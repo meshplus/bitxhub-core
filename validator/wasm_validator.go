@@ -10,21 +10,24 @@ import (
 	"github.com/meshplus/bitxhub-kit/wasm"
 	"github.com/meshplus/bitxhub-model/pb"
 	"github.com/sirupsen/logrus"
+	"github.com/wasmerio/go-ext-wasm/wasmer"
 )
 
 // Validator is the instance that can use wasm to verify transaction validity
 type WasmValidator struct {
-	wasm   *wasm.Wasm
-	input  []byte
-	ledger Ledger
-	logger logrus.FieldLogger
+	wasm      *wasm.Wasm
+	input     []byte
+	ledger    Ledger
+	logger    logrus.FieldLogger
+	instances map[string]wasmer.Instance
 }
 
 // New a validator instance
-func NewWasmValidator(ledger Ledger, logger logrus.FieldLogger) *WasmValidator {
+func NewWasmValidator(ledger Ledger, logger logrus.FieldLogger, instances map[string]wasmer.Instance) *WasmValidator {
 	return &WasmValidator{
-		ledger: ledger,
-		logger: logger,
+		ledger:    ledger,
+		logger:    logger,
+		instances: instances,
 	}
 }
 
@@ -69,7 +72,7 @@ func (vlt *WasmValidator) initRule(address, from string, proof, payload []byte, 
 		return fmt.Errorf("this rule address does not exist")
 	}
 
-	wasm, err := wasm.New(contractByte, imports)
+	wasm, err := wasm.New(contractByte, imports, vlt.instances)
 	if err != nil {
 		return err
 	}

@@ -2,6 +2,7 @@ package validator
 
 import (
 	"github.com/sirupsen/logrus"
+	"github.com/wasmerio/go-ext-wasm/wasmer"
 )
 
 const (
@@ -10,8 +11,9 @@ const (
 
 // Validator is the instance that can use wasm to verify transaction validity
 type ValidationEngine struct {
-	ledger Ledger
-	logger logrus.FieldLogger
+	ledger    Ledger
+	logger    logrus.FieldLogger
+	instances map[string]wasmer.Instance
 }
 
 // New a validator instance
@@ -34,5 +36,9 @@ func (ve *ValidationEngine) getValidator(address string) Validator {
 		return NewFabV14Validator(ve.logger)
 	}
 
-	return NewWasmValidator(ve.ledger, ve.logger)
+	if ve.instances == nil {
+		ve.instances = make(map[string]wasmer.Instance)
+	}
+
+	return NewWasmValidator(ve.ledger, ve.logger, ve.instances)
 }
