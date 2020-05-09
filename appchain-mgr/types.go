@@ -7,10 +7,10 @@ import (
 type AppchainMgr interface {
 	// Register appchain managers registers appchain info caller is the appchain
 	// manager address return appchain id and error
-	Register(validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte)
+	Register(id, validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte)
 
 	// UpdateAppchain updates approved appchain
-	UpdateAppchain(validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte)
+	UpdateAppchain(id, validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte)
 
 	// Audit bitxhub manager audit appchain register info
 	// caller is the bitxhub manager address
@@ -30,7 +30,7 @@ type AppchainMgr interface {
 	Appchains() (bool, []byte)
 
 	// DeleteAppchain deletes appchain
-	DeleteAppchain(cid string) (bool, []byte)
+	DeleteAppchain(id string) (bool, []byte)
 
 	// Appchain returns appchain info
 	Appchain() (bool, []byte)
