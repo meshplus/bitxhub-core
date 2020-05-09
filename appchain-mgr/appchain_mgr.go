@@ -44,9 +44,9 @@ func New(persister Persister) AppchainMgr {
 
 // Register appchain manager registers appchain info caller is the appchain
 // manager address return appchain id and error
-func (am *AppchainManager) Register(validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte) {
+func (am *AppchainManager) Register(id, validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte) {
 	chain := &Appchain{
-		ID:            am.Caller(),
+		ID:            id,
 		Name:          name,
 		Validators:    validators,
 		ConsensusType: consensusType,
@@ -56,7 +56,7 @@ func (am *AppchainManager) Register(validators string, consensusType int32, chai
 		PublicKey:     pubkey,
 	}
 
-	ok := am.Has(am.appchainKey(am.Caller()))
+	ok := am.Has(am.appchainKey(id))
 	if ok {
 		am.Persister.Logger().WithFields(logrus.Fields{
 			"id": am.Caller(),
@@ -77,21 +77,21 @@ func (am *AppchainManager) Register(validators string, consensusType int32, chai
 	return true, body
 }
 
-func (am *AppchainManager) UpdateAppchain(validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte) {
-	ok := am.Has(am.appchainKey(am.Caller()))
+func (am *AppchainManager) UpdateAppchain(id, validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte) {
+	ok := am.Has(am.appchainKey(id))
 	if !ok {
 		return false, []byte("register appchain firstly")
 	}
 
 	chain := &Appchain{}
-	am.GetObject(am.appchainKey(am.Caller()), chain)
+	am.GetObject(am.appchainKey(id), chain)
 
 	if chain.Status == REGISTERED {
 		return false, []byte("this appchain is being audited")
 	}
 
 	chain = &Appchain{
-		ID:            am.Caller(),
+		ID:            id,
 		Name:          name,
 		Validators:    validators,
 		ConsensusType: consensusType,
@@ -101,7 +101,7 @@ func (am *AppchainManager) UpdateAppchain(validators string, consensusType int32
 		PublicKey:     pubkey,
 	}
 
-	am.SetObject(am.appchainKey(am.Caller()), chain)
+	am.SetObject(am.appchainKey(id), chain)
 
 	return true, nil
 }
@@ -196,9 +196,9 @@ func (am *AppchainManager) Appchains() (bool, []byte) {
 	return true, data
 }
 
-func (am *AppchainManager) DeleteAppchain(cid string) (bool, []byte) {
-	am.Delete(PREFIX + cid)
-	am.Logger().Infof("delete appchain:%s", cid)
+func (am *AppchainManager) DeleteAppchain(id string) (bool, []byte) {
+	am.Delete(am.appchainKey(id))
+	am.Logger().Infof("delete appchain:%s", id)
 	return true, nil
 }
 
