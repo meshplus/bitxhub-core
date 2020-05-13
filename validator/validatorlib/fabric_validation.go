@@ -148,18 +148,26 @@ func ValidatePayload(info payloadInfo, payloadByte []byte) error {
 	if err != nil {
 		return err
 	}
-	if info.DstContractId != payload.DstContractId {
+	if payload.Encrypted {
+		return nil
+	}
+	content := &pb.Content{}
+	err = content.Unmarshal(payload.Content)
+	if err != nil {
+		return err
+	}
+	if info.DstContractId != content.DstContractId {
 		return fmt.Errorf("dst contrct id not correct")
 	}
-	if info.SrcContractId != payload.SrcContractId {
+	if info.SrcContractId != content.SrcContractId {
 		return fmt.Errorf("src contrct id not correct")
 	}
-	if info.Callback != payload.Callback {
+	if info.Callback != content.Callback {
 		return fmt.Errorf("callback not correct")
 	}
 	args := strings.Split(info.Args, ",")
 	for index, arg := range args {
-		if arg != string(payload.Args[index]) {
+		if arg != string(content.Args[index]) {
 			return fmt.Errorf("args not correct")
 		}
 	}
