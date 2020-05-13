@@ -242,14 +242,10 @@ github.com/mattn/go-isatty v0.0.5/go.mod h1:Iq45c/XA43vh69/j3iqttzPXn0bhXyGjM0Hd
 github.com/mattn/go-isatty v0.0.8/go.mod h1:Iq45c/XA43vh69/j3iqttzPXn0bhXyGjM0Hdxcsrc5s=
 github.com/mattn/go-isatty v0.0.10/go.mod h1:qgIWMr58cqv1PHHyhnkY9lrL7etaEgOFcMEpPG5Rm84=
 github.com/meshplus/bitxhub-kit v1.0.0-rc1/go.mod h1:ra/AhOkPvpElI+wXrB9G6DjdcrdxFU3vMwA5MYKr9D0=
-github.com/meshplus/bitxhub-kit v1.0.0 h1:+RHGTqW50CLZlEQAUm89fQHicYcjqkdYa+QMAktxGd4=
-github.com/meshplus/bitxhub-kit v1.0.0/go.mod h1:7cWyhXWZfrQ3+EaxkRoXfuiG3Y5R9DXYJomeZKkETW8=
 github.com/meshplus/bitxhub-kit v1.0.1-0.20200429033154-8736253c8460 h1:bL+s+LBhGr4g+28DNtqyj4WoVkYdZ5CPoGjdF6Ll0sk=
 github.com/meshplus/bitxhub-kit v1.0.1-0.20200429033154-8736253c8460/go.mod h1:7cWyhXWZfrQ3+EaxkRoXfuiG3Y5R9DXYJomeZKkETW8=
 github.com/meshplus/bitxhub-model v1.0.0-rc3 h1:oTyaDnhmMPKYifkV2Z5fH2OeY2RE7b6Bk6TzoOT9n4c=
 github.com/meshplus/bitxhub-model v1.0.0-rc3/go.mod h1:ZCctQIYTlE3vJ8Lhkrgs9bWwNA+Dw4JzojOSIzLVU6E=
-github.com/meshplus/bitxhub-model v1.0.0-rc4.0.20200427024612-57b479c1d610 h1:BOR7Kgllgx8rpJrqiG2NBU5cUn1ec9NoYozquXwLSLM=
-github.com/meshplus/bitxhub-model v1.0.0-rc4.0.20200427024612-57b479c1d610/go.mod h1:ZCctQIYTlE3vJ8Lhkrgs9bWwNA+Dw4JzojOSIzLVU6E=
 github.com/meshplus/bitxhub-model v1.0.0-rc4.0.20200429111056-62b55c3d4260 h1:C82XmTofR2/R/1rafiwjLkgTvzPN/0cOQHBbpxEXUyY=
 github.com/meshplus/bitxhub-model v1.0.0-rc4.0.20200429111056-62b55c3d4260/go.mod h1:QK8aACbxtZEA3Hk1BOCirW0uxMWLsMrLDpWz9FweIKM=
 github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b/go.mod h1:01TrycV0kFyexm33Z7vhZRXopbI8J3TDReVlkTgMUxE=
