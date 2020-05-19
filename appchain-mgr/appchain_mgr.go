@@ -59,14 +59,13 @@ func (am *AppchainManager) Register(id, validators string, consensusType int32, 
 	ok := am.Has(am.appchainKey(id))
 	if ok {
 		am.Persister.Logger().WithFields(logrus.Fields{
-			"id": am.Caller(),
+			"id": id,
 		}).Debug("Appchain has registered")
-		am.GetObject(am.appchainKey(am.Caller()), chain)
+		am.GetObject(am.appchainKey(id), chain)
 	} else {
-		// logger.Info(am.Caller())
-		am.SetObject(am.appchainKey(am.Caller()), chain)
+		am.SetObject(am.appchainKey(id), chain)
 		am.Logger().WithFields(logrus.Fields{
-			"id": am.Caller(),
+			"id": id,
 		}).Info("Appchain register successfully")
 	}
 	body, err := json.Marshal(chain)
