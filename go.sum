@@ -242,12 +242,10 @@ github.com/mattn/go-isatty v0.0.5/go.mod h1:Iq45c/XA43vh69/j3iqttzPXn0bhXyGjM0Hd
 github.com/mattn/go-isatty v0.0.8/go.mod h1:Iq45c/XA43vh69/j3iqttzPXn0bhXyGjM0Hdxcsrc5s=
 github.com/mattn/go-isatty v0.0.10/go.mod h1:qgIWMr58cqv1PHHyhnkY9lrL7etaEgOFcMEpPG5Rm84=
 github.com/meshplus/bitxhub-kit v1.0.0-rc1/go.mod h1:ra/AhOkPvpElI+wXrB9G6DjdcrdxFU3vMwA5MYKr9D0=
-github.com/meshplus/bitxhub-kit v1.0.1-0.20200429033154-8736253c8460 h1:bL+s+LBhGr4g+28DNtqyj4WoVkYdZ5CPoGjdF6Ll0sk=
-github.com/meshplus/bitxhub-kit v1.0.1-0.20200429033154-8736253c8460/go.mod h1:7cWyhXWZfrQ3+EaxkRoXfuiG3Y5R9DXYJomeZKkETW8=
-github.com/meshplus/bitxhub-model v1.0.0-rc3 h1:oTyaDnhmMPKYifkV2Z5fH2OeY2RE7b6Bk6TzoOT9n4c=
-github.com/meshplus/bitxhub-model v1.0.0-rc3/go.mod h1:ZCctQIYTlE3vJ8Lhkrgs9bWwNA+Dw4JzojOSIzLVU6E=
-github.com/meshplus/bitxhub-model v1.0.0-rc4.0.20200429111056-62b55c3d4260 h1:C82XmTofR2/R/1rafiwjLkgTvzPN/0cOQHBbpxEXUyY=
-github.com/meshplus/bitxhub-model v1.0.0-rc4.0.20200429111056-62b55c3d4260/go.mod h1:QK8aACbxtZEA3Hk1BOCirW0uxMWLsMrLDpWz9FweIKM=
+github.com/meshplus/bitxhub-kit v1.0.1-0.20200525050818-198e65fa54c9 h1:c4MLHbGc1n3zqYvT0Mi6DfmTgnMa+MQHr35aCXLshN8=
+github.com/meshplus/bitxhub-kit v1.0.1-0.20200525050818-198e65fa54c9/go.mod h1:8Pprmnq+2fFi5kJP0qcbwPl/fe22nro0OamjtwD0LJM=
+github.com/meshplus/bitxhub-model v1.0.0-rc4.0.20200514093243-7e8ae60d1c19 h1:D0n0/NqaueI6r+/cJIjYzWwjZ9j/5l36r/c8MYqTdXg=
+github.com/meshplus/bitxhub-model v1.0.0-rc4.0.20200514093243-7e8ae60d1c19/go.mod h1:QK8aACbxtZEA3Hk1BOCirW0uxMWLsMrLDpWz9FweIKM=
 github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b/go.mod h1:01TrycV0kFyexm33Z7vhZRXopbI8J3TDReVlkTgMUxE=
 github.com/miekg/dns v1.1.12/go.mod h1:W1PPwlIAgtquWBMBEV9nkV9Cazfe8ScdGz/Lj7v3Nrg=
 github.com/miekg/pkcs11 v1.0.3 h1:iMwmD7I5225wv84WxIG/bmxz9AXjWvTWIbM/TYHvWtw=
@@ -314,8 +312,6 @@ github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/9
 github.com/pierrec/lz4 v2.4.1+incompatible h1:mFe7ttWaflA46Mhqh+jUfjp2qTbPYxLB2/OyBppH9dg=
 github.com/pierrec/lz4 v2.4.1+incompatible/go.mod h1:pdkljMzZIN41W+lC3N2tnIh5sFi+IEE17M5jbnwPHcY=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
-github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
-github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
