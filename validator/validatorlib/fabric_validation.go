@@ -144,18 +144,19 @@ func ValidateChainCodeID(prp []byte, name string) error {
 
 func ValidatePayload(info payloadInfo, payloadByte []byte) error {
 	payload := &pb.Payload{}
-	err := payload.Unmarshal(payloadByte)
-	if err != nil {
+	if err := payload.Unmarshal(payloadByte); err != nil {
 		return err
 	}
+
 	if payload.Encrypted {
 		return nil
 	}
+
 	content := &pb.Content{}
-	err = content.Unmarshal(payload.Content)
-	if err != nil {
-		return err
+	if err := content.Unmarshal(payload.Content); err != nil {
+		return fmt.Errorf("unmarshal ibtp payload content: %w", err)
 	}
+
 	if info.DstContractId != content.DstContractId {
 		return fmt.Errorf("dst contrct id not correct")
 	}

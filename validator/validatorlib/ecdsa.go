@@ -16,15 +16,12 @@ import (
 	"math/big"
 	"unsafe"
 
-	"github.com/meshplus/bitxhub-kit/crypto/asym/secp256k1"
 	"github.com/wasmerio/go-ext-wasm/wasmer"
 )
 
 type AlgorithmOption string
 
 const (
-	// Secp256k1 secp256k1 algorithm
-	Secp256k1 AlgorithmOption = "Secp256k1"
 	// Secp256r1 secp256r1 algorithm
 	Secp256r1 AlgorithmOption = "Secp256r1"
 )
@@ -133,8 +130,6 @@ func UnmarshalPrivateKey(data []byte, opt AlgorithmOption) (crypto.PrivateKey, e
 	key.K.D = big.NewInt(0)
 	key.K.D.SetBytes(data)
 	switch opt {
-	case Secp256k1:
-		key.K.Curve = secp256k1.S256()
 	case Secp256r1:
 		key.K.Curve = elliptic.P256()
 	default:
@@ -159,8 +154,6 @@ func UnmarshalPublicKey(data []byte, opt AlgorithmOption) (crypto.PublicKey, err
 	key.k.X.SetBytes(data[1:33])
 	key.k.Y.SetBytes(data[33:])
 	switch opt {
-	case Secp256k1:
-		key.k.Curve = secp256k1.S256()
 	case Secp256r1:
 		key.k.Curve = elliptic.P256()
 	}
