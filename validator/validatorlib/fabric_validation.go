@@ -122,12 +122,14 @@ func ValidateV14(proof, payload, policyBytes []byte, confByte []string, cid stri
 }
 
 func ValidateChainCodeID(prp []byte, name string) error {
-	payload := &peer.ProposalResponsePayload{}
-	if err := proto.Unmarshal(prp, payload); err != nil {
+	payload, err := protoutil.UnmarshalProposalResponsePayload(prp)
+	if err != nil {
+		err = fmt.Errorf("GetProposalResponsePayload error %s", err)
 		return err
 	}
-	chaincodeAct := &peer.ChaincodeAction{}
-	if err := proto.Unmarshal(payload.Extension, chaincodeAct); err != nil {
+	chaincodeAct, err := protoutil.UnmarshalChaincodeAction(payload.Extension)
+	if err != nil {
+		err = fmt.Errorf("GetChaincodeAction error %s", err)
 		return err
 	}
 	if name != chaincodeAct.ChaincodeId.Name {
