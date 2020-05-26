@@ -80,13 +80,8 @@ func extractValidationArtifacts(proof []byte) (*valiadationArtifacts, error) {
 		return nil, err
 	}
 
-	ca := &peer.ChaincodeAction{}
-	err = proto.Unmarshal(pRespPayload.Extension, ca)
-	if err != nil {
-		return nil, err
-	}
 	var payloadArray []payloadInfo
-	err = json.Unmarshal(ca.Response.Payload, &payloadArray)
+	err = json.Unmarshal(respPayload.Response.Payload, &payloadArray)
 	if err != nil {
 		return nil, err
 	}
