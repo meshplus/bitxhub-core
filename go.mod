@@ -14,6 +14,7 @@ require (
 	github.com/meshplus/bitxhub-model v1.0.0-rc4.0.20200514093243-7e8ae60d1c19
 	github.com/miekg/pkcs11 v1.0.3 // indirect
 	github.com/sirupsen/logrus v1.5.0
+	github.com/stretchr/testify v1.4.0
 	github.com/sykesm/zap-logfmt v0.0.3 // indirect
 	github.com/wasmerio/go-ext-wasm v0.3.1
 	go.uber.org/zap v1.15.0 // indirect
