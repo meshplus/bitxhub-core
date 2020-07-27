@@ -7,13 +7,15 @@ import "C"
 import (
 	"unsafe"
 
+	"github.com/meshplus/bitxhub-kit/wasm"
 	"github.com/wasmerio/go-ext-wasm/wasmer"
 )
 
 //export fabric_validate_v14
 func fabric_validate_v14(context unsafe.Pointer, proof_ptr int64, validator_ptr int64, payload_ptr int64) int32 {
 	ctx := wasmer.IntoInstanceContext(context)
-	data := ctx.Data().(map[int]int)
+	ctxMap := ctx.Data().(map[string]interface{})
+	data := ctxMap[wasm.CONTEXT_ARGMAP].(map[int]int)
 	memory := ctx.Memory()
 	proof := memory.Data()[proof_ptr : proof_ptr+int64(data[int(proof_ptr)])]
 	validator := memory.Data()[validator_ptr : validator_ptr+int64(data[int(validator_ptr)])]
@@ -22,8 +24,30 @@ func fabric_validate_v14(context unsafe.Pointer, proof_ptr int64, validator_ptr 
 	if err != nil {
 		return 0
 	}
-	err = ValidateV14(proof, payload, []byte(vInfo.Policy), vInfo.ConfByte, vInfo.Cid)
+	artifact, err := extractValidationArtifacts(proof)
 	if err != nil {
+		return 0
+	}
+
+	if err := ValidateChainCodeID(artifact.prp, vInfo.Cid); err != nil {
+		return 0
+	}
+
+	if err := ValidatePayload(artifact.payload, payload); err != nil {
+		return 0
+	}
+
+	signatureSet := GetSignatureSet(artifact)
+
+	pe, ok := ctxMap[FABRIC_EVALUATOR].(*PolicyEvaluator)
+	if !ok {
+		pe, err = NewPolicyEvaluator(vInfo.ConfByte)
+		if err != nil {
+			return 0
+		}
+		ctxMap[FABRIC_EVALUATOR] = pe
+	}
+	if err = pe.Evaluate([]byte(vInfo.Policy), signatureSet); err != nil {
 		return 0
 	}
 
