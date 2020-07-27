@@ -15,6 +15,14 @@ import (
 	"github.com/meshplus/bitxhub-model/pb"
 )
 
+const (
+	FABRIC_EVALUATOR = "fabric_evaluator"
+)
+
+var (
+	evaluatorMap map[string]*PolicyEvaluator
+)
+
 type valiadationArtifacts struct {
 	rwset        []byte
 	prp          []byte
@@ -24,6 +32,7 @@ type valiadationArtifacts struct {
 }
 
 type validatorInfo struct {
+	ChainId  string   `json:"chain_id"`
 	ConfByte []string `json:"conf_byte"`
 	Policy   string   `json:"policy"`
 	Cid      string   `json:"cid"`
@@ -57,6 +66,10 @@ func UnmarshalValidatorInfo(validatorBytes []byte) (*validatorInfo, error) {
 		return nil, err
 	}
 	return vInfo, nil
+}
+
+func ExtractValidationArtifacts(proof []byte) (*valiadationArtifacts, error) {
+	return extractValidationArtifacts(proof)
 }
 
 func extractValidationArtifacts(proof []byte) (*valiadationArtifacts, error) {
@@ -95,7 +108,27 @@ func extractValidationArtifacts(proof []byte) (*valiadationArtifacts, error) {
 	}, nil
 }
 
-func ValidateV14(proof, payload, policyBytes []byte, confByte []string, cid string) error {
+func PreCheck(proof, payload []byte, cid string) (*valiadationArtifacts, error) {
+	// Get the validation artifacts that help validate the chaincodeID and policy
+	artifact, err := extractValidationArtifacts(proof)
+	if err != nil {
+		return nil, err
+	}
+
+	err = ValidateChainCodeID(artifact.prp, cid)
+	if err != nil {
+		return nil, err
+	}
+
+	err = ValidatePayload(artifact.payload, payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return artifact, nil
+}
+
+func ValidateV14(proof, payload, policyBytes []byte, confByte []string, cid, from string) error {
 	// Get the validation artifacts that help validate the chaincodeID and policy
 	artifact, err := extractValidationArtifacts(proof)
 	if err != nil {
@@ -113,6 +146,7 @@ func ValidateV14(proof, payload, policyBytes []byte, confByte []string, cid stri
 	}
 
 	signatureSet := GetSignatureSet(artifact)
+
 	pe, err := NewPolicyEvaluator(confByte)
 	if err != nil {
 		return err

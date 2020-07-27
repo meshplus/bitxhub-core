@@ -8,12 +8,14 @@ import (
 // Validator is the instance that can use wasm to verify transaction validity
 type FabV14Validator struct {
 	logger logrus.FieldLogger
+	evMap  map[string]*validatorlib.PolicyEvaluator
 }
 
 // New a validator instance
 func NewFabV14Validator(logger logrus.FieldLogger) *FabV14Validator {
 	return &FabV14Validator{
 		logger: logger,
+		evMap:  make(map[string]*validatorlib.PolicyEvaluator),
 	}
 }
 
@@ -23,7 +25,24 @@ func (vlt *FabV14Validator) Verify(address, from string, proof, payload []byte, 
 	if err != nil {
 		return false, err
 	}
-	err = validatorlib.ValidateV14(proof, payload, []byte(vInfo.Policy), vInfo.ConfByte, vInfo.Cid)
+	// Get the validation artifacts that help validate the chaincodeID and policy
+	artifact, err := validatorlib.PreCheck(proof, payload, vInfo.Cid)
+	if err != nil {
+		return false, err
+	}
+
+	signatureSet := validatorlib.GetSignatureSet(artifact)
+
+	pe, ok := vlt.evMap[vInfo.ChainId]
+	if !ok {
+		pe, err = validatorlib.NewPolicyEvaluator(vInfo.ConfByte)
+		if err != nil {
+			return false, err
+		}
+		vlt.evMap[vInfo.ChainId] = pe
+	}
+
+	err = pe.Evaluate([]byte(vInfo.Policy), signatureSet)
 	if err != nil {
 		return false, err
 	}
