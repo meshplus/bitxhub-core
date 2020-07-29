@@ -11,16 +11,19 @@ const (
 
 // Validator is the instance that can use wasm to verify transaction validity
 type ValidationEngine struct {
-	ledger    Ledger
-	logger    logrus.FieldLogger
-	instances map[string]wasmer.Instance
+	instances    map[string]wasmer.Instance
+	fabValidator Validator
+
+	ledger Ledger
+	logger logrus.FieldLogger
 }
 
 // New a validator instance
 func NewValidationEngine(ledger Ledger, logger logrus.FieldLogger) *ValidationEngine {
 	return &ValidationEngine{
-		ledger: ledger,
-		logger: logger,
+		ledger:       ledger,
+		logger:       logger,
+		fabValidator: NewFabV14Validator(logger),
 	}
 }
 
@@ -33,7 +36,7 @@ func (ve *ValidationEngine) Validate(address, from string, proof, payload []byte
 
 func (ve *ValidationEngine) getValidator(address string) Validator {
 	if address == FabricRuleAddr {
-		return NewFabV14Validator(ve.logger)
+		return ve.fabValidator
 	}
 
 	if ve.instances == nil {
