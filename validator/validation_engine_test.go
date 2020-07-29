@@ -79,16 +79,16 @@ func TestFabV14Validator_Verify(t *testing.T) {
 func BenchmarkFabV14Validator_Verify(b *testing.B) {
 	logger := log.NewWithModule("validator")
 
-	proof, err := ioutil.ReadFile("./testdata/proof")
+	proof, err := ioutil.ReadFile("./testdata/proof_1.0.0_rc")
 	require.Nil(b, err)
 
-	validators, err := ioutil.ReadFile("./testdata/validators")
+	validators, err := ioutil.ReadFile("./testdata/validator_1.0.0_rc")
 	require.Nil(b, err)
 
 	content := &pb.Content{
 		SrcContractId: "mychannel&transfer",
-		DstContractId: "0x668a209Dc6562707469374B8235e37b8eC25db08",
-		Func:          "get",
+		DstContractId: "mychannel&transfer",
+		Func:          "interchainCharge",
 		Args:          [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
 		Callback:      "interchainConfirm",
 	}
@@ -104,9 +104,9 @@ func BenchmarkFabV14Validator_Verify(b *testing.B) {
 	body, err := payload.Marshal()
 	require.Nil(b, err)
 
+	v := NewValidationEngine(nil, logger)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		v := NewValidationEngine(nil, logger)
 		ok, err := v.Validate(FabricRuleAddr, "0xe02d8fdacd59020d7f292ab3278d13674f5c404d", proof, body, string(validators))
 		require.Nil(b, err)
 		require.True(b, ok)
