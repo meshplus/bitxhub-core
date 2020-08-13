@@ -31,7 +31,7 @@ type valiadationArtifacts struct {
 	payload      payloadInfo
 }
 
-type validatorInfo struct {
+type ValidatorInfo struct {
 	ChainId  string   `json:"chain_id"`
 	ConfByte []string `json:"conf_byte"`
 	Policy   string   `json:"policy"`
@@ -60,8 +60,8 @@ func GetPolicyEnvelope(policy string) ([]byte, error) {
 	return policyBytes, nil
 }
 
-func UnmarshalValidatorInfo(validatorBytes []byte) (*validatorInfo, error) {
-	vInfo := &validatorInfo{}
+func UnmarshalValidatorInfo(validatorBytes []byte) (*ValidatorInfo, error) {
+	vInfo := &ValidatorInfo{}
 	if err := json.Unmarshal(validatorBytes, vInfo); err != nil {
 		return nil, err
 	}

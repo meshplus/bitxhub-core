@@ -7,7 +7,6 @@ import "C"
 import (
 	"unsafe"
 
-	"github.com/meshplus/bitxhub-kit/wasm"
 	"github.com/wasmerio/go-ext-wasm/wasmer"
 )
 
@@ -15,7 +14,7 @@ import (
 func fabric_validate_v14(context unsafe.Pointer, proof_ptr int64, validator_ptr int64, payload_ptr int64) int32 {
 	ctx := wasmer.IntoInstanceContext(context)
 	ctxMap := ctx.Data().(map[string]interface{})
-	data := ctxMap[wasm.CONTEXT_ARGMAP].(map[int]int)
+	data := ctxMap["argmap"].(map[int]int)
 	memory := ctx.Memory()
 	proof := memory.Data()[proof_ptr : proof_ptr+int64(data[int(proof_ptr)])]
 	validator := memory.Data()[validator_ptr : validator_ptr+int64(data[int(validator_ptr)])]
