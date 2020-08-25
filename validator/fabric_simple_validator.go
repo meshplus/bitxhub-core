@@ -53,7 +53,10 @@ func (vlt *FabSimValidator) Verify(address, from string, proof, payload []byte, 
 	}
 
 	h := sha256.New()
-	h.Write(signatureSet[0].Data)
+	_, err = h.Write(signatureSet[0].Data)
+	if err != nil {
+		return false, err
+	}
 	ret := h.Sum(nil)
 	isValid := ecdsa.Verify(pk, ret, r, s)
 
