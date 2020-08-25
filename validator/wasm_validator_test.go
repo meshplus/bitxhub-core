@@ -15,7 +15,7 @@ import (
 )
 
 func TestWasmValidator(t *testing.T) {
-	wasmBytes, err := ioutil.ReadFile("./testdata/test_demo.wasm")
+	wasmBytes, err := ioutil.ReadFile("./testdata/hpc_demo.wasm")
 	require.Nil(t, err)
 
 	proof, err := ioutil.ReadFile("./testdata/proof_1.0.0_rc")
@@ -64,4 +64,60 @@ func TestWasmValidator(t *testing.T) {
 	result, err := strconv.Atoi(string(ret))
 	require.Nil(t, err)
 	fmt.Println(result)
+}
+
+func BenchmarkHpcWasm_Verify(b *testing.B) {
+	wasmBytes, err := ioutil.ReadFile("./testdata/hpc_demo.wasm")
+	require.Nil(b, err)
+
+	// proof, err := ioutil.ReadFile("./testdata/proof_1.0.0_rc")
+	// require.Nil(b, err)
+
+	// validators, err := ioutil.ReadFile("./testdata/validator_1.0.0_rc")
+	// require.Nil(b, err)
+
+	content := &pb.Content{
+		SrcContractId: "mychannel&transfer",
+		DstContractId: "mychannel&transfer",
+		Func:          "interchainCharge",
+		Args:          [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
+		Callback:      "interchainConfirm",
+	}
+
+	bytes, err := content.Marshal()
+	require.Nil(b, err)
+
+	payload := &pb.Payload{
+		Encrypted: false,
+		Content:   bytes,
+	}
+
+	body, err := payload.Marshal()
+	require.Nil(b, err)
+
+	validator := &WasmValidator{
+		instances: make(map[string]wasmer.Instance),
+	}
+
+	wasmCode := &wasm.Contract{
+		Code: wasmBytes,
+	}
+	contractBytes, err := json.Marshal(wasmCode)
+	require.Nil(b, err)
+	imports, err := validatorlib.New()
+	require.Nil(b, err)
+	wasm, err := wasm.New(contractBytes, imports, validator.instances)
+	require.Nil(b, err)
+	validator.wasm = wasm
+	err = validator.setTransaction("", "0xe02d8fdacd59020d7f292ab3278d13674f5c404d", []byte("111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"), "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111", body)
+	require.Nil(b, err)
+	// for i := 0; i < 400000; i++ {
+	// 	_, err := validator.wasm.Execute(validator.input)
+	// 	require.Nil(b, err)
+	// }
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := validator.wasm.Execute(validator.input)
+		require.Nil(b, err)
+	}
 }

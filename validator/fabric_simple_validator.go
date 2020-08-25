@@ -37,7 +37,7 @@ func (vlt *FabSimValidator) Verify(address, from string, proof, payload []byte, 
 	signatureSet := validatorlib.GetSignatureSet(artifact)
 
 	var pk *ecdsa.PublicKey
-	pk, ok := vlt.pkMap["111"]
+	pk, ok := vlt.pkMap[from]
 	if !ok {
 		pemCert, _ := pem.Decode([]byte(validators))
 		cert, err := x509.ParseCertificate(pemCert.Bytes)
@@ -45,7 +45,7 @@ func (vlt *FabSimValidator) Verify(address, from string, proof, payload []byte, 
 			return false, err
 		}
 		pk = cert.PublicKey.(*ecdsa.PublicKey)
-		vlt.pkMap["111"] = pk
+		vlt.pkMap[from] = pk
 	}
 	r, s, err := unmarshalECDSASignature(signatureSet[0].Signature)
 	if err != nil {
