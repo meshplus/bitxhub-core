@@ -1,8 +1,10 @@
 package validator
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"strconv"
+	"sync"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/meshplus/bitxhub-core/validator/validatorlib"
@@ -10,7 +12,6 @@ import (
 	"github.com/meshplus/bitxhub-kit/wasm"
 	"github.com/meshplus/bitxhub-model/pb"
 	"github.com/sirupsen/logrus"
-	"github.com/wasmerio/go-ext-wasm/wasmer"
 )
 
 // Validator is the instance that can use wasm to verify transaction validity
@@ -19,11 +20,11 @@ type WasmValidator struct {
 	input     []byte
 	ledger    Ledger
 	logger    logrus.FieldLogger
-	instances map[string]wasmer.Instance
+	instances *sync.Map
 }
 
 // New a validator instance
-func NewWasmValidator(ledger Ledger, logger logrus.FieldLogger, instances map[string]wasmer.Instance) *WasmValidator {
+func NewWasmValidator(ledger Ledger, logger logrus.FieldLogger, instances *sync.Map) *WasmValidator {
 	return &WasmValidator{
 		ledger:    ledger,
 		logger:    logger,
@@ -43,6 +44,19 @@ func (vlt *WasmValidator) Verify(address, from string, proof, payload []byte, va
 		return false, err
 	}
 
+	// put wasm instance into pool
+	contractByte := vlt.ledger.GetCode(types.String2Address(address))
+	if contractByte == nil {
+		return false, fmt.Errorf("this rule address does not exist")
+	}
+	hash := sha256.Sum256(contractByte)
+	v, ok := vlt.instances.Load(string(hash[:]))
+	if !ok {
+		return false, fmt.Errorf("free wasm instance failed")
+	}
+	v.(*sync.Pool).Put(vlt.wasm.Instance)
+
+	// check execution status
 	result, err := strconv.Atoi(string(ret))
 	if err != nil {
 		return false, err

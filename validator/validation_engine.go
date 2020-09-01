@@ -2,7 +2,7 @@ package validator
 
 import (
 	"github.com/sirupsen/logrus"
-	"github.com/wasmerio/go-ext-wasm/wasmer"
+	"sync"
 )
 
 const (
@@ -13,7 +13,7 @@ const (
 type ValidationEngine struct {
 	ledger    Ledger
 	logger    logrus.FieldLogger
-	instances map[string]wasmer.Instance
+	instances *sync.Map
 }
 
 // New a validator instance
@@ -37,7 +37,7 @@ func (ve *ValidationEngine) getValidator(address string) Validator {
 	}
 
 	if ve.instances == nil {
-		ve.instances = make(map[string]wasmer.Instance)
+		ve.instances = &sync.Map{}
 	}
 
 	return NewWasmValidator(ve.ledger, ve.logger, ve.instances)
