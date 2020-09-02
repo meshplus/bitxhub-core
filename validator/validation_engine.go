@@ -1,8 +1,9 @@
 package validator
 
 import (
+	"sync"
+
 	"github.com/sirupsen/logrus"
-	"github.com/wasmerio/go-ext-wasm/wasmer"
 )
 
 const (
@@ -12,7 +13,7 @@ const (
 
 // Validator is the instance that can use wasm to verify transaction validity
 type ValidationEngine struct {
-	instances       map[string]wasmer.Instance
+	instances       *sync.Map
 	fabValidator    Validator
 	simFabValidator Validator
 
@@ -47,7 +48,7 @@ func (ve *ValidationEngine) getValidator(address string) Validator {
 	}
 
 	if ve.instances == nil {
-		ve.instances = make(map[string]wasmer.Instance)
+		ve.instances = &sync.Map{}
 	}
 
 	return NewWasmValidator(ve.ledger, ve.logger, ve.instances)
