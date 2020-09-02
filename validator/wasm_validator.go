@@ -1,8 +1,10 @@
 package validator
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"strconv"
+	"sync"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/meshplus/bitxhub-core/validator/validatorlib"
@@ -10,7 +12,6 @@ import (
 	"github.com/meshplus/bitxhub-kit/wasm"
 	"github.com/meshplus/bitxhub-model/pb"
 	"github.com/sirupsen/logrus"
-	"github.com/wasmerio/go-ext-wasm/wasmer"
 )
 
 // Validator is the instance that can use wasm to verify transaction validity
@@ -19,11 +20,11 @@ type WasmValidator struct {
 	input     []byte
 	ledger    Ledger
 	logger    logrus.FieldLogger
-	instances map[string]wasmer.Instance
+	instances *sync.Map
 }
 
 // New a validator instance
-func NewWasmValidator(ledger Ledger, logger logrus.FieldLogger, instances map[string]wasmer.Instance) *WasmValidator {
+func NewWasmValidator(ledger Ledger, logger logrus.FieldLogger, instances *sync.Map) *WasmValidator {
 	return &WasmValidator{
 		ledger:    ledger,
 		logger:    logger,
@@ -33,7 +34,7 @@ func NewWasmValidator(ledger Ledger, logger logrus.FieldLogger, instances map[st
 
 // Verify will check whether the transaction info is valid
 func (vlt *WasmValidator) Verify(address, from string, proof, payload []byte, validators string) (bool, error) {
-	err := vlt.initRule(address, from, proof, payload, validators)
+	ruleHash, err := vlt.initRule(address, from, proof, payload, validators)
 	if err != nil {
 		return false, err
 	}
@@ -42,7 +43,14 @@ func (vlt *WasmValidator) Verify(address, from string, proof, payload []byte, va
 	if err != nil {
 		return false, err
 	}
+	// put wasm instance into pool
+	v, ok := vlt.instances.Load(string(ruleHash))
+	if !ok {
+		return false, fmt.Errorf("free wasm instance failed")
+	}
+	v.(*sync.Pool).Put(vlt.wasm.Instance)
 
+	// check execution status
 	result, err := strconv.Atoi(string(ret))
 	if err != nil {
 		return false, err
@@ -56,29 +64,30 @@ func (vlt *WasmValidator) Verify(address, from string, proof, payload []byte, va
 }
 
 // InitRule can import a specific rule for validator to verify the transaction
-func (vlt *WasmValidator) initRule(address, from string, proof, payload []byte, validators string) error {
+func (vlt *WasmValidator) initRule(address, from string, proof, payload []byte, validators string) ([]byte, error) {
 	err := vlt.setTransaction(address, from, proof, validators, payload)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	imports, err := validatorlib.New()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	contractByte := vlt.ledger.GetCode(types.String2Address(address))
 
 	if contractByte == nil {
-		return fmt.Errorf("this rule address does not exist")
+		return nil, fmt.Errorf("this rule address does not exist")
 	}
 
 	wasm, err := wasm.New(contractByte, imports, vlt.instances)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	vlt.wasm = wasm
 
-	return nil
+	hash := sha256.Sum256(contractByte)
+	return hash[:], nil
 }
 
 func (vlt *WasmValidator) setTransaction(address, from string, proof []byte, validators string, payload []byte) error {
