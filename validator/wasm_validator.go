@@ -1,7 +1,7 @@
 package validator
 
 import (
-	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"sync"
@@ -44,9 +44,9 @@ func (vlt *WasmValidator) Verify(address, from string, proof, payload []byte, va
 		return false, err
 	}
 	// put wasm instance into pool
-	v, ok := vlt.instances.Load(string(ruleHash))
+	v, ok := vlt.instances.Load(ruleHash)
 	if !ok {
-		return false, fmt.Errorf("free wasm instance failed")
+		return false, fmt.Errorf("load wasm instance failed")
 	}
 	v.(*sync.Pool).Put(vlt.wasm.Instance)
 
@@ -64,30 +64,33 @@ func (vlt *WasmValidator) Verify(address, from string, proof, payload []byte, va
 }
 
 // InitRule can import a specific rule for validator to verify the transaction
-func (vlt *WasmValidator) initRule(address, from string, proof, payload []byte, validators string) ([]byte, error) {
+func (vlt *WasmValidator) initRule(address, from string, proof, payload []byte, validators string) (string, error) {
 	err := vlt.setTransaction(address, from, proof, validators, payload)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	imports, err := validatorlib.New()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	contractByte := vlt.ledger.GetCode(types.String2Address(address))
 
 	if contractByte == nil {
-		return nil, fmt.Errorf("this rule address does not exist")
+		return "", fmt.Errorf("this rule address does not exist")
 	}
 
-	wasm, err := wasm.New(contractByte, imports, vlt.instances)
+	wasmInstance, err := wasm.New(contractByte, imports, vlt.instances)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	vlt.wasm = wasm
+	vlt.wasm = wasmInstance
 
-	hash := sha256.Sum256(contractByte)
-	return hash[:], nil
+	contract := &wasm.Contract{}
+	if err := json.Unmarshal(contractByte, contract); err != nil {
+		return "", fmt.Errorf("contract byte not correct")
+	}
+	return contract.Hash.Hex(), nil
 }
 
 func (vlt *WasmValidator) setTransaction(address, from string, proof []byte, validators string, payload []byte) error {
