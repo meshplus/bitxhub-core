@@ -16,16 +16,15 @@ import (
 
 // Validator is the instance that can use wasm to verify transaction validity
 type FabSimValidator struct {
-	logger    logrus.FieldLogger
-	pkMapLock sync.Mutex
-	pkMap     map[string]*ecdsa.PublicKey
+	logger logrus.FieldLogger
+	pkMap  *sync.Map
 }
 
 // New a validator instance
 func NewFabSimValidator(logger logrus.FieldLogger) *FabSimValidator {
 	return &FabSimValidator{
 		logger: logger,
-		pkMap:  make(map[string]*ecdsa.PublicKey),
+		pkMap:  &sync.Map{},
 	}
 }
 
@@ -39,9 +38,7 @@ func (vlt *FabSimValidator) Verify(address, from string, proof, payload []byte, 
 	signatureSet := validatorlib.GetSignatureSet(artifact)
 
 	var pk *ecdsa.PublicKey
-	vlt.pkMapLock.Lock()
-	pk, ok := vlt.pkMap[from]
-	vlt.pkMapLock.Unlock()
+	raw, ok := vlt.pkMap.Load(from)
 	if !ok {
 		pemCert, _ := pem.Decode([]byte(validators))
 		cert, err := x509.ParseCertificate(pemCert.Bytes)
@@ -49,10 +46,11 @@ func (vlt *FabSimValidator) Verify(address, from string, proof, payload []byte, 
 			return false, err
 		}
 		pk = cert.PublicKey.(*ecdsa.PublicKey)
-		vlt.pkMapLock.Lock()
-		vlt.pkMap[from] = pk
-		vlt.pkMapLock.Unlock()
+		vlt.pkMap.Store(from, pk)
+	} else {
+		pk = raw.(*ecdsa.PublicKey)
 	}
+
 	r, s, err := unmarshalECDSASignature(signatureSet[0].Signature)
 	if err != nil {
 		return false, err
