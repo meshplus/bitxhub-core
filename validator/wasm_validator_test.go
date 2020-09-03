@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strconv"
+	"sync"
 	"testing"
 
 	"github.com/meshplus/bitxhub-core/validator/validatorlib"
 	"github.com/meshplus/bitxhub-kit/wasm"
 	"github.com/meshplus/bitxhub-model/pb"
 	"github.com/stretchr/testify/require"
-	"github.com/wasmerio/go-ext-wasm/wasmer"
 )
 
 func TestWasmValidator(t *testing.T) {
@@ -44,7 +44,7 @@ func TestWasmValidator(t *testing.T) {
 	require.Nil(t, err)
 
 	validator := &WasmValidator{
-		instances: make(map[string]wasmer.Instance),
+		instances: &sync.Map{},
 	}
 
 	wasmCode := &wasm.Contract{
@@ -96,7 +96,7 @@ func BenchmarkHpcWasm_Verify(b *testing.B) {
 	require.Nil(b, err)
 
 	validator := &WasmValidator{
-		instances: make(map[string]wasmer.Instance),
+		instances: &sync.Map{},
 	}
 
 	wasmCode := &wasm.Contract{
