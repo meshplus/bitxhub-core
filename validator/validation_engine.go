@@ -6,21 +6,27 @@ import (
 )
 
 const (
-	FabricRuleAddr = "0x00000000000000000000000000000000000000a0"
+	FabricRuleAddr    = "0x00000000000000000000000000000000000000a0"
+	SimFabricRuleAddr = "0x00000000000000000000000000000000000000a1"
 )
 
 // Validator is the instance that can use wasm to verify transaction validity
 type ValidationEngine struct {
-	ledger    Ledger
-	logger    logrus.FieldLogger
-	instances map[string]wasmer.Instance
+	instances       map[string]wasmer.Instance
+	fabValidator    Validator
+	simFabValidator Validator
+
+	ledger Ledger
+	logger logrus.FieldLogger
 }
 
 // New a validator instance
 func NewValidationEngine(ledger Ledger, logger logrus.FieldLogger) *ValidationEngine {
 	return &ValidationEngine{
-		ledger: ledger,
-		logger: logger,
+		ledger:          ledger,
+		logger:          logger,
+		fabValidator:    NewFabV14Validator(logger),
+		simFabValidator: NewFabSimValidator(logger),
 	}
 }
 
@@ -33,7 +39,11 @@ func (ve *ValidationEngine) Validate(address, from string, proof, payload []byte
 
 func (ve *ValidationEngine) getValidator(address string) Validator {
 	if address == FabricRuleAddr {
-		return NewFabV14Validator(ve.logger)
+		return ve.fabValidator
+	}
+
+	if address == SimFabricRuleAddr {
+		return ve.simFabValidator
 	}
 
 	if ve.instances == nil {
