@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"math/big"
+	"sync"
 
 	"github.com/meshplus/bitxhub-core/validator/validatorlib"
 	"github.com/sirupsen/logrus"
@@ -16,14 +17,14 @@ import (
 // Validator is the instance that can use wasm to verify transaction validity
 type FabSimValidator struct {
 	logger logrus.FieldLogger
-	pkMap  map[string]*ecdsa.PublicKey
+	pkMap  *sync.Map
 }
 
 // New a validator instance
 func NewFabSimValidator(logger logrus.FieldLogger) *FabSimValidator {
 	return &FabSimValidator{
 		logger: logger,
-		pkMap:  make(map[string]*ecdsa.PublicKey),
+		pkMap:  &sync.Map{},
 	}
 }
 
@@ -37,7 +38,7 @@ func (vlt *FabSimValidator) Verify(address, from string, proof, payload []byte, 
 	signatureSet := validatorlib.GetSignatureSet(artifact)
 
 	var pk *ecdsa.PublicKey
-	pk, ok := vlt.pkMap[from]
+	raw, ok := vlt.pkMap.Load(from)
 	if !ok {
 		pemCert, _ := pem.Decode([]byte(validators))
 		cert, err := x509.ParseCertificate(pemCert.Bytes)
@@ -45,8 +46,11 @@ func (vlt *FabSimValidator) Verify(address, from string, proof, payload []byte, 
 			return false, err
 		}
 		pk = cert.PublicKey.(*ecdsa.PublicKey)
-		vlt.pkMap[from] = pk
+		vlt.pkMap.Store(from, pk)
+	} else {
+		pk = raw.(*ecdsa.PublicKey)
 	}
+
 	r, s, err := unmarshalECDSASignature(signatureSet[0].Signature)
 	if err != nil {
 		return false, err
