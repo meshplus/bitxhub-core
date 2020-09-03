@@ -22,12 +22,13 @@ type ValidationEngine struct {
 }
 
 // New a validator instance
-func NewValidationEngine(ledger Ledger, logger logrus.FieldLogger) *ValidationEngine {
+func NewValidationEngine(ledger Ledger, instances *sync.Map, logger logrus.FieldLogger) *ValidationEngine {
 	return &ValidationEngine{
 		ledger:          ledger,
 		logger:          logger,
 		fabValidator:    NewFabV14Validator(logger),
 		simFabValidator: NewFabSimValidator(logger),
+		instances:       instances,
 	}
 }
 
