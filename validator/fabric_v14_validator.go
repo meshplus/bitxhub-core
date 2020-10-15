@@ -2,6 +2,7 @@ package validator
 
 import (
 	"sort"
+	"sync"
 
 	"github.com/hyperledger/fabric/common/cauthdsl"
 	"github.com/hyperledger/fabric/common/policies"
@@ -13,12 +14,17 @@ import (
 
 // Validator is the instance that can use wasm to verify transaction validity
 type FabV14Validator struct {
-	logger logrus.FieldLogger
-	evMap  map[string]*validatorlib.ValidatorInfo
-	peMap  map[string]*validatorlib.PolicyEvaluator
-	ppMap  map[string]policies.Policy
-	idMap  map[string]mspi.Identity
-	keyMap map[string]struct{}
+	logger     logrus.FieldLogger
+	evMap      map[string]*validatorlib.ValidatorInfo
+	peMap      map[string]*validatorlib.PolicyEvaluator
+	ppMap      map[string]policies.Policy
+	idMap      map[string]mspi.Identity
+	keyMap     map[string]struct{}
+	evMapLock  sync.Mutex
+	peMapLock  sync.Mutex
+	ppMapLock  sync.Mutex
+	idMapLock  sync.Mutex
+	keyMapLock sync.Mutex
 }
 
 // New a validator instance
@@ -36,13 +42,17 @@ func NewFabV14Validator(logger logrus.FieldLogger) *FabV14Validator {
 // Verify will check whether the transaction info is valid
 func (vlt *FabV14Validator) Verify(address, from string, proof, payload []byte, validators string) (bool, error) {
 	var err error
+	vlt.evMapLock.Lock()
 	vInfo, ok := vlt.evMap[from]
+	vlt.evMapLock.Unlock()
 	if !ok {
 		vInfo, err = validatorlib.UnmarshalValidatorInfo([]byte(validators))
 		if err != nil {
 			return false, err
 		}
+		vlt.evMapLock.Lock()
 		vlt.evMap[from] = vInfo
+		vlt.evMapLock.Unlock()
 	}
 	// Get the validation artifacts that help validate the chaincodeID and policy
 	artifact, err := validatorlib.PreCheck(proof, payload, vInfo.Cid)
@@ -52,7 +62,9 @@ func (vlt *FabV14Validator) Verify(address, from string, proof, payload []byte, 
 
 	signatureSet := validatorlib.GetSignatureSet(artifact)
 
+	vlt.ppMapLock.Lock()
 	policy, ok := vlt.ppMap[vInfo.ChainId]
+	vlt.ppMapLock.Unlock()
 	if !ok {
 		pe, err := validatorlib.NewPolicyEvaluator(vInfo.ConfByte)
 		if err != nil {
@@ -63,11 +75,18 @@ func (vlt *FabV14Validator) Verify(address, from string, proof, payload []byte, 
 		if err != nil {
 			return false, err
 		}
+		vlt.ppMapLock.Lock()
 		vlt.ppMap[vInfo.ChainId] = policy
+		vlt.ppMapLock.Unlock()
+
+		vlt.peMapLock.Lock()
 		vlt.peMap[vInfo.ChainId] = pe
+		vlt.peMapLock.Unlock()
 	}
 
+	vlt.peMapLock.Lock()
 	pe := vlt.peMap[vInfo.ChainId]
+	vlt.peMapLock.Unlock()
 	return vlt.EvaluateSignedData(signatureSet, pe.IdentityDeserializer, policy)
 }
 
@@ -78,13 +97,17 @@ func (vlt *FabV14Validator) EvaluateSignedData(signedData []*protoutil.SignedDat
 
 	for _, sd := range signedData {
 		var err error
+		vlt.idMapLock.Lock()
 		identity, ok := vlt.idMap[string(sd.Identity)]
+		vlt.idMapLock.Unlock()
 		if !ok {
 			identity, err = identityDeserializer.DeserializeIdentity(sd.Identity)
 			if err != nil {
 				continue
 			}
+			vlt.idMapLock.Lock()
 			vlt.idMap[string(sd.Identity)] = identity
+			vlt.idMapLock.Unlock()
 		}
 
 		key := identity.GetIdentifier().Mspid + identity.GetIdentifier().Id
@@ -107,11 +130,17 @@ func (vlt *FabV14Validator) EvaluateSignedData(signedData []*protoutil.SignedDat
 	for _, id := range nids {
 		idStr = idStr + id
 	}
-	if _, ok := vlt.keyMap[idStr]; !ok {
+
+	vlt.keyMapLock.Lock()
+	_, ok := vlt.keyMap[idStr]
+	vlt.keyMapLock.Unlock()
+	if !ok {
 		if err := policy.EvaluateIdentities(identities); err != nil {
 			return false, err
 		}
+		vlt.keyMapLock.Lock()
 		vlt.keyMap[idStr] = struct{}{}
+		vlt.keyMapLock.Unlock()
 		return true, nil
 	}
 
