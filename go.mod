@@ -10,7 +10,7 @@ require (
 	github.com/hyperledger/fabric v2.0.1+incompatible
 	github.com/hyperledger/fabric-amcl v0.0.0-20200424173818-327c9e2cf77a // indirect
 	github.com/hyperledger/fabric-protos-go v0.0.0-20200330074707-cfe579e86986
-	github.com/meshplus/bitxhub-kit v1.0.1-0.20200901133033-65d642b7cc41
+	github.com/meshplus/bitxhub-kit v1.0.1-0.20200903112208-fb288271c55c
 	github.com/meshplus/bitxhub-model v1.0.0-rc4.0.20200514093243-7e8ae60d1c19
 	github.com/miekg/pkcs11 v1.0.3 // indirect
 	github.com/sirupsen/logrus v1.5.0

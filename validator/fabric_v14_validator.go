@@ -14,46 +14,44 @@ import (
 
 // Validator is the instance that can use wasm to verify transaction validity
 type FabV14Validator struct {
-	logger     logrus.FieldLogger
-	evMap      map[string]*validatorlib.ValidatorInfo
-	peMap      map[string]*validatorlib.PolicyEvaluator
-	ppMap      map[string]policies.Policy
-	idMap      map[string]mspi.Identity
-	keyMap     map[string]struct{}
-	evMapLock  sync.Mutex
-	peMapLock  sync.Mutex
-	ppMapLock  sync.Mutex
-	idMapLock  sync.Mutex
-	keyMapLock sync.Mutex
+	logger logrus.FieldLogger
+	evMap  *sync.Map
+	peMap  *sync.Map
+	ppMap  *sync.Map
+	idMap  *sync.Map
+	keyMap *sync.Map
 }
 
 // New a validator instance
 func NewFabV14Validator(logger logrus.FieldLogger) *FabV14Validator {
 	return &FabV14Validator{
 		logger: logger,
-		evMap:  make(map[string]*validatorlib.ValidatorInfo),
-		peMap:  make(map[string]*validatorlib.PolicyEvaluator),
-		ppMap:  make(map[string]policies.Policy),
-		idMap:  make(map[string]mspi.Identity),
-		keyMap: make(map[string]struct{}),
+		evMap:  &sync.Map{},
+		peMap:  &sync.Map{},
+		ppMap:  &sync.Map{},
+		idMap:  &sync.Map{},
+		keyMap: &sync.Map{},
 	}
 }
 
 // Verify will check whether the transaction info is valid
 func (vlt *FabV14Validator) Verify(address, from string, proof, payload []byte, validators string) (bool, error) {
-	var err error
-	vlt.evMapLock.Lock()
-	vInfo, ok := vlt.evMap[from]
-	vlt.evMapLock.Unlock()
+	var (
+		vInfo  *validatorlib.ValidatorInfo
+		policy policies.Policy
+		err    error
+	)
+	raw, ok := vlt.evMap.Load(from)
 	if !ok {
 		vInfo, err = validatorlib.UnmarshalValidatorInfo([]byte(validators))
 		if err != nil {
 			return false, err
 		}
-		vlt.evMapLock.Lock()
-		vlt.evMap[from] = vInfo
-		vlt.evMapLock.Unlock()
+		vlt.evMap.Store(from, vInfo)
+	} else {
+		vInfo = raw.(*validatorlib.ValidatorInfo)
 	}
+
 	// Get the validation artifacts that help validate the chaincodeID and policy
 	artifact, err := validatorlib.PreCheck(proof, payload, vInfo.Cid)
 	if err != nil {
@@ -62,9 +60,7 @@ func (vlt *FabV14Validator) Verify(address, from string, proof, payload []byte, 
 
 	signatureSet := validatorlib.GetSignatureSet(artifact)
 
-	vlt.ppMapLock.Lock()
-	policy, ok := vlt.ppMap[vInfo.ChainId]
-	vlt.ppMapLock.Unlock()
+	raw, ok = vlt.ppMap.Load(vInfo.ChainId)
 	if !ok {
 		pe, err := validatorlib.NewPolicyEvaluator(vInfo.ConfByte)
 		if err != nil {
@@ -75,19 +71,14 @@ func (vlt *FabV14Validator) Verify(address, from string, proof, payload []byte, 
 		if err != nil {
 			return false, err
 		}
-		vlt.ppMapLock.Lock()
-		vlt.ppMap[vInfo.ChainId] = policy
-		vlt.ppMapLock.Unlock()
-
-		vlt.peMapLock.Lock()
-		vlt.peMap[vInfo.ChainId] = pe
-		vlt.peMapLock.Unlock()
+		vlt.ppMap.Store(vInfo.ChainId, policy)
+		vlt.peMap.Store(vInfo.ChainId, pe)
+	} else {
+		policy = raw.(policies.Policy)
 	}
 
-	vlt.peMapLock.Lock()
-	pe := vlt.peMap[vInfo.ChainId]
-	vlt.peMapLock.Unlock()
-	return vlt.EvaluateSignedData(signatureSet, pe.IdentityDeserializer, policy)
+	pe, _ := vlt.peMap.Load(vInfo.ChainId)
+	return vlt.EvaluateSignedData(signatureSet, pe.(*validatorlib.PolicyEvaluator).IdentityDeserializer, policy)
 }
 
 func (vlt *FabV14Validator) EvaluateSignedData(signedData []*protoutil.SignedData, identityDeserializer mspi.IdentityDeserializer, policy policies.Policy) (bool, error) {
@@ -96,18 +87,19 @@ func (vlt *FabV14Validator) EvaluateSignedData(signedData []*protoutil.SignedDat
 	ids := make([]string, 0, len(signedData))
 
 	for _, sd := range signedData {
-		var err error
-		vlt.idMapLock.Lock()
-		identity, ok := vlt.idMap[string(sd.Identity)]
-		vlt.idMapLock.Unlock()
+		var (
+			identity mspi.Identity
+			err      error
+		)
+		raw, ok := vlt.idMap.Load(string(sd.Identity))
 		if !ok {
 			identity, err = identityDeserializer.DeserializeIdentity(sd.Identity)
 			if err != nil {
 				continue
 			}
-			vlt.idMapLock.Lock()
-			vlt.idMap[string(sd.Identity)] = identity
-			vlt.idMapLock.Unlock()
+			vlt.idMap.Store(string(sd.Identity), identity)
+		} else {
+			identity = raw.(mspi.Identity)
 		}
 
 		key := identity.GetIdentifier().Mspid + identity.GetIdentifier().Id
@@ -131,16 +123,12 @@ func (vlt *FabV14Validator) EvaluateSignedData(signedData []*protoutil.SignedDat
 		idStr = idStr + id
 	}
 
-	vlt.keyMapLock.Lock()
-	_, ok := vlt.keyMap[idStr]
-	vlt.keyMapLock.Unlock()
+	_, ok := vlt.keyMap.Load(idStr)
 	if !ok {
 		if err := policy.EvaluateIdentities(identities); err != nil {
 			return false, err
 		}
-		vlt.keyMapLock.Lock()
-		vlt.keyMap[idStr] = struct{}{}
-		vlt.keyMapLock.Unlock()
+		vlt.keyMap.Store(idStr, struct{}{})
 		return true, nil
 	}
 

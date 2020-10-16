@@ -12,7 +12,7 @@ import (
 
 func TestFabV14ValidatorWasm_Verify(t *testing.T) {
 	logger := log.NewWithModule("validator")
-	v := NewValidationEngine(nil, logger)
+	v := NewValidationEngine(nil, nil, logger)
 
 	proof, err := ioutil.ReadFile("./testdata/proof")
 	require.Nil(t, err)
@@ -45,7 +45,7 @@ func TestFabV14ValidatorWasm_Verify(t *testing.T) {
 }
 func TestFabV14Validator_Verify(t *testing.T) {
 	logger := log.NewWithModule("validator")
-	v := NewValidationEngine(nil, logger)
+	v := NewValidationEngine(nil, nil, logger)
 
 	proof, err := ioutil.ReadFile("./testdata/proof")
 	require.Nil(t, err)
@@ -78,7 +78,7 @@ func TestFabV14Validator_Verify(t *testing.T) {
 }
 func TestFabSimValidator_Verify(t *testing.T) {
 	logger := log.NewWithModule("validator")
-	v := NewValidationEngine(nil, logger)
+	v := NewValidationEngine(nil, nil, logger)
 
 	proof, err := ioutil.ReadFile("./testdata/proof_1.0.0_rc")
 	require.Nil(t, err)
@@ -138,7 +138,7 @@ func BenchmarkFabV14Validator_Verify(b *testing.B) {
 	body, err := payload.Marshal()
 	require.Nil(b, err)
 
-	v := NewValidationEngine(nil, logger)
+	v := NewValidationEngine(nil, nil, logger)
 	ok, err := v.Validate(FabricRuleAddr, "0xe02d8fdacd59020d7f292ab3278d13674f5c404d", proof, body, string(validators))
 	require.Nil(b, err)
 	require.True(b, ok)
@@ -177,7 +177,7 @@ func BenchmarkFabSimValidator_Verify(b *testing.B) {
 	body, err := payload.Marshal()
 	require.Nil(b, err)
 
-	v := NewValidationEngine(nil, logger)
+	v := NewValidationEngine(nil, nil, logger)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		ok, err := v.Validate(SimFabricRuleAddr, "0xe02d8fdacd59020d7f292ab3278d13674f5c404d", proof, body, string(validators))
@@ -214,7 +214,7 @@ func BenchmarkFabComplexValidator_Verify(b *testing.B) {
 	body, err := payload.Marshal()
 	require.Nil(b, err)
 
-	v := NewValidationEngine(nil, logger)
+	v := NewValidationEngine(nil, nil, logger)
 	ok, err := v.Validate(FabricRuleAddr, "0xe02d8fdacd59020d7f292ab3278d13674f5c404d", proof, body, string(validators))
 	require.Nil(b, err)
 	require.True(b, ok)
