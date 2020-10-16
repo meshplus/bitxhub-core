@@ -6,11 +6,11 @@ import (
 	"github.com/meshplus/bitxhub-model/pb"
 )
 
-type ApplyTxFun func(int, *pb.Transaction, *TxOpt) *pb.Receipt
+type ApplyTxFunc func(int, *pb.Transaction, *TxOpt) *pb.Receipt
 
-type RegisterContractFun func() map[string]Contract
+type RegisterContractFunc func() map[string]Contract
 
-type TxsExecutorConstructor func(ApplyTxFun, RegisterContractFun) TxsExecutor
+type TxsExecutorConstructor func(ApplyTxFunc, RegisterContractFunc) TxsExecutor
 
 var TxsExecutorConstructorM = make(map[string]TxsExecutorConstructor)
 
