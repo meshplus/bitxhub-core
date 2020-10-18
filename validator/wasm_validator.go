@@ -8,8 +8,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/meshplus/bitxhub-core/validator/validatorlib"
+	"github.com/meshplus/bitxhub-core/wasm"
 	"github.com/meshplus/bitxhub-kit/types"
-	"github.com/meshplus/bitxhub-kit/wasm"
 	"github.com/meshplus/bitxhub-model/pb"
 	"github.com/sirupsen/logrus"
 )

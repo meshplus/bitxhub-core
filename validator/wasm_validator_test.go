@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/meshplus/bitxhub-core/validator/validatorlib"
-	"github.com/meshplus/bitxhub-kit/wasm"
+	"github.com/meshplus/bitxhub-core/wasm"
 	"github.com/meshplus/bitxhub-model/pb"
 	"github.com/stretchr/testify/require"
 )
