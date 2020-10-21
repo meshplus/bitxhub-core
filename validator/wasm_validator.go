@@ -74,7 +74,7 @@ func (vlt *WasmValidator) initRule(address, from string, proof, payload []byte, 
 	if err != nil {
 		return "", err
 	}
-	contractByte := vlt.ledger.GetCode(*types.String2Address(address))
+	contractByte := vlt.ledger.GetCode(*types.NewAddressByStr(address))
 
 	if contractByte == nil {
 		return "", fmt.Errorf("this rule address does not exist")
@@ -90,7 +90,7 @@ func (vlt *WasmValidator) initRule(address, from string, proof, payload []byte, 
 	if err := json.Unmarshal(contractByte, contract); err != nil {
 		return "", fmt.Errorf("contract byte not correct")
 	}
-	return contract.Hash.Hex(), nil
+	return contract.Hash.String(), nil
 }
 
 func (vlt *WasmValidator) setTransaction(address, from string, proof []byte, validators string, payload []byte) error {

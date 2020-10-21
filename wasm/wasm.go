@@ -27,7 +27,7 @@ func getInstance(contract *Contract, imports *wasmer.Imports, instances *sync.Ma
 		err      error
 		pool *sync.Pool
 	)
-	v, ok := instances.Load(contract.Hash.Hex())
+	v, ok := instances.Load(contract.Hash.String())
 	if !ok {
 		v = &sync.Pool{
 			New: func() interface{} {
@@ -35,7 +35,7 @@ func getInstance(contract *Contract, imports *wasmer.Imports, instances *sync.Ma
 				return instance
 			},
 		}
-		instances.Store(contract.Hash.Hex(), v)
+		instances.Store(contract.Hash.String(), v)
 	}
 
 	pool = v.(*sync.Pool)
