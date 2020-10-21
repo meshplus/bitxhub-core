@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"sync"
 	"testing"
 
+	"github.com/meshplus/bitxhub-core/wasm/wasmlib"
 	"github.com/meshplus/bitxhub-kit/types"
-	"github.com/meshplus/bitxhub-kit/wasm/wasmlib"
 	"github.com/meshplus/bitxhub-model/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/wasmerio/go-ext-wasm/wasmer"
@@ -25,7 +26,7 @@ func TestExecute(t *testing.T) {
 	bytes, err := json.Marshal(contract)
 	assert.Nil(t, err)
 	imports := wasmer.NewImports()
-	instances := make(map[string]wasmer.Instance)
+	instances := &sync.Map{}
 	wasm, err := New(bytes, imports, instances)
 	assert.Nil(t, err)
 	input := &pb.InvokePayload{
@@ -56,7 +57,7 @@ func TestImportExecute(t *testing.T) {
 	assert.Nil(t, err)
 	imports, err := wasmlib.New()
 	assert.Nil(t, err)
-	instances := make(map[string]wasmer.Instance)
+	instances := &sync.Map{}
 	wasm, err := New(bytes, imports, instances)
 	assert.Nil(t, err)
 	input := &pb.InvokePayload{
@@ -89,7 +90,7 @@ func BenchmarkImportExecute(b *testing.B) {
 	assert.Nil(b, err)
 	imports, err := wasmlib.New()
 	assert.Nil(b, err)
-	instances := make(map[string]wasmer.Instance)
+	instances := &sync.Map{}
 	wasm, err := New(bytes, imports, instances)
 	assert.Nil(b, err)
 	input := &pb.InvokePayload{
