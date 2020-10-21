@@ -3,9 +3,13 @@ package agency
 import (
 	"fmt"
 
+	"github.com/meshplus/bitxhub-kit/log"
 	"github.com/meshplus/bitxhub-kit/types"
 	"github.com/meshplus/bitxhub-model/pb"
+	"github.com/sirupsen/logrus"
 )
+
+var logger = log.NewWithModule("agency")
 
 type ContractInfo struct {
 	Name        string
@@ -35,6 +39,7 @@ func GetExecutorConstructor(typ string) (TxsExecutorConstructor, error) {
 
 func RegisterExecutorConstructor(typ string, f TxsExecutorConstructor) {
 	TxsExecutorConstructorM[typ] = f
+	logger.WithField("type", typ).Info("executor registered")
 }
 
 func RegisterContractConstructor(name string, addr *types.Address, f ContractConstructor) {
@@ -42,6 +47,10 @@ func RegisterContractConstructor(name string, addr *types.Address, f ContractCon
 		Name:        name,
 		Constructor: f,
 	}
+	logger.WithFields(logrus.Fields{
+		"name": name,
+		"addr": addr.String(),
+	}).Info("contract registered")
 }
 
 func GetContractInfo(addr *types.Address) (*ContractInfo, error) {
