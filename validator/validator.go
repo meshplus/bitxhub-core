@@ -14,5 +14,5 @@ type Validator interface {
 
 type Ledger interface {
 	// GetCode
-	GetCode(types.Address) []byte
+	GetCode(*types.Address) []byte
 }

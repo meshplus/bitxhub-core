@@ -25,7 +25,7 @@ func getInstance(contract *Contract, imports *wasmer.Imports, instances *sync.Ma
 	var (
 		instance wasmer.Instance
 		err      error
-		pool *sync.Pool
+		pool     *sync.Pool
 	)
 	v, ok := instances.Load(contract.Hash.String())
 	if !ok {
@@ -69,7 +69,7 @@ type Contract struct {
 	Code []byte
 
 	// contract hash
-	Hash types.Hash
+	Hash *types.Hash
 }
 
 // New creates a wasm vm instance

@@ -20,7 +20,7 @@ func TestExecute(t *testing.T) {
 
 	contract := &Contract{
 		Code: data,
-		Hash: types.Hash{},
+		Hash: &types.Hash{},
 	}
 
 	bytes, err := json.Marshal(contract)
@@ -50,7 +50,7 @@ func TestImportExecute(t *testing.T) {
 
 	contract := &Contract{
 		Code: data,
-		Hash: types.Hash{},
+		Hash: &types.Hash{},
 	}
 
 	bytes, err := json.Marshal(contract)
@@ -83,7 +83,7 @@ func BenchmarkImportExecute(b *testing.B) {
 
 	contract := &Contract{
 		Code: data,
-		Hash: types.Hash{},
+		Hash: &types.Hash{},
 	}
 
 	bytes, err := json.Marshal(contract)
