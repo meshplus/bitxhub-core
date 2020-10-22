@@ -74,7 +74,7 @@ func (vlt *WasmValidator) initRule(address, from string, proof, payload []byte, 
 	if err != nil {
 		return "", err
 	}
-	contractByte := vlt.ledger.GetCode(*types.NewAddressByStr(address))
+	contractByte := vlt.ledger.GetCode(types.NewAddressByStr(address))
 
 	if contractByte == nil {
 		return "", fmt.Errorf("this rule address does not exist")

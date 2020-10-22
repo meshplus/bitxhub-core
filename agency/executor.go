@@ -10,9 +10,9 @@ type TxsExecutor interface {
 
 	GetBoltContracts() map[string]Contract
 
-	AddNormalTx(hash types.Hash)
+	AddNormalTx(hash *types.Hash)
 
-	GetNormalTxs() []types.Hash
+	GetNormalTxs() []*types.Hash
 
 	AddInterchainCounter(to string, index uint64)
 
