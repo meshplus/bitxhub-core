@@ -39,7 +39,6 @@ func GetExecutorConstructor(typ string) (TxsExecutorConstructor, error) {
 
 func RegisterExecutorConstructor(typ string, f TxsExecutorConstructor) {
 	TxsExecutorConstructorM[typ] = f
-	logger.WithField("type", typ).Info("executor registered")
 }
 
 func RegisterContractConstructor(name string, addr *types.Address, f ContractConstructor) {
