@@ -19,7 +19,7 @@ type ContractInfo struct {
 
 type ApplyTxFunc func(int, *pb.Transaction, *TxOpt) *pb.Receipt
 
-type RegisterContractFunc func() map[string]Contract
+type RegisterContractFunc func(interface{}) map[string]Contract
 
 type TxsExecutorConstructor func(ApplyTxFunc, RegisterContractFunc, logrus.FieldLogger) TxsExecutor
 
