@@ -23,7 +23,7 @@ type RegisterContractFunc func() map[string]Contract
 
 type TxsExecutorConstructor func(ApplyTxFunc, RegisterContractFunc, logrus.FieldLogger) TxsExecutor
 
-type ContractConstructor func(interface{}) Contract
+type ContractConstructor func() Contract
 
 type RegistryConstructor func(storage.Storage, storage.Storage, logrus.FieldLogger) Registry
 
