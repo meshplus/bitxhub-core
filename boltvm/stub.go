@@ -19,6 +19,8 @@ type Stub interface {
 	GetTxHash() *types.Hash
 	// GetTxIndex returns the transaction index in the block
 	GetTxIndex() uint64
+	// GetCurrentHeight returns the current block height
+	GetCurrentHeight() uint64
 	// Has judges key
 	Has(key string) bool
 	// Get gets value from datastore by key
