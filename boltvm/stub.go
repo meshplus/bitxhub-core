@@ -23,6 +23,8 @@ type Stub interface {
 	GetTxTimeStamp() int64
 	// GetTxIndex returns the transaction index in the block
 	GetTxIndex() uint64
+	// GetCurrentHeight returns the current block height
+	GetCurrentHeight() uint64
 	// Has judges key
 	Has(key string) bool
 	// Get gets value from datastore by key
