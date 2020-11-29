@@ -45,4 +45,8 @@ type Stub interface {
 	ValidationEngine() validator.Engine
 	// CrossInvoke cross contract invoke
 	CrossInvoke(address, method string, args ...*pb.Arg) *Response
+	// SetTimeoutList set timeout list for interchain event
+	SetTimeoutList(height uint64, list []string)
+	// GetTimeoutList get timeout list for interchain event
+	GetTimeoutList(height uint64) (bool, []string)
 }
