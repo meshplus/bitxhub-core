@@ -49,4 +49,8 @@ type Stub interface {
 	SetTimeoutList(height uint64, list []string)
 	// GetTimeoutList get timeout list for interchain event
 	GetTimeoutList(height uint64) (bool, []string)
+	// SetTimeoutList set timeout list for interchain event
+	SetTxRecord(txId string, record TransactionRecord)
+	// GetTimeoutList get timeout list for interchain event
+	GetTxRecord(txId string) (bool, TransactionRecord)
 }
