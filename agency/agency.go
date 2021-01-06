@@ -25,7 +25,7 @@ type TxsExecutorConstructor func(ApplyTxFunc, RegisterContractFunc, logrus.Field
 
 type ContractConstructor func() Contract
 
-type RegistryConstructor func(storage.Storage, storage.Storage, logrus.FieldLogger) Registry
+type RegistryConstructor func(storage.Storage, logrus.FieldLogger) Registry
 
 var (
 	TxsExecutorConstructorM = make(map[string]TxsExecutorConstructor)
