@@ -27,10 +27,14 @@ type ContractConstructor func() Contract
 
 type RegistryConstructor func(storage.Storage, logrus.FieldLogger) Registry
 
+type PierHAConstructor func(client HAClient, pierID string, relayAddr string) PierHA
+
 var (
 	TxsExecutorConstructorM = make(map[string]TxsExecutorConstructor)
 	ContractConstructorM    = make(map[string]*ContractInfo)
 	RegisterConstructorM    = make(map[string]RegistryConstructor)
+
+	PierHAConstructorM = make(map[string]PierHAConstructor)
 )
 
 func RegisterRegistryConstructor(typ string, f RegistryConstructor) {
@@ -78,4 +82,16 @@ func GetContractInfo(addr *types.Address) (*ContractInfo, error) {
 
 func GetRegisteredContractInfo() map[string]*ContractInfo {
 	return ContractConstructorM
+}
+
+func RegisterPierHAConstructor(typ string, f PierHAConstructor) {
+	PierHAConstructorM[typ] = f
+}
+
+func GetPierHAConstructor(typ string) (PierHAConstructor, error) {
+	con, ok := PierHAConstructorM[typ]
+	if !ok {
+		return nil, fmt.Errorf("type %s is unsupported", typ)
+	}
+	return con, nil
 }
