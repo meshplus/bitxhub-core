@@ -7,7 +7,7 @@ type PierHA interface {
 
 	Stop() error
 
-	IsMain() bool
+	IsMain() <-chan bool
 }
 
 type HAClient interface {
