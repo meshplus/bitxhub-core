@@ -27,7 +27,7 @@ type ContractConstructor func() Contract
 
 type RegistryConstructor func(storage.Storage, logrus.FieldLogger) Registry
 
-type PierHAConstructor func(client HAClient, pierID string, relayAddr string) PierHA
+type PierHAConstructor func(client HAClient, pierID string) PierHA
 
 var (
 	TxsExecutorConstructorM = make(map[string]TxsExecutorConstructor)
