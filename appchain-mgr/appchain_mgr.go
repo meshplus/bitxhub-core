@@ -13,6 +13,10 @@ const (
 
 	REGISTERED = 0
 	APPROVED   = 1
+
+	RelaychainType = "relaychain"
+	AppchainType   = "appchain"
+	FabricType     = "fabric"
 )
 
 type AppchainManager struct {
