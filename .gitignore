@@ -6,4 +6,5 @@ node_modules
 cover.out
 coverage.out
 mock_*/
+!mock_validator
 coverage.txt
