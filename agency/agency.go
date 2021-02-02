@@ -69,7 +69,7 @@ func RegisterContractConstructor(name string, addr *types.Address, f ContractCon
 	logger.WithFields(logrus.Fields{
 		"name": name,
 		"addr": addr.String(),
-	}).Info("contract registered")
+	}).Debug("contract registered")
 }
 
 func GetContractInfo(addr *types.Address) (*ContractInfo, error) {
