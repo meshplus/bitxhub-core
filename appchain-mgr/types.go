@@ -4,6 +4,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+//go:generate mockgen -destination mock_appchainMgr/mock_appchainMgr.go -package mock_appchainMgr -source types.go
 type AppchainMgr interface {
 	// Register appchain managers registers appchain info caller is the appchain
 	// manager address return appchain id and error
