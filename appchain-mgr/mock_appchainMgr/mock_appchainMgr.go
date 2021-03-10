@@ -63,49 +63,34 @@ func (mr *MockAppchainMgrMockRecorder) UpdateAppchain(id, validators, consensusT
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppchain", reflect.TypeOf((*MockAppchainMgr)(nil).UpdateAppchain), id, validators, consensusType, chainType, name, desc, version, pubkey)
 }
 
-// Audit mocks base method
-func (m *MockAppchainMgr) Audit(proposer string, isApproved int32, desc string) (bool, []byte) {
+// ChangeStatus mocks base method
+func (m *MockAppchainMgr) ChangeStatus(id, trigger string) (bool, []byte) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Audit", proposer, isApproved, desc)
+	ret := m.ctrl.Call(m, "ChangeStatus", id, trigger)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].([]byte)
 	return ret0, ret1
 }
 
-// Audit indicates an expected call of Audit
-func (mr *MockAppchainMgrMockRecorder) Audit(proposer, isApproved, desc interface{}) *gomock.Call {
+// ChangeStatus indicates an expected call of ChangeStatus
+func (mr *MockAppchainMgrMockRecorder) ChangeStatus(id, trigger interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Audit", reflect.TypeOf((*MockAppchainMgr)(nil).Audit), proposer, isApproved, desc)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeStatus", reflect.TypeOf((*MockAppchainMgr)(nil).ChangeStatus), id, trigger)
 }
 
-// FetchAuditRecords mocks base method
-func (m *MockAppchainMgr) FetchAuditRecords(id string) (bool, []byte) {
+// CountAvailableAppchains mocks base method
+func (m *MockAppchainMgr) CountAvailableAppchains() (bool, []byte) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchAuditRecords", id)
+	ret := m.ctrl.Call(m, "CountAvailableAppchains")
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].([]byte)
 	return ret0, ret1
 }
 
-// FetchAuditRecords indicates an expected call of FetchAuditRecords
-func (mr *MockAppchainMgrMockRecorder) FetchAuditRecords(id interface{}) *gomock.Call {
+// CountAvailableAppchains indicates an expected call of CountAvailableAppchains
+func (mr *MockAppchainMgrMockRecorder) CountAvailableAppchains() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchAuditRecords", reflect.TypeOf((*MockAppchainMgr)(nil).FetchAuditRecords), id)
-}
-
-// CountApprovedAppchains mocks base method
-func (m *MockAppchainMgr) CountApprovedAppchains() (bool, []byte) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountApprovedAppchains")
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].([]byte)
-	return ret0, ret1
-}
-
-// CountApprovedAppchains indicates an expected call of CountApprovedAppchains
-func (mr *MockAppchainMgrMockRecorder) CountApprovedAppchains() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountApprovedAppchains", reflect.TypeOf((*MockAppchainMgr)(nil).CountApprovedAppchains))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAvailableAppchains", reflect.TypeOf((*MockAppchainMgr)(nil).CountAvailableAppchains))
 }
 
 // CountAppchains mocks base method

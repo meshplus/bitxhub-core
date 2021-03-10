@@ -11,6 +11,7 @@ require (
 	github.com/hyperledger/fabric v2.0.1+incompatible
 	github.com/hyperledger/fabric-amcl v0.0.0-20200424173818-327c9e2cf77a // indirect
 	github.com/hyperledger/fabric-protos-go v0.0.0-20200330074707-cfe579e86986
+	github.com/looplab/fsm v0.2.0
 	github.com/meshplus/bitxhub-kit v1.1.2-0.20201023030558-9f36554d5d5d
 	github.com/meshplus/bitxhub-model v1.1.2-0.20201021152621-0b3c17c54b23
 	github.com/miekg/pkcs11 v1.0.3 // indirect
