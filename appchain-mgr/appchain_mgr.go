@@ -105,6 +105,7 @@ func (am *AppchainManager) Register(id, validators string, consensusType int32, 
 		Version:       version,
 		PublicKey:     pubkey,
 	}
+	isRegister := false
 
 	ok := am.Has(am.appchainKey(id))
 	if ok {
@@ -112,18 +113,15 @@ func (am *AppchainManager) Register(id, validators string, consensusType int32, 
 			"id": id,
 		}).Debug("Appchain has registered")
 		am.GetObject(am.appchainKey(id), chain)
+		isRegister = true
 	} else {
 		am.SetObject(am.appchainKey(id), chain)
 		am.Logger().WithFields(logrus.Fields{
 			"id": id,
 		}).Info("Appchain is registering")
 	}
-	body, err := json.Marshal(chain)
-	if err != nil {
-		return false, []byte(err.Error())
-	}
 
-	return true, body
+	return isRegister, []byte(chain.ID)
 }
 
 func (am *AppchainManager) UpdateAppchain(id, validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte) {
