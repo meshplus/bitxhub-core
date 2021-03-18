@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/looplab/fsm"
 	"github.com/sirupsen/logrus"
 )
+
+type AppchainStatus string
 
 const (
 	PREFIX = "appchain-"
@@ -17,6 +20,24 @@ const (
 	RelaychainType = "relaychain"
 	AppchainType   = "appchain"
 	FabricType     = "fabric"
+
+	AppchainRegisting   AppchainStatus = "registing"
+	AppchainAvailable   AppchainStatus = "available"
+	AppchainUnavailable AppchainStatus = "unavailable"
+	AppchainUpdating    AppchainStatus = "updating"
+	AppchainFreezing    AppchainStatus = "freezing"
+	AppchainActivating  AppchainStatus = "activating"
+	AppchainFrozen      AppchainStatus = "frozen"
+	AppchainLogouting   AppchainStatus = "logouting"
+
+	EventRegister = "register"
+	EventUpdate   = "update"
+	EventFreeze   = "freeze"
+	EventActivate = "activate"
+	EventLogout   = "logout"
+	EventApprove  = "approve"
+	EventReject   = "reject"
+	EventClose    = "close"
 )
 
 type AppchainManager struct {
@@ -24,16 +45,16 @@ type AppchainManager struct {
 }
 
 type Appchain struct {
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	Validators    string `json:"validators"`
-	ConsensusType int32  `json:"consensus_type"`
-	// 0 => registered, 1 => approved, -1 => rejected
-	Status    int32  `json:"status"`
-	ChainType string `json:"chain_type"`
-	Desc      string `json:"desc"`
-	Version   string `json:"version"`
-	PublicKey string `json:"public_key"`
+	ID            string         `json:"id"`
+	Name          string         `json:"name"`
+	Validators    string         `json:"validators"`
+	ConsensusType int32          `json:"consensus_type"`
+	Status        AppchainStatus `json:"status"`
+	ChainType     string         `json:"chain_type"`
+	Desc          string         `json:"desc"`
+	Version       string         `json:"version"`
+	PublicKey     string         `json:"public_key"`
+	FSM           *fsm.FSM       `json:"fsm"`
 }
 
 type auditRecord struct {
@@ -46,6 +67,30 @@ func New(persister Persister) AppchainMgr {
 	return &AppchainManager{persister}
 }
 
+func SetFSM(chain *Appchain) {
+	chain.FSM = fsm.NewFSM(
+		string(chain.Status),
+		fsm.Events{
+			{Name: EventUpdate, Src: []string{string(AppchainAvailable)}, Dst: string(AppchainUpdating)},
+			{Name: EventFreeze, Src: []string{string(AppchainAvailable)}, Dst: string(AppchainFreezing)},
+			{Name: EventActivate, Src: []string{string(AppchainFrozen)}, Dst: string(AppchainActivating)},
+			{Name: EventLogout, Src: []string{string(AppchainAvailable)}, Dst: string(AppchainLogouting)},
+			{Name: EventApprove, Src: []string{string(AppchainRegisting), string(AppchainUpdating), string(AppchainActivating)}, Dst: string(AppchainAvailable)},
+			{Name: EventApprove, Src: []string{string(AppchainFreezing)}, Dst: string(AppchainFrozen)},
+			{Name: EventApprove, Src: []string{string(AppchainLogouting)}, Dst: string(AppchainUnavailable)},
+			{Name: EventReject, Src: []string{string(AppchainRegisting)}, Dst: string(AppchainUnavailable)},
+			{Name: EventReject, Src: []string{string(AppchainUpdating)}, Dst: string(AppchainAvailable)},
+			{Name: EventReject, Src: []string{string(AppchainFreezing)}, Dst: string(AppchainAvailable)},
+			{Name: EventReject, Src: []string{string(AppchainActivating)}, Dst: string(AppchainFrozen)},
+			{Name: EventReject, Src: []string{string(AppchainLogouting)}, Dst: string(AppchainAvailable)},
+			{Name: EventClose, Src: []string{"open"}, Dst: "closed"},
+		},
+		fsm.Callbacks{
+			"enter_state": func(e *fsm.Event) { chain.Status = AppchainStatus(chain.FSM.Current()) },
+		},
+	)
+}
+
 // Register appchain manager registers appchain info caller is the appchain
 // manager address return appchain id and error
 func (am *AppchainManager) Register(id, validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte) {
@@ -54,11 +99,13 @@ func (am *AppchainManager) Register(id, validators string, consensusType int32, 
 		Name:          name,
 		Validators:    validators,
 		ConsensusType: consensusType,
+		Status:        AppchainRegisting,
 		ChainType:     chainType,
 		Desc:          desc,
 		Version:       version,
 		PublicKey:     pubkey,
 	}
+	isRegister := false
 
 	ok := am.Has(am.appchainKey(id))
 	if ok {
@@ -66,18 +113,15 @@ func (am *AppchainManager) Register(id, validators string, consensusType int32, 
 			"id": id,
 		}).Debug("Appchain has registered")
 		am.GetObject(am.appchainKey(id), chain)
+		isRegister = true
 	} else {
 		am.SetObject(am.appchainKey(id), chain)
 		am.Logger().WithFields(logrus.Fields{
 			"id": id,
-		}).Info("Appchain register successfully")
-	}
-	body, err := json.Marshal(chain)
-	if err != nil {
-		return false, []byte(err.Error())
+		}).Info("Appchain is registering")
 	}
 
-	return true, body
+	return isRegister, []byte(chain.ID)
 }
 
 func (am *AppchainManager) UpdateAppchain(id, validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte) {
@@ -89,8 +133,8 @@ func (am *AppchainManager) UpdateAppchain(id, validators string, consensusType i
 	chain := &Appchain{}
 	am.GetObject(am.appchainKey(id), chain)
 
-	if chain.Status == REGISTERED {
-		return false, []byte("this appchain is being audited")
+	if chain.Status != AppchainAvailable {
+		return false, []byte("this appchain is " + chain.Status + ", can not be updated")
 	}
 
 	chain = &Appchain{
@@ -98,6 +142,7 @@ func (am *AppchainManager) UpdateAppchain(id, validators string, consensusType i
 		Name:          name,
 		Validators:    validators,
 		ConsensusType: consensusType,
+		Status:        AppchainAvailable,
 		ChainType:     chainType,
 		Desc:          desc,
 		Version:       version,
@@ -109,46 +154,29 @@ func (am *AppchainManager) UpdateAppchain(id, validators string, consensusType i
 	return true, nil
 }
 
-// Audit bitxhub manager audit appchain register info
-func (am *AppchainManager) Audit(proposer string, isApproved int32, desc string) (bool, []byte) {
-	chain := &Appchain{}
-	ok := am.GetObject(am.appchainKey(proposer), chain)
+func (am *AppchainManager) ChangeStatus(id, trigger string) (bool, []byte) {
+	ok, data := am.Get(am.appchainKey(id))
 	if !ok {
-		return false, []byte("this appchain does not exist")
+		return false, []byte(fmt.Errorf("this appchain does not exist").Error())
 	}
 
-	chain.Status = isApproved
-
-	record := &auditRecord{
-		Appchain:   chain,
-		IsApproved: isApproved == APPROVED,
-		Desc:       desc,
+	chain := &Appchain{}
+	if err := json.Unmarshal(data, chain); err != nil {
+		return false, []byte(fmt.Sprintf("unmarshal json error: %v", err))
 	}
 
-	var records []*auditRecord
-	am.GetObject(am.auditRecordKey(proposer), &records)
-	records = append(records, record)
-
-	am.SetObject(am.auditRecordKey(proposer), records)
-	am.SetObject(am.appchainKey(proposer), chain)
-
-	return true, []byte(fmt.Sprintf("audit %s successfully", proposer))
-}
-
-func (am *AppchainManager) FetchAuditRecords(id string) (bool, []byte) {
-	var records []*auditRecord
-	am.GetObject(am.auditRecordKey(id), &records)
-
-	body, err := json.Marshal(records)
+	SetFSM(chain)
+	err := chain.FSM.Event(trigger)
 	if err != nil {
-		return false, []byte(err.Error())
+		return false, []byte(fmt.Sprintf("change status error: %v, %s, %s", err, chain.FSM.Current(), trigger))
 	}
 
-	return true, body
+	am.SetObject(am.appchainKey(id), *chain)
+	return true, nil
 }
 
-// CountApprovedAppchains counts all approved appchains
-func (am *AppchainManager) CountApprovedAppchains() (bool, []byte) {
+// CountAvailableAppchains counts all available appchains
+func (am *AppchainManager) CountAvailableAppchains() (bool, []byte) {
 	ok, value := am.Query(PREFIX)
 	if !ok {
 		return true, []byte("0")
@@ -160,7 +188,7 @@ func (am *AppchainManager) CountApprovedAppchains() (bool, []byte) {
 		if err := json.Unmarshal(v, a); err != nil {
 			return false, []byte(fmt.Sprintf("unmarshal json error: %v", err))
 		}
-		if a.Status == APPROVED {
+		if a.Status == AppchainAvailable {
 			count++
 		}
 	}
@@ -236,10 +264,6 @@ func (am *AppchainManager) GetPubKeyByChainID(id string) (bool, []byte) {
 
 func (am *AppchainManager) appchainKey(id string) string {
 	return PREFIX + id
-}
-
-func (am *AppchainManager) auditRecordKey(id string) string {
-	return "audit-record-" + id
 }
 
 func (am *AppchainManager) indexMapKey(id string) string {
