@@ -10,6 +10,14 @@ type AppchainMgr interface {
 	// manager address return appchain id and error
 	Register(id, validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte)
 
+	// Audit bitxhub manager audit appchain register info
+	// caller is the bitxhub manager address
+	// proposer is the appchain manager address
+	Audit(proposer string, isApproved int32, desc string) (bool, []byte)
+
+	//FetchAuditRecords fetches audit records by appchain id
+	FetchAuditRecords(id string) (bool, []byte)
+
 	// UpdateAppchain updates approved appchain
 	UpdateAppchain(id, validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte)
 

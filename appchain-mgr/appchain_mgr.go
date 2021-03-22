@@ -154,6 +154,44 @@ func (am *AppchainManager) UpdateAppchain(id, validators string, consensusType i
 	return true, nil
 }
 
+// Audit bitxhub manager audit appchain register info
+func (am *AppchainManager) Audit(proposer string, isApproved int32, desc string) (bool, []byte) {
+	chain := &Appchain{}
+	ok := am.GetObject(am.appchainKey(proposer), chain)
+	if !ok {
+		return false, []byte("this appchain does not exist")
+	}
+
+	chain.Status = AppchainAvailable
+
+	record := &auditRecord{
+		Appchain:   chain,
+		IsApproved: isApproved == APPROVED,
+		Desc:       desc,
+	}
+
+	var records []*auditRecord
+	am.GetObject(am.auditRecordKey(proposer), &records)
+	records = append(records, record)
+
+	am.SetObject(am.auditRecordKey(proposer), records)
+	am.SetObject(am.appchainKey(proposer), chain)
+
+	return true, []byte(fmt.Sprintf("audit %s successfully", proposer))
+}
+
+func (am *AppchainManager) FetchAuditRecords(id string) (bool, []byte) {
+	var records []*auditRecord
+	am.GetObject(am.auditRecordKey(id), &records)
+
+	body, err := json.Marshal(records)
+	if err != nil {
+		return false, []byte(err.Error())
+	}
+
+	return true, body
+}
+
 func (am *AppchainManager) ChangeStatus(id, trigger string) (bool, []byte) {
 	ok, data := am.Get(am.appchainKey(id))
 	if !ok {
@@ -264,6 +302,10 @@ func (am *AppchainManager) GetPubKeyByChainID(id string) (bool, []byte) {
 
 func (am *AppchainManager) appchainKey(id string) string {
 	return PREFIX + id
+}
+
+func (am *AppchainManager) auditRecordKey(id string) string {
+	return "audit-record-" + id
 }
 
 func (am *AppchainManager) indexMapKey(id string) string {
