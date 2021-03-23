@@ -48,6 +48,36 @@ func (mr *MockAppchainMgrMockRecorder) Register(id, validators, consensusType, c
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockAppchainMgr)(nil).Register), id, validators, consensusType, chainType, name, desc, version, pubkey)
 }
 
+// Audit mocks base method
+func (m *MockAppchainMgr) Audit(proposer string, isApproved int32, desc string) (bool, []byte) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Audit", proposer, isApproved, desc)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].([]byte)
+	return ret0, ret1
+}
+
+// Audit indicates an expected call of Audit
+func (mr *MockAppchainMgrMockRecorder) Audit(proposer, isApproved, desc interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Audit", reflect.TypeOf((*MockAppchainMgr)(nil).Audit), proposer, isApproved, desc)
+}
+
+// FetchAuditRecords mocks base method
+func (m *MockAppchainMgr) FetchAuditRecords(id string) (bool, []byte) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchAuditRecords", id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].([]byte)
+	return ret0, ret1
+}
+
+// FetchAuditRecords indicates an expected call of FetchAuditRecords
+func (mr *MockAppchainMgrMockRecorder) FetchAuditRecords(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchAuditRecords", reflect.TypeOf((*MockAppchainMgr)(nil).FetchAuditRecords), id)
+}
+
 // UpdateAppchain mocks base method
 func (m *MockAppchainMgr) UpdateAppchain(id, validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte) {
 	m.ctrl.T.Helper()
