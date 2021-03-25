@@ -125,19 +125,7 @@ func (am *AppchainManager) Register(id, validators string, consensusType int32, 
 }
 
 func (am *AppchainManager) UpdateAppchain(id, validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte) {
-	ok := am.Has(am.appchainKey(id))
-	if !ok {
-		return false, []byte("register appchain firstly")
-	}
-
-	chain := &Appchain{}
-	am.GetObject(am.appchainKey(id), chain)
-
-	if chain.Status != AppchainAvailable {
-		return false, []byte("this appchain is " + chain.Status + ", can not be updated")
-	}
-
-	chain = &Appchain{
+	chain := &Appchain{
 		ID:            id,
 		Name:          name,
 		Validators:    validators,
@@ -206,7 +194,7 @@ func (am *AppchainManager) ChangeStatus(id, trigger string) (bool, []byte) {
 	SetFSM(chain)
 	err := chain.FSM.Event(trigger)
 	if err != nil {
-		return false, []byte(fmt.Sprintf("change status error: %v, %s, %s", err, chain.FSM.Current(), trigger))
+		return false, []byte(fmt.Sprintf("change status error: %v", err))
 	}
 
 	am.SetObject(am.appchainKey(id), *chain)
