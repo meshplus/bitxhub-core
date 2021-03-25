@@ -5,13 +5,14 @@
 package mock_stub
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	boltvm "github.com/meshplus/bitxhub-core/boltvm"
 	validator "github.com/meshplus/bitxhub-core/validator"
 	types "github.com/meshplus/bitxhub-kit/types"
 	pb "github.com/meshplus/bitxhub-model/pb"
 	logrus "github.com/sirupsen/logrus"
-	reflect "reflect"
 )
 
 // MockStub is a mock of Stub interface
@@ -63,6 +64,20 @@ func (m *MockStub) Callee() string {
 func (mr *MockStubMockRecorder) Callee() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Callee", reflect.TypeOf((*MockStub)(nil).Callee))
+}
+
+// CurrentCaller mocks base method
+func (m *MockStub) CurrentCaller() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CurrentCaller")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// CurrentCaller indicates an expected call of CurrentCaller
+func (mr *MockStubMockRecorder) CurrentCaller() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentCaller", reflect.TypeOf((*MockStub)(nil).CurrentCaller))
 }
 
 // Logger mocks base method

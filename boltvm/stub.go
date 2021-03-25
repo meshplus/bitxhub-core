@@ -13,6 +13,8 @@ type Stub interface {
 	Caller() string
 	// Callee
 	Callee() string
+	// CurrentCaller
+	CurrentCaller() string
 	// Logger
 	Logger() logrus.FieldLogger
 	// GetTxHash returns the transaction hash
