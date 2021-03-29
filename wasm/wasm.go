@@ -15,6 +15,9 @@ import (
 const (
 	CONTEXT_ARGMAP    = "argmap"
 	CONTEXT_INTERFACE = "interface"
+
+	ACCOUNT   = "account"
+	ALLOC_MEM = "allocate"
 )
 
 var (
@@ -111,6 +114,12 @@ func (w *Wasm) Execute(input []byte) ([]byte, error) {
 		return nil, errorLackOfMethod
 	}
 
+	alloc := w.Instance.Exports[ALLOC_MEM]
+	if alloc == nil {
+		return nil, fmt.Errorf("not found allocate method")
+	}
+	w.context[ALLOC_MEM] = alloc
+
 	methodName, ok := w.Instance.Exports[payload.Method]
 	if !ok {
 		return nil, fmt.Errorf("wrong rule contract")
@@ -195,4 +204,11 @@ func (w *Wasm) SetContext(key string, value interface{}) {
 	defer w.Unlock()
 
 	w.context[key] = value
+}
+
+func (w *Wasm) GetContext(key string) interface{} {
+	w.Lock()
+	defer w.Unlock()
+
+	return w.context[key]
 }
