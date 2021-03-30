@@ -34,7 +34,7 @@ func (m *MockAppchainMgr) EXPECT() *MockAppchainMgrMockRecorder {
 }
 
 // Register mocks base method
-func (m *MockAppchainMgr) Register(id, validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte) {
+func (m *MockAppchainMgr) Register(id, validators, consensusType, chainType, name, desc, version, pubkey string) (bool, []byte) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Register", id, validators, consensusType, chainType, name, desc, version, pubkey)
 	ret0, _ := ret[0].(bool)
@@ -79,7 +79,7 @@ func (mr *MockAppchainMgrMockRecorder) FetchAuditRecords(id interface{}) *gomock
 }
 
 // UpdateAppchain mocks base method
-func (m *MockAppchainMgr) UpdateAppchain(id, validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte) {
+func (m *MockAppchainMgr) UpdateAppchain(id, validators, consensusType, chainType, name, desc, version, pubkey string) (bool, []byte) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateAppchain", id, validators, consensusType, chainType, name, desc, version, pubkey)
 	ret0, _ := ret[0].(bool)

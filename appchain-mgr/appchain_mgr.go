@@ -48,7 +48,7 @@ type Appchain struct {
 	ID            string         `json:"id"`
 	Name          string         `json:"name"`
 	Validators    string         `json:"validators"`
-	ConsensusType int32          `json:"consensus_type"`
+	ConsensusType string         `json:"consensus_type"`
 	Status        AppchainStatus `json:"status"`
 	ChainType     string         `json:"chain_type"`
 	Desc          string         `json:"desc"`
@@ -93,7 +93,7 @@ func SetFSM(chain *Appchain) {
 
 // Register appchain manager registers appchain info caller is the appchain
 // manager address return appchain id and error
-func (am *AppchainManager) Register(id, validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte) {
+func (am *AppchainManager) Register(id, validators string, consensusType, chainType, name, desc, version, pubkey string) (bool, []byte) {
 	chain := &Appchain{
 		ID:            id,
 		Name:          name,
@@ -124,7 +124,7 @@ func (am *AppchainManager) Register(id, validators string, consensusType int32, 
 	return isRegister, []byte(chain.ID)
 }
 
-func (am *AppchainManager) UpdateAppchain(id, validators string, consensusType int32, chainType, name, desc, version, pubkey string) (bool, []byte) {
+func (am *AppchainManager) UpdateAppchain(id, validators string, consensusType, chainType, name, desc, version, pubkey string) (bool, []byte) {
 	chain := &Appchain{
 		ID:            id,
 		Name:          name,
