@@ -54,6 +54,9 @@ type Appchain struct {
 	Desc          string         `json:"desc"`
 	Version       string         `json:"version"`
 	PublicKey     string         `json:"public_key"`
+	OwnerDID      string         `json:"owner_did"`
+	DidDocAddr    string         `json:"did_doc_addr"`
+	DidDocHash    string         `json:"did_doc_hash"`
 	FSM           *fsm.FSM       `json:"fsm"`
 }
 
@@ -93,7 +96,8 @@ func SetFSM(chain *Appchain) {
 
 // Register appchain manager registers appchain info caller is the appchain
 // manager address return appchain id and error
-func (am *AppchainManager) Register(id, validators string, consensusType, chainType, name, desc, version, pubkey string) (bool, []byte) {
+func (am *AppchainManager) Register(id, appchainOwner, docAddr, docHash, validators string,
+	consensusType, chainType, name, desc, version, pubkey string) (bool, []byte) {
 	chain := &Appchain{
 		ID:            id,
 		Name:          name,
@@ -104,6 +108,9 @@ func (am *AppchainManager) Register(id, validators string, consensusType, chainT
 		Desc:          desc,
 		Version:       version,
 		PublicKey:     pubkey,
+		DidDocAddr:    docAddr,
+		DidDocHash:    docHash,
+		OwnerDID:      appchainOwner,
 	}
 	isRegister := false
 
@@ -124,7 +131,8 @@ func (am *AppchainManager) Register(id, validators string, consensusType, chainT
 	return isRegister, []byte(chain.ID)
 }
 
-func (am *AppchainManager) UpdateAppchain(id, validators string, consensusType, chainType, name, desc, version, pubkey string) (bool, []byte) {
+func (am *AppchainManager) UpdateAppchain(id, appchainOwner, docAddr, docHash, validators string, consensusType,
+	chainType, name, desc, version, pubkey string) (bool, []byte) {
 	chain := &Appchain{
 		ID:            id,
 		Name:          name,
@@ -135,6 +143,9 @@ func (am *AppchainManager) UpdateAppchain(id, validators string, consensusType, 
 		Desc:          desc,
 		Version:       version,
 		PublicKey:     pubkey,
+		DidDocAddr:    docAddr,
+		DidDocHash:    docHash,
+		OwnerDID:      appchainOwner,
 	}
 
 	am.SetObject(am.appchainKey(id), chain)
