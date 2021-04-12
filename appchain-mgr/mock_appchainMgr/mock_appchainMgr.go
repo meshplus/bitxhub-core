@@ -34,18 +34,18 @@ func (m *MockAppchainMgr) EXPECT() *MockAppchainMgrMockRecorder {
 }
 
 // Register mocks base method
-func (m *MockAppchainMgr) Register(id, validators, consensusType, chainType, name, desc, version, pubkey string) (bool, []byte) {
+func (m *MockAppchainMgr) Register(id, appchainOwner, docAddr, docHash, validators, consensusType, chainType, name, desc, version, pubkey string) (bool, []byte) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Register", id, validators, consensusType, chainType, name, desc, version, pubkey)
+	ret := m.ctrl.Call(m, "Register", id, appchainOwner, docAddr, docHash, validators, consensusType, chainType, name, desc, version, pubkey)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].([]byte)
 	return ret0, ret1
 }
 
 // Register indicates an expected call of Register
-func (mr *MockAppchainMgrMockRecorder) Register(id, validators, consensusType, chainType, name, desc, version, pubkey interface{}) *gomock.Call {
+func (mr *MockAppchainMgrMockRecorder) Register(id, appchainOwner, docAddr, docHash, validators, consensusType, chainType, name, desc, version, pubkey interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockAppchainMgr)(nil).Register), id, validators, consensusType, chainType, name, desc, version, pubkey)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockAppchainMgr)(nil).Register), id, appchainOwner, docAddr, docHash, validators, consensusType, chainType, name, desc, version, pubkey)
 }
 
 // Audit mocks base method
@@ -79,18 +79,18 @@ func (mr *MockAppchainMgrMockRecorder) FetchAuditRecords(id interface{}) *gomock
 }
 
 // UpdateAppchain mocks base method
-func (m *MockAppchainMgr) UpdateAppchain(id, validators, consensusType, chainType, name, desc, version, pubkey string) (bool, []byte) {
+func (m *MockAppchainMgr) UpdateAppchain(id, appchainOwner, docAddr, docHash, validators, consensusType, chainType, name, desc, version, pubkey string) (bool, []byte) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAppchain", id, validators, consensusType, chainType, name, desc, version, pubkey)
+	ret := m.ctrl.Call(m, "UpdateAppchain", id, appchainOwner, docAddr, docHash, validators, consensusType, chainType, name, desc, version, pubkey)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].([]byte)
 	return ret0, ret1
 }
 
 // UpdateAppchain indicates an expected call of UpdateAppchain
-func (mr *MockAppchainMgrMockRecorder) UpdateAppchain(id, validators, consensusType, chainType, name, desc, version, pubkey interface{}) *gomock.Call {
+func (mr *MockAppchainMgrMockRecorder) UpdateAppchain(id, appchainOwner, docAddr, docHash, validators, consensusType, chainType, name, desc, version, pubkey interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppchain", reflect.TypeOf((*MockAppchainMgr)(nil).UpdateAppchain), id, validators, consensusType, chainType, name, desc, version, pubkey)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppchain", reflect.TypeOf((*MockAppchainMgr)(nil).UpdateAppchain), id, appchainOwner, docAddr, docHash, validators, consensusType, chainType, name, desc, version, pubkey)
 }
 
 // ChangeStatus mocks base method
