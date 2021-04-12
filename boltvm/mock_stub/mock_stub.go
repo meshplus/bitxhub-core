@@ -5,14 +5,13 @@
 package mock_stub
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	boltvm "github.com/meshplus/bitxhub-core/boltvm"
 	validator "github.com/meshplus/bitxhub-core/validator"
 	types "github.com/meshplus/bitxhub-kit/types"
 	pb "github.com/meshplus/bitxhub-model/pb"
 	logrus "github.com/sirupsen/logrus"
+	reflect "reflect"
 )
 
 // MockStub is a mock of Stub interface
