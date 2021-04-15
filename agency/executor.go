@@ -6,7 +6,7 @@ import (
 )
 
 type TxsExecutor interface {
-	ApplyTransactions(txs []*pb.Transaction) []*pb.Receipt
+	ApplyTransactions(txs []*pb.Transaction, invalidTxs map[int]InvalidReason) []*pb.Receipt
 
 	GetBoltContracts() map[string]Contract
 
@@ -17,6 +17,8 @@ type TxsExecutor interface {
 	AddInterchainCounter(to string, index uint64)
 
 	GetInterchainCounter() map[string][]uint64
+
+	GetDescription() string
 }
 
 type TxOpt struct {
