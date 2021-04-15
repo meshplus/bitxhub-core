@@ -12,12 +12,14 @@ import (
 
 var logger = log.NewWithModule("agency")
 
+type InvalidReason string
+
 type ContractInfo struct {
 	Name        string
 	Constructor ContractConstructor
 }
 
-type ApplyTxFunc func(int, *pb.Transaction, *TxOpt) *pb.Receipt
+type ApplyTxFunc func(int, *pb.Transaction, InvalidReason, *TxOpt) *pb.Receipt
 
 type RegisterContractFunc func() map[string]Contract
 
