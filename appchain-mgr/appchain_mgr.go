@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/looplab/fsm"
+	g "github.com/meshplus/bitxhub-core/governance"
 	"github.com/sirupsen/logrus"
 )
 
@@ -14,30 +15,9 @@ type AppchainStatus string
 const (
 	PREFIX = "appchain-"
 
-	REGISTERED = 0
-	APPROVED   = 1
-
 	RelaychainType = "relaychain"
 	AppchainType   = "appchain"
 	FabricType     = "fabric"
-
-	AppchainRegisting   AppchainStatus = "registing"
-	AppchainAvailable   AppchainStatus = "available"
-	AppchainUnavailable AppchainStatus = "unavailable"
-	AppchainUpdating    AppchainStatus = "updating"
-	AppchainFreezing    AppchainStatus = "freezing"
-	AppchainActivating  AppchainStatus = "activating"
-	AppchainFrozen      AppchainStatus = "frozen"
-	AppchainLogouting   AppchainStatus = "logouting"
-
-	EventRegister = "register"
-	EventUpdate   = "update"
-	EventFreeze   = "freeze"
-	EventActivate = "activate"
-	EventLogout   = "logout"
-	EventApprove  = "approve"
-	EventReject   = "reject"
-	EventClose    = "close"
 )
 
 type AppchainManager struct {
@@ -45,19 +25,19 @@ type AppchainManager struct {
 }
 
 type Appchain struct {
-	ID            string         `json:"id"`
-	Name          string         `json:"name"`
-	Validators    string         `json:"validators"`
-	ConsensusType string         `json:"consensus_type"`
-	Status        AppchainStatus `json:"status"`
-	ChainType     string         `json:"chain_type"`
-	Desc          string         `json:"desc"`
-	Version       string         `json:"version"`
-	PublicKey     string         `json:"public_key"`
-	OwnerDID      string         `json:"owner_did"`
-	DidDocAddr    string         `json:"did_doc_addr"`
-	DidDocHash    string         `json:"did_doc_hash"`
-	FSM           *fsm.FSM       `json:"fsm"`
+	ID            string             `json:"id"`
+	Name          string             `json:"name"`
+	Validators    string             `json:"validators"`
+	ConsensusType string             `json:"consensus_type"`
+	Status        g.GovernanceStatus `json:"status"`
+	ChainType     string             `json:"chain_type"`
+	Desc          string             `json:"desc"`
+	Version       string             `json:"version"`
+	PublicKey     string             `json:"public_key"`
+	OwnerDID      string             `json:"owner_did"`
+	DidDocAddr    string             `json:"did_doc_addr"`
+	DidDocHash    string             `json:"did_doc_hash"`
+	FSM           *fsm.FSM           `json:"fsm"`
 }
 
 type auditRecord struct {
@@ -74,22 +54,33 @@ func SetFSM(chain *Appchain) {
 	chain.FSM = fsm.NewFSM(
 		string(chain.Status),
 		fsm.Events{
-			{Name: EventUpdate, Src: []string{string(AppchainAvailable)}, Dst: string(AppchainUpdating)},
-			{Name: EventFreeze, Src: []string{string(AppchainAvailable)}, Dst: string(AppchainFreezing)},
-			{Name: EventActivate, Src: []string{string(AppchainFrozen)}, Dst: string(AppchainActivating)},
-			{Name: EventLogout, Src: []string{string(AppchainAvailable)}, Dst: string(AppchainLogouting)},
-			{Name: EventApprove, Src: []string{string(AppchainRegisting), string(AppchainUpdating), string(AppchainActivating)}, Dst: string(AppchainAvailable)},
-			{Name: EventApprove, Src: []string{string(AppchainFreezing)}, Dst: string(AppchainFrozen)},
-			{Name: EventApprove, Src: []string{string(AppchainLogouting)}, Dst: string(AppchainUnavailable)},
-			{Name: EventReject, Src: []string{string(AppchainRegisting)}, Dst: string(AppchainUnavailable)},
-			{Name: EventReject, Src: []string{string(AppchainUpdating)}, Dst: string(AppchainAvailable)},
-			{Name: EventReject, Src: []string{string(AppchainFreezing)}, Dst: string(AppchainAvailable)},
-			{Name: EventReject, Src: []string{string(AppchainActivating)}, Dst: string(AppchainFrozen)},
-			{Name: EventReject, Src: []string{string(AppchainLogouting)}, Dst: string(AppchainAvailable)},
-			{Name: EventClose, Src: []string{"open"}, Dst: "closed"},
+			// register 3
+			{Name: string(g.EventRegister), Src: []string{string(g.GovernanceUnavailable)}, Dst: string(g.GovernanceRegisting)},
+			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceRegisting)}, Dst: string(g.GovernanceAvailable)},
+			{Name: string(g.EventReject), Src: []string{string(g.GovernanceRegisting)}, Dst: string(g.GovernanceUnavailable)},
+
+			// update 1
+			{Name: string(g.EventUpdate), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceFrozen), string(g.GovernanceFreezing), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceUpdating)},
+			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceUpdating)}, Dst: string(g.GovernanceAvailable)},
+			{Name: string(g.EventReject), Src: []string{string(g.GovernanceUpdating)}, Dst: string(g.GovernanceAvailable)},
+
+			// freeze 2
+			{Name: string(g.EventFreeze), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceUpdating), string(g.GovernanceActivating), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceFreezing)},
+			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceFreezing)}, Dst: string(g.GovernanceFrozen)},
+			{Name: string(g.EventReject), Src: []string{string(g.GovernanceFreezing)}, Dst: string(g.GovernanceAvailable)},
+
+			// active 1
+			{Name: string(g.EventActivate), Src: []string{string(g.GovernanceFrozen), string(g.GovernanceFreezing), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceActivating)},
+			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceActivating)}, Dst: string(g.GovernanceAvailable)},
+			{Name: string(g.EventReject), Src: []string{string(g.GovernanceActivating)}, Dst: string(g.GovernanceFrozen)},
+
+			// logout 3
+			{Name: string(g.EventLogout), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceUpdating), string(g.GovernanceFreezing), string(g.GovernanceFrozen), string(g.GovernanceActivating)}, Dst: string(g.GovernanceLogouting)},
+			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceLogouting)}, Dst: string(g.GovernanceForbidden)},
+			{Name: string(g.EventReject), Src: []string{string(g.GovernanceLogouting)}, Dst: string(g.GovernanceAvailable)},
 		},
 		fsm.Callbacks{
-			"enter_state": func(e *fsm.Event) { chain.Status = AppchainStatus(chain.FSM.Current()) },
+			"enter_state": func(e *fsm.Event) { chain.Status = g.GovernanceStatus(chain.FSM.Current()) },
 		},
 	)
 }
@@ -103,7 +94,7 @@ func (am *AppchainManager) Register(id, appchainOwner, docAddr, docHash, validat
 		Name:          name,
 		Validators:    validators,
 		ConsensusType: consensusType,
-		Status:        AppchainRegisting,
+		Status:        g.GovernanceRegisting,
 		ChainType:     chainType,
 		Desc:          desc,
 		Version:       version,
@@ -114,8 +105,9 @@ func (am *AppchainManager) Register(id, appchainOwner, docAddr, docHash, validat
 	}
 	isRegister := false
 
-	ok := am.Has(am.appchainKey(id))
-	if ok {
+	appchain := &Appchain{}
+	ok := am.GetObject(am.appchainKey(id), appchain)
+	if ok && appchain.Status != g.GovernanceUnavailable {
 		am.Persister.Logger().WithFields(logrus.Fields{
 			"id": id,
 		}).Debug("Appchain has registered")
@@ -138,7 +130,7 @@ func (am *AppchainManager) UpdateAppchain(id, appchainOwner, docAddr, docHash, v
 		Name:          name,
 		Validators:    validators,
 		ConsensusType: consensusType,
-		Status:        AppchainAvailable,
+		Status:        g.GovernanceAvailable,
 		ChainType:     chainType,
 		Desc:          desc,
 		Version:       version,
@@ -161,11 +153,11 @@ func (am *AppchainManager) Audit(proposer string, isApproved int32, desc string)
 		return false, []byte("this appchain does not exist")
 	}
 
-	chain.Status = AppchainAvailable
+	chain.Status = g.GovernanceAvailable
 
 	record := &auditRecord{
 		Appchain:   chain,
-		IsApproved: isApproved == APPROVED,
+		IsApproved: isApproved == g.APPROVED,
 		Desc:       desc,
 	}
 
@@ -225,7 +217,7 @@ func (am *AppchainManager) CountAvailableAppchains() (bool, []byte) {
 		if err := json.Unmarshal(v, a); err != nil {
 			return false, []byte(fmt.Sprintf("unmarshal json error: %v", err))
 		}
-		if a.Status == AppchainAvailable {
+		if a.Status == g.GovernanceAvailable {
 			count++
 		}
 	}
