@@ -1,23 +1,37 @@
 package boltvm
 
+type VmStatus int
+
+const (
+	Normal VmStatus = iota
+	Unknown
+	NoBindRule
+	NotAvailableAppchain
+	DecodeFail
+	EncodeFail
+	InvalidIBTP
+	ExistIBTPIndex
+	WrongIBTPIndex
+)
+
 type Response struct {
-	Ok     bool
+	Code   VmStatus
 	Result []byte
 }
 
 // Result returns normal result
 func Success(data []byte) *Response {
 	return &Response{
-		Ok:     true,
+		Code:   Normal,
 		Result: data,
 	}
 }
 
 // Error returns error result that will cause
 // vm call error, and this transaction will be invalid
-func Error(msg string) *Response {
+func Error(msg string, status VmStatus) *Response {
 	return &Response{
-		Ok:     false,
+		Code:   status,
 		Result: []byte(msg),
 	}
 }
