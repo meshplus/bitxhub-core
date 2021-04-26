@@ -69,21 +69,26 @@ func SetFSM(rule *Rule) {
 
 // BindPre checks if the rule address can bind with appchain id and record rule
 func (rm *RuleManager) BindPre(chainId, ruleAddress string) (bool, []byte) {
+	flag := false
 	rules := make([]*Rule, 0)
 	if ok := rm.GetObject(rm.ruleKey(chainId), rules); !ok {
-		return true, nil
+		flag = true
 	}
 
 	for _, r := range rules {
 		if ruleAddress == r.Address {
 			if r.Status != g.GovernanceBindable {
 				return false, []byte("The rule is in an unbindable state: " + r.Status)
+			} else {
+				flag = true
 			}
 		}
 	}
 
-	rules = append(rules, &Rule{ruleAddress, chainId, g.GovernanceBindable, nil})
-	rm.SetObject(rm.ruleKey(chainId), rules)
+	if flag {
+		rules = append(rules, &Rule{ruleAddress, chainId, g.GovernanceBindable, nil})
+		rm.SetObject(rm.ruleKey(chainId), rules)
+	}
 
 	return true, nil
 }
