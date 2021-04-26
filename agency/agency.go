@@ -19,7 +19,7 @@ type ContractInfo struct {
 	Constructor ContractConstructor
 }
 
-type ApplyTxFunc func(int, *pb.Transaction, InvalidReason, *TxOpt) *pb.Receipt
+type ApplyTxFunc func(int, pb.Transaction, InvalidReason, *TxOpt) *pb.Receipt
 
 type RegisterContractFunc func() map[string]Contract
 

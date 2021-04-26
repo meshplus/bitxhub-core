@@ -6,7 +6,7 @@ import (
 )
 
 type TxsExecutor interface {
-	ApplyTransactions(txs []*pb.Transaction, invalidTxs map[int]InvalidReason) []*pb.Receipt
+	ApplyTransactions(txs []pb.Transaction, invalidTxs map[int]InvalidReason) []*pb.Receipt
 
 	GetBoltContracts() map[string]Contract
 
