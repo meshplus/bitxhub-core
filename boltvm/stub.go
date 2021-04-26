@@ -46,5 +46,5 @@ type Stub interface {
 	// CrossInvoke cross contract invoke
 	CrossInvoke(address, method string, args ...*pb.Arg) *Response
 	// GetAccount get ledger account address
-	GetAccount(address string) (bool, []byte)
+	GetAccount(address string) (bool, interface{})
 }
