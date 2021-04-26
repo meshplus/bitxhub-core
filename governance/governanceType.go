@@ -7,7 +7,7 @@ const (
 	REGISTERED = 0
 	APPROVED   = 1
 
-	GovernanceRegisting   GovernanceStatus = "registing"
+	GovernanceRegisting   GovernanceStatus = "registering"
 	GovernanceAvailable   GovernanceStatus = "available"
 	GovernanceUnavailable GovernanceStatus = "unavailable"
 	GovernanceUpdating    GovernanceStatus = "updating"
@@ -30,3 +30,8 @@ const (
 	EventBind     EventType = "bind"
 	EventUnbind   EventType = "unbind"
 )
+
+type RegisterResult struct {
+	IsRegistered bool   `json:"is_registered"`
+	ID           string `json:"id"`
+}

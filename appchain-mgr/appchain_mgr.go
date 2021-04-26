@@ -10,8 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type AppchainStatus string
-
 const (
 	PREFIX = "appchain-"
 
@@ -21,7 +19,7 @@ const (
 )
 
 type AppchainManager struct {
-	Persister
+	g.Persister
 }
 
 type Appchain struct {
@@ -46,7 +44,7 @@ type auditRecord struct {
 	Desc       string    `json:"desc"`
 }
 
-func New(persister Persister) AppchainMgr {
+func New(persister g.Persister) AppchainMgr {
 	return &AppchainManager{persister}
 }
 
@@ -85,63 +83,80 @@ func SetFSM(chain *Appchain) {
 	)
 }
 
-// Register appchain manager registers appchain info caller is the appchain
-// manager address return appchain id and error
-func (am *AppchainManager) Register(id, appchainOwner, docAddr, docHash, validators string,
-	consensusType, chainType, name, desc, version, pubkey string) (bool, []byte) {
-	chain := &Appchain{
-		ID:            id,
-		Name:          name,
-		Validators:    validators,
-		ConsensusType: consensusType,
-		Status:        g.GovernanceRegisting,
-		ChainType:     chainType,
-		Desc:          desc,
-		Version:       version,
-		PublicKey:     pubkey,
-		DidDocAddr:    docAddr,
-		DidDocHash:    docHash,
-		OwnerDID:      appchainOwner,
+// Register registers appchain info return appchain id and error
+func (am *AppchainManager) Register(info []byte) (bool, []byte) {
+	chain := &Appchain{}
+	if err := json.Unmarshal(info, chain); err != nil {
+		return false, []byte(err.Error())
 	}
-	isRegister := false
 
-	appchain := &Appchain{}
-	ok := am.GetObject(am.appchainKey(id), appchain)
-	if ok && appchain.Status != g.GovernanceUnavailable {
+	res := &g.RegisterResult{}
+	res.ID = chain.ID
+
+	tmpChain := &Appchain{}
+	ok := am.GetObject(am.appchainKey(chain.ID), tmpChain)
+
+	if ok && tmpChain.Status != g.GovernanceUnavailable {
 		am.Persister.Logger().WithFields(logrus.Fields{
-			"id": id,
+			"id": chain.ID,
 		}).Debug("Appchain has registered")
-		am.GetObject(am.appchainKey(id), chain)
-		isRegister = true
+		res.IsRegistered = true
 	} else {
-		am.SetObject(am.appchainKey(id), chain)
+		am.SetObject(am.appchainKey(chain.ID), chain)
 		am.Logger().WithFields(logrus.Fields{
-			"id": id,
+			"id": chain.ID,
 		}).Info("Appchain is registering")
+		res.IsRegistered = false
 	}
 
-	return isRegister, []byte(chain.ID)
+	resData, err := json.Marshal(res)
+	if err != nil {
+		return false, []byte(err.Error())
+	}
+
+	return true, resData
 }
 
-func (am *AppchainManager) UpdateAppchain(id, appchainOwner, docAddr, docHash, validators string, consensusType,
-	chainType, name, desc, version, pubkey string) (bool, []byte) {
-	chain := &Appchain{
-		ID:            id,
-		Name:          name,
-		Validators:    validators,
-		ConsensusType: consensusType,
-		Status:        g.GovernanceAvailable,
-		ChainType:     chainType,
-		Desc:          desc,
-		Version:       version,
-		PublicKey:     pubkey,
-		DidDocAddr:    docAddr,
-		DidDocHash:    docHash,
-		OwnerDID:      appchainOwner,
+func (am *AppchainManager) Update(info []byte) (bool, []byte) {
+	chain := &Appchain{}
+	if err := json.Unmarshal(info, chain); err != nil {
+		return false, []byte(err.Error())
 	}
 
-	am.SetObject(am.appchainKey(id), chain)
+	ok := am.Has(am.appchainKey(chain.ID))
+	if !ok {
+		return false, []byte("this appchain does not exist")
+	}
 
+	am.SetObject(am.appchainKey(chain.ID), chain)
+
+	return true, nil
+}
+
+func (am *AppchainManager) ChangeStatus(id, trigger string, _ []byte) (bool, []byte) {
+	ok, data := am.Get(am.appchainKey(id))
+	if !ok {
+		return false, []byte(fmt.Errorf("this appchain does not exist").Error())
+	}
+
+	chain := &Appchain{}
+	if err := json.Unmarshal(data, chain); err != nil {
+		return false, []byte(fmt.Sprintf("unmarshal json error: %v", err))
+	}
+
+	SetFSM(chain)
+	err := chain.FSM.Event(trigger)
+	if err != nil {
+		return false, []byte(fmt.Sprintf("change status error: %v", err))
+	}
+
+	am.SetObject(am.appchainKey(id), *chain)
+	return true, nil
+}
+
+func (am *AppchainManager) DeleteAppchain(id string) (bool, []byte) {
+	am.Delete(am.appchainKey(id))
+	am.Logger().Infof("delete appchain:%s", id)
 	return true, nil
 }
 
@@ -183,29 +198,8 @@ func (am *AppchainManager) FetchAuditRecords(id string) (bool, []byte) {
 	return true, body
 }
 
-func (am *AppchainManager) ChangeStatus(id, trigger string) (bool, []byte) {
-	ok, data := am.Get(am.appchainKey(id))
-	if !ok {
-		return false, []byte(fmt.Errorf("this appchain does not exist").Error())
-	}
-
-	chain := &Appchain{}
-	if err := json.Unmarshal(data, chain); err != nil {
-		return false, []byte(fmt.Sprintf("unmarshal json error: %v", err))
-	}
-
-	SetFSM(chain)
-	err := chain.FSM.Event(trigger)
-	if err != nil {
-		return false, []byte(fmt.Sprintf("change status error: %v", err))
-	}
-
-	am.SetObject(am.appchainKey(id), *chain)
-	return true, nil
-}
-
 // CountAvailableAppchains counts all available appchains
-func (am *AppchainManager) CountAvailableAppchains() (bool, []byte) {
+func (am *AppchainManager) CountAvailable(_ []byte) (bool, []byte) {
 	ok, value := am.Query(PREFIX)
 	if !ok {
 		return true, []byte("0")
@@ -225,7 +219,7 @@ func (am *AppchainManager) CountAvailableAppchains() (bool, []byte) {
 }
 
 // CountAppchains counts all appchains including approved, rejected or registered
-func (am *AppchainManager) CountAppchains() (bool, []byte) {
+func (am *AppchainManager) CountAll(_ []byte) (bool, []byte) {
 	ok, value := am.Query(PREFIX)
 	if !ok {
 		return true, []byte("0")
@@ -234,7 +228,7 @@ func (am *AppchainManager) CountAppchains() (bool, []byte) {
 }
 
 // Appchains returns all appchains
-func (am *AppchainManager) Appchains() (bool, []byte) {
+func (am *AppchainManager) All(_ []byte) (bool, []byte) {
 	ok, value := am.Query(PREFIX)
 	if !ok {
 		return true, nil
@@ -256,21 +250,7 @@ func (am *AppchainManager) Appchains() (bool, []byte) {
 	return true, data
 }
 
-func (am *AppchainManager) DeleteAppchain(id string) (bool, []byte) {
-	am.Delete(am.appchainKey(id))
-	am.Logger().Infof("delete appchain:%s", id)
-	return true, nil
-}
-
-func (am *AppchainManager) Appchain() (bool, []byte) {
-	ok, data := am.Get(am.appchainKey(am.Caller()))
-	if !ok {
-		return false, []byte(fmt.Errorf("this appchain does not exist").Error())
-	}
-	return true, data
-}
-
-func (am *AppchainManager) GetAppchain(id string) (bool, []byte) {
+func (am *AppchainManager) QueryById(id string, _ []byte) (bool, []byte) {
 	ok, data := am.Get(am.appchainKey(id))
 	if !ok {
 		return false, []byte(fmt.Errorf("this appchain does not exist").Error())
