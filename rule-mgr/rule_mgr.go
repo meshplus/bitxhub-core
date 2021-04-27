@@ -71,7 +71,7 @@ func SetFSM(rule *Rule) {
 func (rm *RuleManager) BindPre(chainId, ruleAddress string) (bool, []byte) {
 	flag := false
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(chainId), rules); !ok {
+	if ok := rm.GetObject(rm.ruleKey(chainId), &rules); !ok {
 		flag = true
 	}
 
@@ -95,8 +95,8 @@ func (rm *RuleManager) BindPre(chainId, ruleAddress string) (bool, []byte) {
 
 func (rm *RuleManager) ChangeStatus(ruleAddress, trigger string, chainId []byte) (bool, []byte) {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(string(chainId)), rules); !ok {
-		return false, []byte("this appchain' rules does not exist")
+	if ok := rm.GetObject(rm.ruleKey(string(chainId)), &rules); !ok {
+		return false, []byte("this appchain's rules do not exist")
 	}
 
 	flag := false
@@ -112,7 +112,7 @@ func (rm *RuleManager) ChangeStatus(ruleAddress, trigger string, chainId []byte)
 	}
 
 	if !flag {
-		return false, []byte("this appchain' rules does not exist")
+		return false, []byte("this appchain's rules do not exist")
 	}
 
 	rm.SetObject(rm.ruleKey(string(chainId)), rules)
@@ -123,8 +123,8 @@ func (rm *RuleManager) ChangeStatus(ruleAddress, trigger string, chainId []byte)
 // CountAvailable counts all rules of one appchain including available
 func (rm *RuleManager) CountAvailable(chainId []byte) (bool, []byte) {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(string(chainId)), rules); !ok {
-		return false, []byte("this appchain' rules does not exist")
+	if ok := rm.GetObject(rm.ruleKey(string(chainId)), &rules); !ok {
+		return false, []byte("this appchain's rules do not exist")
 	}
 
 	count := 0
@@ -139,8 +139,8 @@ func (rm *RuleManager) CountAvailable(chainId []byte) (bool, []byte) {
 
 func (rm *RuleManager) CountAll(chainId []byte) (bool, []byte) {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(string(chainId)), rules); !ok {
-		return false, []byte("this appchain' rules does not exist")
+	if ok := rm.GetObject(rm.ruleKey(string(chainId)), &rules); !ok {
+		return false, []byte("this appchain's rules do not exist")
 	}
 
 	return true, []byte(strconv.Itoa(len(rules)))
@@ -150,7 +150,7 @@ func (rm *RuleManager) CountAll(chainId []byte) (bool, []byte) {
 func (rm *RuleManager) All(chainId []byte) (bool, []byte) {
 	ok, data := rm.Get(rm.ruleKey(string(chainId)))
 	if !ok {
-		return false, []byte("this appchain' rules does not exist")
+		return false, []byte("this appchain's rules do not exist")
 	}
 
 	return true, data
@@ -158,7 +158,7 @@ func (rm *RuleManager) All(chainId []byte) (bool, []byte) {
 
 func (rm *RuleManager) QueryById(ruleAddress string, chainId []byte) (bool, []byte) {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(string(chainId)), rules); !ok {
+	if ok := rm.GetObject(rm.ruleKey(string(chainId)), &rules); !ok {
 		return false, []byte(fmt.Errorf("this appchain's rules do not exist").Error())
 	}
 
@@ -177,7 +177,7 @@ func (rm *RuleManager) QueryById(ruleAddress string, chainId []byte) (bool, []by
 
 func (rm *RuleManager) GetAvailableRuleAddress(chainId, chainType string) (bool, []byte) {
 	rules := make([]*Rule, 0)
-	_ = rm.GetObject(rm.ruleKey(chainId), rules)
+	_ = rm.GetObject(rm.ruleKey(chainId), &rules)
 
 	for _, r := range rules {
 		if g.GovernanceAvailable == r.Status {
