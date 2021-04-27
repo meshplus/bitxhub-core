@@ -69,10 +69,11 @@ func SetFSM(rule *Rule) {
 
 // BindPre checks if the rule address can bind with appchain id and record rule
 func (rm *RuleManager) BindPre(chainId, ruleAddress string) (bool, []byte) {
-	flag := false
 	rules := make([]*Rule, 0)
 	if ok := rm.GetObject(rm.ruleKey(chainId), &rules); !ok {
-		flag = true
+		rules = append(rules, &Rule{ruleAddress, chainId, g.GovernanceBindable, nil})
+		rm.SetObject(rm.ruleKey(chainId), rules)
+		return true, nil
 	}
 
 	for _, r := range rules {
@@ -80,16 +81,13 @@ func (rm *RuleManager) BindPre(chainId, ruleAddress string) (bool, []byte) {
 			if r.Status != g.GovernanceBindable {
 				return false, []byte("The rule is in an unbindable state: " + r.Status)
 			} else {
-				flag = true
+				return true, nil
 			}
 		}
 	}
 
-	if flag {
-		rules = append(rules, &Rule{ruleAddress, chainId, g.GovernanceBindable, nil})
-		rm.SetObject(rm.ruleKey(chainId), rules)
-	}
-
+	rules = append(rules, &Rule{ruleAddress, chainId, g.GovernanceBindable, nil})
+	rm.SetObject(rm.ruleKey(chainId), rules)
 	return true, nil
 }
 
@@ -112,7 +110,7 @@ func (rm *RuleManager) ChangeStatus(ruleAddress, trigger string, chainId []byte)
 	}
 
 	if !flag {
-		return false, []byte("this appchain's rules do not exist")
+		return false, []byte("the rule does not exist ")
 	}
 
 	rm.SetObject(rm.ruleKey(string(chainId)), rules)
