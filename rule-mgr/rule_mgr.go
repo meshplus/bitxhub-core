@@ -77,6 +77,12 @@ func (rm *RuleManager) BindPre(chainId, ruleAddress string) (bool, []byte) {
 	}
 
 	for _, r := range rules {
+		if g.GovernanceAvailable == r.Status {
+			return false, []byte("There is already a bound (available) validation rule. Please unbind the rule before binding other validation rules")
+		}
+		if g.GovernanceBinding == r.Status {
+			return false, []byte("There is already a (available) validation rule that is being bound. Please wait for the rule to finish binding before binding any other validation rules")
+		}
 		if ruleAddress == r.Address {
 			if r.Status != g.GovernanceBindable {
 				return false, []byte("The rule is in an unbindable state: " + r.Status)
