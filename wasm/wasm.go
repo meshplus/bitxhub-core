@@ -182,19 +182,19 @@ func (w *Wasm) Execute(input []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	for i := range slice {
-		arg := payload.Args[i]
-		switch arg.Type {
-		case pb.Arg_String:
-			if err := w.FreeString(slice[i], string(arg.Value)); err != nil {
-				return nil, err
-			}
-		case pb.Arg_Bytes:
-			if err := w.FreeBytes(slice[i], arg.Value); err != nil {
-				return nil, err
-			}
-		}
-	}
+	// for i := range slice {
+	// 	arg := payload.Args[i]
+	// 	switch arg.Type {
+	// 	case pb.Arg_String:
+	// 		if err := w.FreeString(slice[i], string(arg.Value)); err != nil {
+	// 			return nil, err
+	// 		}
+	// 	case pb.Arg_Bytes:
+	// 		if err := w.FreeBytes(slice[i], arg.Value); err != nil {
+	// 			return nil, err
+	// 		}
+	// 	}
+	// }
 
 	return []byte(result.String()), err
 }
