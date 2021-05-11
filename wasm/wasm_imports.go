@@ -1,4 +1,4 @@
-package validatorlib
+package wasm
 
 import (
 	"github.com/meshplus/bitxhub-core/wasm/wasmlib"
@@ -9,18 +9,14 @@ type Imports struct {
 	imports *wasmer.ImportObject
 }
 
-func New() wasmlib.WasmImport {
+func NewEmptyImports() wasmlib.WasmImport {
 	imports := &Imports{
 		imports: wasmer.NewImportObject(),
 	}
 	return imports
 }
 
-func (imports *Imports) ImportLib(wasmEnv *wasmlib.WasmEnv) {
-	imports.importECDSA(wasmEnv.Store, wasmEnv)
-	imports.importFabricV14(wasmEnv.Store, wasmEnv)
-	imports.importFabricV13(wasmEnv.Store, wasmEnv)
-}
+func (imports *Imports) ImportLib(wasmEnv *wasmlib.WasmEnv) {}
 
 func (imports *Imports) GetImportObject() *wasmer.ImportObject {
 	return imports.imports

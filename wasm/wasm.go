@@ -7,9 +7,10 @@ import (
 	"sync"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/meshplus/bitxhub-core/wasm/wasmlib"
 	"github.com/meshplus/bitxhub-kit/types"
 	"github.com/meshplus/bitxhub-model/pb"
-	"github.com/wasmerio/go-ext-wasm/wasmer"
+	"github.com/wasmerio/wasmer-go/wasmer"
 )
 
 const (
@@ -24,42 +25,12 @@ var (
 	errorLackOfMethod = fmt.Errorf("wasm execute: lack of method name")
 )
 
-func getInstance(contract *Contract, imports *wasmer.Imports, instances *sync.Map) (wasmer.Instance, error) {
-	var (
-		instance wasmer.Instance
-		err      error
-		pool     *sync.Pool
-	)
-	v, ok := instances.Load(contract.Hash.String())
-	if !ok {
-		v = &sync.Pool{
-			New: func() interface{} {
-				instance, _ := wasmer.NewInstanceWithImports(contract.Code, imports)
-				return instance
-			},
-		}
-		instances.Store(contract.Hash.String(), v)
-	}
-
-	pool = v.(*sync.Pool)
-	rawInstance := pool.Get()
-	if rawInstance == nil {
-		instance, err = wasmer.NewInstanceWithImports(contract.Code, imports)
-		if err != nil {
-			return wasmer.Instance{}, err
-		}
-	} else {
-		instance = rawInstance.(wasmer.Instance)
-	}
-
-	return instance, nil
-}
-
 // Wasm represents the wasm vm in BitXHub
 type Wasm struct {
 	// wasm instance
-	Instance wasmer.Instance
+	Instance *wasmer.Instance
 
+	env     *wasmlib.WasmEnv
 	context map[string]interface{}
 	argMap  map[int]int
 
@@ -75,8 +46,59 @@ type Contract struct {
 	Hash *types.Hash
 }
 
+func getInstance(contract *Contract, imports wasmlib.WasmImport, env *wasmlib.WasmEnv, instances *sync.Map) (*wasmer.Instance, error) {
+	var (
+		instance *wasmer.Instance
+		pool     *sync.Pool
+	)
+	v, ok := instances.Load(contract.Hash.String())
+	if !ok {
+		v = &sync.Pool{
+			New: func() interface{} {
+				engine := wasmer.NewEngine()
+				store := wasmer.NewStore(engine)
+				module, err := wasmer.NewModule(store, contract.Code)
+				if err != nil {
+					return nil
+				}
+				env.Store = store
+				imports.ImportLib(env)
+				instance, err = wasmer.NewInstance(module, imports.GetImportObject())
+				env.Instance = instance
+				if err != nil {
+					return nil
+				}
+				return instance
+			},
+		}
+		instances.Store(contract.Hash.String(), v)
+	}
+
+	pool = v.(*sync.Pool)
+	rawInstance := pool.Get()
+	if rawInstance == nil {
+		engine := wasmer.NewEngine()
+		store := wasmer.NewStore(engine)
+		module, err := wasmer.NewModule(store, contract.Code)
+		if err != nil {
+			return &wasmer.Instance{}, err
+		}
+		env.Store = store
+		imports.ImportLib(env)
+		instance, err = wasmer.NewInstance(module, imports.GetImportObject())
+		if err != nil {
+			return &wasmer.Instance{}, err
+		}
+		env.Instance = instance
+	} else {
+		instance = rawInstance.(*wasmer.Instance)
+	}
+
+	return instance, nil
+}
+
 // New creates a wasm vm instance
-func New(contractByte []byte, imports *wasmer.Imports, instances *sync.Map) (*Wasm, error) {
+func New(contractByte []byte, imports wasmlib.WasmImport, instances *sync.Map) (*Wasm, error) {
 	wasm := &Wasm{}
 
 	contract := &Contract{}
@@ -88,7 +110,8 @@ func New(contractByte []byte, imports *wasmer.Imports, instances *sync.Map) (*Wa
 		return wasm, fmt.Errorf("contract byte is empty")
 	}
 
-	instance, err := getInstance(contract, imports, instances)
+	env := &wasmlib.WasmEnv{}
+	instance, err := getInstance(contract, imports, env, instances)
 	if err != nil {
 		return nil, err
 	}
@@ -96,12 +119,14 @@ func New(contractByte []byte, imports *wasmer.Imports, instances *sync.Map) (*Wa
 	wasm.Instance = instance
 	wasm.argMap = make(map[int]int)
 	wasm.context = make(map[string]interface{})
+	env.Ctx = make(map[string]interface{})
+	wasm.env = env
 
 	return wasm, nil
 }
 
-func EmptyImports() (*wasmer.Imports, error) {
-	return wasmer.NewImports(), nil
+func EmptyImports() (*wasmer.ImportObject, error) {
+	return wasmer.NewImportObject(), nil
 }
 
 func (w *Wasm) Execute(input []byte) ([]byte, error) {
@@ -114,15 +139,17 @@ func (w *Wasm) Execute(input []byte) ([]byte, error) {
 		return nil, errorLackOfMethod
 	}
 
-	alloc := w.Instance.Exports[ALLOC_MEM]
-	if alloc == nil {
-		return nil, fmt.Errorf("not found allocate method")
-	}
-	w.context[ALLOC_MEM] = alloc
-
-	methodName, ok := w.Instance.Exports[payload.Method]
-	if !ok {
-		return nil, fmt.Errorf("wrong rule contract")
+	// alloc, err := w.Instance.Exports.GetFunction(ALLOC_MEM)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if alloc == nil {
+	// 	return nil, fmt.Errorf("not found allocate method")
+	// }
+	// w.context[ALLOC_MEM] = alloc
+	methodName, err := w.Instance.Exports.GetFunction(payload.Method)
+	if err != nil {
+		return nil, err
 	}
 	slice := make([]interface{}, len(payload.Args))
 	for i := range slice {
@@ -175,8 +202,8 @@ func (w *Wasm) Execute(input []byte) ([]byte, error) {
 		}
 	}
 
-	w.context[CONTEXT_ARGMAP] = w.argMap
-	w.Instance.SetContextData(w.context)
+	w.env.Ctx[CONTEXT_ARGMAP] = w.argMap
+	// w.Instance.SetContextData(w.context)
 
 	result, err := methodName(slice...)
 	if err != nil {
@@ -196,19 +223,19 @@ func (w *Wasm) Execute(input []byte) ([]byte, error) {
 		}
 	}
 
-	return []byte(result.String()), err
+	return []byte(strconv.Itoa(int(result.(int32)))), err
 }
 
 func (w *Wasm) SetContext(key string, value interface{}) {
 	w.Lock()
 	defer w.Unlock()
 
-	w.context[key] = value
+	w.env.Ctx[key] = value
 }
 
 func (w *Wasm) GetContext(key string) interface{} {
 	w.Lock()
 	defer w.Unlock()
 
-	return w.context[key]
+	return w.env.Ctx[key]
 }

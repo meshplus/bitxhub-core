@@ -1,9 +1,5 @@
 package validatorlib
 
-// #include <stdlib.h>
-//
-// extern int32_t ecdsa_verify(void *context, long long sig_ptr, long long digest_ptr, long long pubkey_ptr, int32_t opt);
-import "C"
 import (
 	"bytes"
 	"crypto"
@@ -14,9 +10,9 @@ import (
 	"encoding/pem"
 	"fmt"
 	"math/big"
-	"unsafe"
 
-	"github.com/wasmerio/go-ext-wasm/wasmer"
+	"github.com/meshplus/bitxhub-core/wasm/wasmlib"
+	"github.com/wasmerio/wasmer-go/wasmer"
 )
 
 type AlgorithmOption string
@@ -40,31 +36,35 @@ type ECDSASignature struct {
 	R, S *big.Int
 }
 
-//export ecdsa_verify
-func ecdsa_verify(context unsafe.Pointer, sig_ptr int64, digest_ptr int64, pubkey_ptr int64, opt int32) int32 {
-	ctx := wasmer.IntoInstanceContext(context)
-	data := ctx.Data().(map[int]int)
-	memory := ctx.Memory()
+func ecdsa_verify(env interface{}, args []wasmer.Value) ([]wasmer.Value, error) {
+	memory, err := env.(*wasmlib.WasmEnv).Instance.Exports.GetMemory("memory")
+	if err != nil {
+		return nil, err
+	}
+	sig_ptr := args[0].I64()
+	digest_ptr := args[1].I64()
+	pubkey_ptr := args[2].I64()
+	data := env.(*wasmlib.WasmEnv).Ctx["data"].(map[int]int)
 	signature := memory.Data()[sig_ptr : sig_ptr+70]
 	digest := memory.Data()[digest_ptr : digest_ptr+32]
 	pubkey := memory.Data()[pubkey_ptr : pubkey_ptr+int64(data[int(pubkey_ptr)])]
 	pemCert, _ := pem.Decode(pubkey)
 	var cert *x509.Certificate
-	cert, err := x509.ParseCertificate(pemCert.Bytes)
+	cert, err = x509.ParseCertificate(pemCert.Bytes)
 	if err != nil {
-		return 0
+		return []wasmer.Value{wasmer.NewI32(0)}, nil
 	}
 	pk := cert.PublicKey
 	r, s, err := unmarshalECDSASignature(signature)
 	if err != nil {
-		return 0
+		return []wasmer.Value{wasmer.NewI32(0)}, nil
 	}
 	isValid := ecdsa.Verify(pk.(*ecdsa.PublicKey), digest, r, s)
 
 	if isValid {
-		return 1
+		return []wasmer.Value{wasmer.NewI32(1)}, nil
 	} else {
-		return 0
+		return []wasmer.Value{wasmer.NewI32(0)}, nil
 	}
 }
 
@@ -93,12 +93,22 @@ func unmarshalECDSASignature(raw []byte) (*big.Int, *big.Int, error) {
 	return sig.R, sig.S, nil
 }
 
-func (im *Imports) importECDSA() {
-	var err error
-	im.imports, err = im.imports.Append("ecdsa_verify", ecdsa_verify, C.ecdsa_verify)
-	if err != nil {
-		return
-	}
+func (im *Imports) importECDSA(store *wasmer.Store, wasmEnv *wasmlib.WasmEnv) {
+	function := wasmer.NewFunctionWithEnvironment(
+		store,
+		wasmer.NewFunctionType(
+			wasmer.NewValueTypes(wasmer.I64, wasmer.I64, wasmer.I64),
+			wasmer.NewValueTypes(wasmer.I32),
+		),
+		wasmEnv,
+		ecdsa_verify,
+	)
+	im.imports.Register(
+		"env",
+		map[string]wasmer.IntoExtern{
+			"ecdsa_verify": function,
+		},
+	)
 }
 
 // Bytes returns a serialized, storable representation of this key

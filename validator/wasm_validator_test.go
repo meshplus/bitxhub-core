@@ -52,7 +52,7 @@ func TestWasmValidator(t *testing.T) {
 	}
 	contractBytes, err := json.Marshal(wasmCode)
 	require.Nil(t, err)
-	imports, err := validatorlib.New()
+	imports := validatorlib.New()
 	require.Nil(t, err)
 	wasm, err := wasm.New(contractBytes, imports, validator.instances)
 	require.Nil(t, err)
@@ -104,7 +104,7 @@ func BenchmarkHpcWasm_Verify(b *testing.B) {
 	}
 	contractBytes, err := json.Marshal(wasmCode)
 	require.Nil(b, err)
-	imports, err := validatorlib.New()
+	imports := validatorlib.New()
 	require.Nil(b, err)
 	wasm, err := wasm.New(contractBytes, imports, validator.instances)
 	require.Nil(b, err)

@@ -1,18 +1,24 @@
 package wasmlib
 
 import (
-	"github.com/wasmerio/go-ext-wasm/wasmer"
+	"github.com/wasmerio/wasmer-go/wasmer"
 )
 
 type Imports struct {
-	imports *wasmer.Imports
+	imports *wasmer.ImportObject
 }
 
-func New() (*wasmer.Imports, error) {
+func New() WasmImport {
 	imports := &Imports{
-		imports: wasmer.NewImports(),
+		imports: wasmer.NewImportObject(),
 	}
-	imports.importWasmLib()
+	return imports
+}
 
-	return imports.imports, nil
+func (imports *Imports) ImportLib(wasmEnv *WasmEnv) {
+	imports.importWasmLib(wasmEnv.Store, wasmEnv)
+}
+
+func (imports *Imports) GetImportObject() *wasmer.ImportObject {
+	return imports.imports
 }

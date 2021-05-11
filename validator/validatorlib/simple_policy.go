@@ -1,22 +1,28 @@
 package validatorlib
 
-// #include <stdlib.h>
-//
-// extern int32_t fabric_validate_v13(void *context, long long proof_ptr, long long validator_ptr);
-import "C"
 import (
-	"unsafe"
+	"github.com/meshplus/bitxhub-core/wasm/wasmlib"
+	"github.com/wasmerio/wasmer-go/wasmer"
 )
 
-//export fabric_validate_v13
-func fabric_validate_v13(context unsafe.Pointer, proof_ptr int64, validator_ptr int64) int32 {
-	return 1
+func fabric_validate_v13(env interface{}, args []wasmer.Value) ([]wasmer.Value, error) {
+	return []wasmer.Value{wasmer.NewI32(1)}, nil
 }
 
-func (im *Imports) importFabricV13() {
-	var err error
-	im.imports, err = im.imports.Append("fabric_validate_v13", fabric_validate_v13, C.fabric_validate_v13)
-	if err != nil {
-		return
-	}
+func (im *Imports) importFabricV13(store *wasmer.Store, wasmEnv *wasmlib.WasmEnv) {
+	function := wasmer.NewFunctionWithEnvironment(
+		store,
+		wasmer.NewFunctionType(
+			wasmer.NewValueTypes(wasmer.I64, wasmer.I64),
+			wasmer.NewValueTypes(wasmer.I32),
+		),
+		wasmEnv,
+		fabric_validate_v13,
+	)
+	im.imports.Register(
+		"env",
+		map[string]wasmer.IntoExtern{
+			"fabric_validate_v13": function,
+		},
+	)
 }
