@@ -14,9 +14,9 @@ type TxsExecutor interface {
 
 	GetNormalTxs() []*types.Hash
 
-	AddInterchainCounter(to string, index uint64)
+	AddInterchainCounter(to string, index *pb.VerifiedIndex)
 
-	GetInterchainCounter() map[string][]uint64
+	GetInterchainCounter() map[string][]*pb.VerifiedIndex
 
 	GetDescription() string
 }
