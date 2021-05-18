@@ -55,20 +55,7 @@ func getInstance(contract *Contract, imports wasmlib.WasmImport, env *wasmlib.Wa
 	if !ok {
 		v = &sync.Pool{
 			New: func() interface{} {
-				engine := wasmer.NewEngine()
-				store := wasmer.NewStore(engine)
-				module, err := wasmer.NewModule(store, contract.Code)
-				if err != nil {
-					return nil
-				}
-				env.Store = store
-				imports.ImportLib(env)
-				instance, err = wasmer.NewInstance(module, imports.GetImportObject())
-				env.Instance = instance
-				if err != nil {
-					return nil
-				}
-				return instance
+				return nil
 			},
 		}
 		instances.Store(contract.Hash.String(), v)
