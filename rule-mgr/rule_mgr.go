@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/meshplus/bitxhub-core/governance"
-
-	"github.com/meshplus/bitxhub-core/validator"
-
 	"github.com/looplab/fsm"
+	"github.com/meshplus/bitxhub-core/governance"
 	g "github.com/meshplus/bitxhub-core/governance"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -24,6 +22,7 @@ type RuleManager struct {
 type Rule struct {
 	Address string             `json:"address"`
 	ChainId string             `json:"chain_id"`
+	Master  bool               `json:"master"`
 	Status  g.GovernanceStatus `json:"status"`
 	FSM     *fsm.FSM           `json:"fsm"`
 }
@@ -32,7 +31,7 @@ func New(persister g.Persister) RuleMgr {
 	return &RuleManager{persister}
 }
 
-func SetFSM(rule *Rule) {
+func setFSM(rule *Rule) {
 	rule.FSM = fsm.NewFSM(
 		string(rule.Status),
 		fsm.Events{
@@ -67,33 +66,92 @@ func SetFSM(rule *Rule) {
 	)
 }
 
-// BindPre checks if the rule address can bind with appchain id and record rule
-func (rm *RuleManager) BindPre(chainId, ruleAddress string) (bool, []byte) {
-	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(chainId), &rules); !ok {
-		rules = append(rules, &Rule{ruleAddress, chainId, g.GovernanceBindable, nil})
-		rm.SetObject(rm.ruleKey(chainId), rules)
-		return true, nil
-	}
+// Register record rule
+func (rm *RuleManager) Register(chainId, ruleAddress string) (bool, []byte) {
+	res := &g.RegisterResult{}
+	res.ID = ruleAddress
+	res.IsRegistered = false
 
-	for _, r := range rules {
-		if g.GovernanceAvailable == r.Status {
-			return false, []byte("There is already a bound (available) validation rule. Please unbind the rule before binding other validation rules")
-		}
-		if g.GovernanceBinding == r.Status {
-			return false, []byte("There is already a (available) validation rule that is being bound. Please wait for the rule to finish binding before binding any other validation rules")
-		}
-		if ruleAddress == r.Address {
-			if r.Status != g.GovernanceBindable {
-				return false, []byte("The rule is in an unbindable state: " + r.Status)
-			} else {
-				return true, nil
+	rules := make([]*Rule, 0)
+	if ok := rm.GetObject(rm.ruleKey(chainId), &rules); ok {
+		for _, r := range rules {
+			if ruleAddress == r.Address {
+				rm.Persister.Logger().WithFields(logrus.Fields{
+					"id":   chainId,
+					"addr": ruleAddress,
+				}).Info("Rule has deployed")
+				res.IsRegistered = true
+				break
 			}
 		}
 	}
 
-	rules = append(rules, &Rule{ruleAddress, chainId, g.GovernanceBindable, nil})
-	rm.SetObject(rm.ruleKey(chainId), rules)
+	if !res.IsRegistered {
+		rules = append(rules, &Rule{ruleAddress, chainId, false, g.GovernanceBindable, nil})
+		rm.SetObject(rm.ruleKey(chainId), rules)
+	}
+
+	resData, err := json.Marshal(res)
+	if err != nil {
+		return false, []byte(err.Error())
+	}
+
+	return true, resData
+}
+
+// BindPre checks if the rule address can bind with appchain id and record rule. (only check, not modify infomation)
+// force will be true when update master rule
+func (rm *RuleManager) BindPre(chainId, ruleAddress string, force bool) (bool, []byte) {
+	rules := make([]*Rule, 0)
+	if ok := rm.GetObject(rm.ruleKey(chainId), &rules); !ok {
+		return false, []byte("this appchain's rules do not exist")
+	}
+
+	isExisted := false
+	for _, r := range rules {
+		if ruleAddress == r.Address {
+			if r.Status != g.GovernanceBindable {
+				return false, []byte("The rule is in an unbindable state: " + r.Status)
+			} else {
+				isExisted = true
+			}
+		} else {
+			if g.GovernanceAvailable == r.Status && !force {
+				return false, []byte("There is already a bound (available) validation rule. Please unbind the rule before binding other validation rules")
+			}
+			if true == r.Master && g.GovernanceAvailable != r.Status {
+				return false, []byte(fmt.Sprintf("The master rule is changing(%s) now. Please wait until the proposal close before binding new rule", r.Status))
+			}
+		}
+	}
+
+	if !isExisted {
+		return false, []byte("the rule does not exist ")
+	}
+
+	return true, nil
+}
+
+func (rm *RuleManager) SetMaster(ruleAddress string, chainId []byte, master bool) (bool, []byte) {
+	rules := make([]*Rule, 0)
+	if ok := rm.GetObject(rm.ruleKey(string(chainId)), &rules); !ok {
+		return false, []byte("this appchain's rules do not exist")
+	}
+
+	flag := false
+	for _, r := range rules {
+		if ruleAddress == r.Address {
+			flag = true
+			r.Master = master
+		}
+	}
+
+	if !flag {
+		return false, []byte("the rule does not exist ")
+	}
+
+	rm.SetObject(rm.ruleKey(string(chainId)), rules)
+
 	return true, nil
 }
 
@@ -107,7 +165,7 @@ func (rm *RuleManager) ChangeStatus(ruleAddress, trigger string, chainId []byte)
 	for _, r := range rules {
 		if ruleAddress == r.Address {
 			flag = true
-			SetFSM(r)
+			setFSM(r)
 			err := r.FSM.Event(trigger)
 			if err != nil {
 				return false, []byte(fmt.Sprintf("change status error: %v", err))
@@ -128,7 +186,7 @@ func (rm *RuleManager) ChangeStatus(ruleAddress, trigger string, chainId []byte)
 func (rm *RuleManager) CountAvailable(chainId []byte) (bool, []byte) {
 	rules := make([]*Rule, 0)
 	if ok := rm.GetObject(rm.ruleKey(string(chainId)), &rules); !ok {
-		return false, []byte("this appchain's rules do not exist")
+		return true, []byte(strconv.Itoa(0))
 	}
 
 	count := 0
@@ -144,7 +202,7 @@ func (rm *RuleManager) CountAvailable(chainId []byte) (bool, []byte) {
 func (rm *RuleManager) CountAll(chainId []byte) (bool, []byte) {
 	rules := make([]*Rule, 0)
 	if ok := rm.GetObject(rm.ruleKey(string(chainId)), &rules); !ok {
-		return false, []byte("this appchain's rules do not exist")
+		return true, []byte(strconv.Itoa(0))
 	}
 
 	return true, []byte(strconv.Itoa(len(rules)))
@@ -154,7 +212,7 @@ func (rm *RuleManager) CountAll(chainId []byte) (bool, []byte) {
 func (rm *RuleManager) All(chainId []byte) (bool, []byte) {
 	ok, data := rm.Get(rm.ruleKey(string(chainId)))
 	if !ok {
-		return false, []byte("this appchain's rules do not exist")
+		return true, nil
 	}
 
 	return true, data
@@ -179,9 +237,11 @@ func (rm *RuleManager) QueryById(ruleAddress string, chainId []byte) (bool, []by
 	return false, []byte(fmt.Errorf("this rule does not exist").Error())
 }
 
-func (rm *RuleManager) GetAvailableRuleAddress(chainId, chainType string) (bool, []byte) {
+func (rm *RuleManager) GetAvailableRuleAddress(chainId string) (bool, []byte) {
 	rules := make([]*Rule, 0)
-	_ = rm.GetObject(rm.ruleKey(chainId), &rules)
+	if ok := rm.GetObject(rm.ruleKey(chainId), &rules); !ok {
+		return false, []byte("this appchain's rules do not exist")
+	}
 
 	for _, r := range rules {
 		if g.GovernanceAvailable == r.Status {
@@ -189,11 +249,41 @@ func (rm *RuleManager) GetAvailableRuleAddress(chainId, chainType string) (bool,
 		}
 	}
 
-	if chainType == "fabric" {
-		return true, []byte(validator.FabricRuleAddr)
+	return false, []byte("this appchain's available rule does not exist")
+}
+
+func (rm *RuleManager) GetMaster(chainId string) (bool, []byte) {
+	rules := make([]*Rule, 0)
+	if ok := rm.GetObject(rm.ruleKey(chainId), &rules); !ok {
+		return false, []byte("this appchain's rules do not exist")
 	}
 
-	return false, []byte("this appchain's available rule does not exist")
+	for _, r := range rules {
+		if true == r.Master {
+			ruleData, err := json.Marshal(r)
+			if err != nil {
+				return false, []byte(fmt.Sprintf("marshal rule error: %v", err))
+			}
+			return true, ruleData
+		}
+	}
+
+	return false, []byte("this appchain's master rule does not exist")
+}
+
+func (rm *RuleManager) HasMaster(chainId string) (bool, []byte) {
+	rules := make([]*Rule, 0)
+	if ok := rm.GetObject(rm.ruleKey(chainId), &rules); !ok {
+		return true, []byte(strconv.FormatBool(false))
+	}
+
+	for _, r := range rules {
+		if true == r.Master {
+			return true, []byte(strconv.FormatBool(true))
+		}
+	}
+
+	return true, []byte(strconv.FormatBool(false))
 }
 
 func (rm *RuleManager) IsAvailable(chainId, ruleAddress string) (bool, []byte) {

@@ -35,3 +35,8 @@ type RegisterResult struct {
 	IsRegistered bool   `json:"is_registered"`
 	ID           string `json:"id"`
 }
+
+type GovernanceResult struct {
+	ProposalID string `json:"proposal_id"`
+	Extra      []byte `json:"extra"`
+}
