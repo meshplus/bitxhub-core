@@ -8,9 +8,9 @@ import (
 type RuleMgr interface {
 	governance.Governance
 
-	BindPre(chainId, ruleAddress string) (bool, []byte)
+	BindPre(chainId, ruleAddress string, force bool) (bool, []byte)
 
-	GetAvailableRuleAddress(chainId, chainType string) (bool, []byte)
+	GetAvailableRuleAddress(chainId string) (bool, []byte)
 
 	IsAvailable(chainId, ruleId string) (bool, []byte)
 }

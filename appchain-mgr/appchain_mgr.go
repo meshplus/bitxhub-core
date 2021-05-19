@@ -48,7 +48,7 @@ func New(persister g.Persister) AppchainMgr {
 	return &AppchainManager{persister}
 }
 
-func SetFSM(chain *Appchain) {
+func setFSM(chain *Appchain) {
 	chain.FSM = fsm.NewFSM(
 		string(chain.Status),
 		fsm.Events{
@@ -144,7 +144,7 @@ func (am *AppchainManager) ChangeStatus(id, trigger string, _ []byte) (bool, []b
 		return false, []byte(fmt.Sprintf("unmarshal json error: %v", err))
 	}
 
-	SetFSM(chain)
+	setFSM(chain)
 	err := chain.FSM.Event(trigger)
 	if err != nil {
 		return false, []byte(fmt.Sprintf("change status error: %v", err))
