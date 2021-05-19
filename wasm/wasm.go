@@ -34,8 +34,7 @@ func getInstance(contract *Contract, imports *wasmer.Imports, instances *sync.Ma
 	if !ok {
 		v = &sync.Pool{
 			New: func() interface{} {
-				instance, _ := wasmer.NewInstanceWithImports(contract.Code, imports)
-				return instance
+				return nil
 			},
 		}
 		instances.Store(contract.Hash.String(), v)
