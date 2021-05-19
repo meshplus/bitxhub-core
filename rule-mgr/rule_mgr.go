@@ -271,19 +271,19 @@ func (rm *RuleManager) GetMaster(chainId string) (bool, []byte) {
 	return false, []byte("this appchain's master rule does not exist")
 }
 
-func (rm *RuleManager) HasMaster(chainId string) (bool, []byte) {
+func (rm *RuleManager) HasMaster(chainId string) bool {
 	rules := make([]*Rule, 0)
 	if ok := rm.GetObject(rm.ruleKey(chainId), &rules); !ok {
-		return true, []byte(strconv.FormatBool(false))
+		return false
 	}
 
 	for _, r := range rules {
 		if true == r.Master {
-			return true, []byte(strconv.FormatBool(true))
+			return true
 		}
 	}
 
-	return true, []byte(strconv.FormatBool(false))
+	return false
 }
 
 func (rm *RuleManager) IsAvailable(chainId, ruleAddress string) (bool, []byte) {
