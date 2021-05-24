@@ -22,6 +22,7 @@ type RuleManager struct {
 type Rule struct {
 	Address string             `json:"address"`
 	ChainId string             `json:"chain_id"`
+	Master  bool               `json:"master"`
 	Status  g.GovernanceStatus `json:"status"`
 	FSM     *fsm.FSM           `json:"fsm"`
 }
@@ -78,7 +79,7 @@ func (rm *RuleManager) Register(chainId, ruleAddress string) (bool, []byte) {
 				rm.Persister.Logger().WithFields(logrus.Fields{
 					"id":   chainId,
 					"addr": ruleAddress,
-				}).Debug("Rule has deployed")
+				}).Info("Rule has deployed")
 				res.IsRegistered = true
 				break
 			}
@@ -86,7 +87,7 @@ func (rm *RuleManager) Register(chainId, ruleAddress string) (bool, []byte) {
 	}
 
 	if !res.IsRegistered {
-		rules = append(rules, &Rule{ruleAddress, chainId, g.GovernanceBindable, nil})
+		rules = append(rules, &Rule{ruleAddress, chainId, false, g.GovernanceBindable, nil})
 		rm.SetObject(rm.ruleKey(chainId), rules)
 	}
 
@@ -98,7 +99,7 @@ func (rm *RuleManager) Register(chainId, ruleAddress string) (bool, []byte) {
 	return true, resData
 }
 
-// BindPre checks if the rule address can bind with appchain id and record rule
+// BindPre checks if the rule address can bind with appchain id and record rule. (only check, not modify infomation)
 // force will be true when update master rule
 func (rm *RuleManager) BindPre(chainId, ruleAddress string, force bool) (bool, []byte) {
 	rules := make([]*Rule, 0)
@@ -118,7 +119,7 @@ func (rm *RuleManager) BindPre(chainId, ruleAddress string, force bool) (bool, [
 			if g.GovernanceAvailable == r.Status && !force {
 				return false, []byte("There is already a bound (available) validation rule. Please unbind the rule before binding other validation rules")
 			}
-			if g.GovernanceBinding == r.Status || g.GovernanceUnbinding == r.Status {
+			if true == r.Master && g.GovernanceAvailable != r.Status {
 				return false, []byte(fmt.Sprintf("The master rule is changing(%s) now. Please wait until the proposal close before binding new rule", r.Status))
 			}
 		}
@@ -127,6 +128,29 @@ func (rm *RuleManager) BindPre(chainId, ruleAddress string, force bool) (bool, [
 	if !isExisted {
 		return false, []byte("the rule does not exist ")
 	}
+
+	return true, nil
+}
+
+func (rm *RuleManager) SetMaster(ruleAddress string, chainId []byte, master bool) (bool, []byte) {
+	rules := make([]*Rule, 0)
+	if ok := rm.GetObject(rm.ruleKey(string(chainId)), &rules); !ok {
+		return false, []byte("this appchain's rules do not exist")
+	}
+
+	flag := false
+	for _, r := range rules {
+		if ruleAddress == r.Address {
+			flag = true
+			r.Master = master
+		}
+	}
+
+	if !flag {
+		return false, []byte("the rule does not exist ")
+	}
+
+	rm.SetObject(rm.ruleKey(string(chainId)), rules)
 
 	return true, nil
 }
@@ -215,7 +239,9 @@ func (rm *RuleManager) QueryById(ruleAddress string, chainId []byte) (bool, []by
 
 func (rm *RuleManager) GetAvailableRuleAddress(chainId string) (bool, []byte) {
 	rules := make([]*Rule, 0)
-	_ = rm.GetObject(rm.ruleKey(chainId), &rules)
+	if ok := rm.GetObject(rm.ruleKey(chainId), &rules); !ok {
+		return false, []byte("this appchain's rules do not exist")
+	}
 
 	for _, r := range rules {
 		if g.GovernanceAvailable == r.Status {
@@ -224,6 +250,40 @@ func (rm *RuleManager) GetAvailableRuleAddress(chainId string) (bool, []byte) {
 	}
 
 	return false, []byte("this appchain's available rule does not exist")
+}
+
+func (rm *RuleManager) GetMaster(chainId string) (bool, []byte) {
+	rules := make([]*Rule, 0)
+	if ok := rm.GetObject(rm.ruleKey(chainId), &rules); !ok {
+		return false, []byte("this appchain's rules do not exist")
+	}
+
+	for _, r := range rules {
+		if true == r.Master {
+			ruleData, err := json.Marshal(r)
+			if err != nil {
+				return false, []byte(fmt.Sprintf("marshal rule error: %v", err))
+			}
+			return true, ruleData
+		}
+	}
+
+	return false, []byte("this appchain's master rule does not exist")
+}
+
+func (rm *RuleManager) HasMaster(chainId string) bool {
+	rules := make([]*Rule, 0)
+	if ok := rm.GetObject(rm.ruleKey(chainId), &rules); !ok {
+		return false
+	}
+
+	for _, r := range rules {
+		if true == r.Master {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (rm *RuleManager) IsAvailable(chainId, ruleAddress string) (bool, []byte) {

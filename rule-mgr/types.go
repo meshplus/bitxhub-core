@@ -12,5 +12,9 @@ type RuleMgr interface {
 
 	GetAvailableRuleAddress(chainId string) (bool, []byte)
 
+	GetMaster(chainId string) (bool, []byte)
+
+	HasMaster(chainId string) bool
+
 	IsAvailable(chainId, ruleId string) (bool, []byte)
 }

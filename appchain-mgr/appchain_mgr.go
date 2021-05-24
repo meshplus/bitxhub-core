@@ -99,7 +99,7 @@ func (am *AppchainManager) Register(info []byte) (bool, []byte) {
 	if ok && tmpChain.Status != g.GovernanceUnavailable {
 		am.Persister.Logger().WithFields(logrus.Fields{
 			"id": chain.ID,
-		}).Debug("Appchain has registered")
+		}).Info("Appchain has registered")
 		res.IsRegistered = true
 	} else {
 		am.SetObject(am.appchainKey(chain.ID), chain)
