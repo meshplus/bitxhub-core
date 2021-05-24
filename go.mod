@@ -11,8 +11,8 @@ require (
 	github.com/hyperledger/fabric-amcl v0.0.0-20200424173818-327c9e2cf77a // indirect
 	github.com/hyperledger/fabric-protos-go v0.0.0-20200330074707-cfe579e86986
 	github.com/looplab/fsm v0.2.0
-	github.com/meshplus/bitxhub-kit v1.2.0
-	github.com/meshplus/bitxhub-model v1.2.1-0.20210511081145-6ae7a279e2f0
+	github.com/meshplus/bitxhub-kit v1.2.1-0.20210524063043-9afae78ac098
+	github.com/meshplus/bitxhub-model v1.2.1-0.20210524063354-5d48e2fee178
 	github.com/miekg/pkcs11 v1.0.3 // indirect
 	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.7.0
