@@ -14,10 +14,15 @@ require (
 	github.com/looplab/fsm v0.2.0
 	github.com/meshplus/bitxhub-kit v1.1.2-0.20201203072410-8a0383a6870d
 	github.com/meshplus/bitxhub-model v1.1.2-0.20210513074749-d31e04a9f41d
+	github.com/meshplus/bitxid v0.0.0-20210412025850-e0eaf0f9063a
 	github.com/miekg/pkcs11 v1.0.3 // indirect
-	github.com/sirupsen/logrus v1.5.0
+	github.com/sirupsen/logrus v1.6.0
+	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/viper v1.6.1 // indirect
+	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.6.0
 	github.com/sykesm/zap-logfmt v0.0.3 // indirect
 	github.com/wasmerio/go-ext-wasm v0.3.1
 	go.uber.org/zap v1.15.0 // indirect
+	golang.org/x/tools v0.0.0-20200102140908-9497f49d5709 // indirect
 )

@@ -63,8 +63,10 @@ func (vlt *FabSimValidator) Verify(address, from string, proof, payload []byte, 
 	}
 	ret := h.Sum(nil)
 	isValid := ecdsa.Verify(pk, ret, r, s)
-
-	return isValid, nil
+	if !isValid {
+		return false, fmt.Errorf("signature not right")
+	}
+	return true, nil
 }
 
 type ECDSASignature struct {
