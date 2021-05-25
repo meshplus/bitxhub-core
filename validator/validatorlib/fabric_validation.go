@@ -13,6 +13,7 @@ import (
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/meshplus/bitxhub-model/pb"
+	"github.com/meshplus/bitxid"
 )
 
 const (
@@ -39,13 +40,15 @@ type ValidatorInfo struct {
 }
 
 type payloadInfo struct {
-	Index         int    `json:"index"`
-	DstChainId    string `json:"dst_chain_id"`
-	SrcContractId string `json:"src_contract_id"`
-	DstContractId string `json:"dst_contract_id"`
-	Func          string `json:"func"`
-	Args          string `json:args`
-	Callback      string `json:callback`
+	Index          uint64 `json:"index"`
+	DstContractDID string `json:"dst_contract_did"`
+	SrcContractID  string `json:"src_contract_id"`
+	Func           string `json:"func"`
+	Args           string `json:"args"`
+	Callback       string `json:"callback"`
+	Argscb         string `json:"argscb"`
+	Rollback       string `json:"rollback"`
+	Argsrb         string `json:"argsrb"`
 }
 
 func GetPolicyEnvelope(policy string) ([]byte, error) {
@@ -93,10 +96,18 @@ func extractValidationArtifacts(proof []byte) (*valiadationArtifacts, error) {
 		return nil, err
 	}
 
-	var payloadArray []payloadInfo
+	var (
+		payload      payloadInfo
+		payloadArray []payloadInfo
+	)
 	err = json.Unmarshal(respPayload.Response.Payload, &payloadArray)
 	if err != nil {
-		return nil, err
+		// try if it is from getOutMessage
+		if err = json.Unmarshal(respPayload.Response.Payload, &payload); err != nil {
+			return nil, err
+		}
+	} else {
+		payload = payloadArray[len(payloadArray)-1]
 	}
 
 	return &valiadationArtifacts{
@@ -104,7 +115,7 @@ func extractValidationArtifacts(proof []byte) (*valiadationArtifacts, error) {
 		prp:          cap.Action.ProposalResponsePayload,
 		endorsements: cap.Action.Endorsements,
 		cap:          cap,
-		payload:      payloadArray[len(payloadArray)-1],
+		payload:      payload,
 	}, nil
 }
 
@@ -188,22 +199,47 @@ func ValidatePayload(info payloadInfo, payloadByte []byte) error {
 		return fmt.Errorf("unmarshal ibtp payload content: %w", err)
 	}
 
-	if info.DstContractId != content.DstContractId {
+	if bitxid.DID(info.DstContractDID).GetAddress() != content.DstContractId {
 		return fmt.Errorf("dst contrct id not correct")
 	}
-	if info.SrcContractId != content.SrcContractId {
+	if info.SrcContractID != content.SrcContractId {
 		return fmt.Errorf("src contrct id not correct")
+	}
+	if info.Func != content.Func {
+		return fmt.Errorf("interchain function name not correct")
 	}
 	if info.Callback != content.Callback {
 		return fmt.Errorf("callback not correct")
 	}
-	args := strings.Split(info.Args, ",")
-	for index, arg := range args {
-		if arg != string(content.Args[index]) {
-			return fmt.Errorf("args not correct")
-		}
+	if info.Rollback != content.Rollback {
+		return fmt.Errorf("rollback not correct")
+	}
+	if !checkArgs(info.Argsrb, content.ArgsRb) {
+		return fmt.Errorf("args for rollback not correct")
+	}
+	if !checkArgs(info.Argscb, content.ArgsCb) {
+		return fmt.Errorf("args for callback not correct")
+	}
+	if !checkArgs(info.Args, content.Args) {
+		return fmt.Errorf("args for interchain not correct")
 	}
 	return nil
+}
+
+func checkArgs(args string, argArr [][]byte) bool {
+	if args == "" && len(argArr) == 0 {
+		return true
+	}
+	argsSplit := strings.Split(args, ",")
+	if len(argsSplit) != len(argArr) {
+		return false
+	}
+	for index, arg := range argsSplit {
+		if arg != string(argArr[index]) {
+			return false
+		}
+	}
+	return true
 }
 
 type PolicyEvaluator struct {
