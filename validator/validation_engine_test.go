@@ -1,7 +1,6 @@
 package validator
 
 import (
-	"fmt"
 	"io/ioutil"
 	"testing"
 
@@ -88,10 +87,12 @@ func TestFabSimValidator_Verify(t *testing.T) {
 
 	content := &pb.Content{
 		SrcContractId: "mychannel&transfer",
-		DstContractId: "mychannel&transfer",
-		Func:          "get",
+		DstContractId: "0x30c5D3aeb4681af4D13384DBc2a717C51cb1cc11",
+		Func:          "interchainCharge",
 		Args:          [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
-		Callback:      "interchainConfirm",
+		Callback:      "",
+		Rollback:      "interchainRollback",
+		ArgsRb:        [][]byte{[]byte("Alice"), []byte("1")},
 	}
 
 	bytes, err := content.Marshal()
@@ -107,7 +108,7 @@ func TestFabSimValidator_Verify(t *testing.T) {
 
 	ok, err := v.Validate(SimFabricRuleAddr, "0xe02d8fdacd59020d7f292ab3278d13674f5c404d", proof, body, string(validators))
 	require.Nil(t, err)
-	fmt.Println(ok)
+	require.True(t, ok)
 }
 
 func BenchmarkFabV14Validator_Verify(b *testing.B) {
@@ -160,10 +161,12 @@ func BenchmarkFabSimValidator_Verify(b *testing.B) {
 
 	content := &pb.Content{
 		SrcContractId: "mychannel&transfer",
-		DstContractId: "mychannel&transfer",
+		DstContractId: "0x30c5D3aeb4681af4D13384DBc2a717C51cb1cc11",
 		Func:          "interchainCharge",
 		Args:          [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
-		Callback:      "interchainConfirm",
+		Callback:      "",
+		Rollback:      "interchainRollback",
+		ArgsRb:        [][]byte{[]byte("Alice"), []byte("1")},
 	}
 
 	bytes, err := content.Marshal()
