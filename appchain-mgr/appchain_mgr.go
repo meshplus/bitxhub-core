@@ -83,6 +83,22 @@ func setFSM(chain *Appchain) {
 	)
 }
 
+// GovernancePre checks if the appchain can do the event. (only check, not modify infomation)
+func (am *AppchainManager) GovernancePre(chainId string, event g.EventType) (bool, []byte) {
+	chain := &Appchain{}
+	if ok := am.GetObject(am.appchainKey(chainId), chain); !ok {
+		return false, []byte("this appchain do not exist")
+	}
+
+	for _, s := range g.StateMap[event] {
+		if chain.Status == s {
+			return true, nil
+		}
+	}
+
+	return false, []byte(fmt.Sprintf("The appchain (%s) can not be %s", string(chain.Status), string(event)))
+}
+
 // Register registers appchain info return appchain id and error
 func (am *AppchainManager) Register(info []byte) (bool, []byte) {
 	chain := &Appchain{}
