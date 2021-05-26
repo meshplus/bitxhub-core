@@ -13,7 +13,6 @@ import (
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/meshplus/bitxhub-model/pb"
-	"github.com/meshplus/bitxid"
 )
 
 const (
@@ -40,15 +39,16 @@ type ValidatorInfo struct {
 }
 
 type payloadInfo struct {
-	Index          uint64 `json:"index"`
-	DstContractDID string `json:"dst_contract_did"`
-	SrcContractID  string `json:"src_contract_id"`
-	Func           string `json:"func"`
-	Args           string `json:"args"`
-	Callback       string `json:"callback"`
-	Argscb         string `json:"argscb"`
-	Rollback       string `json:"rollback"`
-	Argsrb         string `json:"argsrb"`
+	Index         uint64 `json:"index"`
+	DstChainID    string `json:"dst_chain_id"`
+	SrcContractID string `json:"src_contract_id"`
+	DstContractID string `json:"dst_contract_id"`
+	Func          string `json:"func"`
+	Args          string `json:"args"`
+	Callback      string `json:"callback"`
+	Argscb        string `json:"argscb"`
+	Rollback      string `json:"rollback"`
+	Argsrb        string `json:"argsrb"`
 }
 
 func GetPolicyEnvelope(policy string) ([]byte, error) {
@@ -199,8 +199,8 @@ func ValidatePayload(info payloadInfo, payloadByte []byte) error {
 		return fmt.Errorf("unmarshal ibtp payload content: %w", err)
 	}
 
-	if bitxid.DID(info.DstContractDID).GetAddress() != content.DstContractId {
-		return fmt.Errorf("dst contrct id not correct")
+	if info.DstContractID != content.DstContractId {
+		return fmt.Errorf("dst contract id not correct")
 	}
 	if info.SrcContractID != content.SrcContractId {
 		return fmt.Errorf("src contrct id not correct")
