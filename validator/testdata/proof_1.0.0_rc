@@ -1,23 +1,20 @@
 
-C
-A
-?broker1
-pollingEvent
-!{"did:bitxhub:etherappchain:.":3}¼
+P
+N
+Lbroker>
+getOutMessage
+*0x857b3305Fcf2BD0b6BFFFEf824C11eCf32BFeFd2
+1Ó
 
-¹
- ïs@ÎVËe{Õ'¸û¯(°¾kISû=`Ü‡8È”
-jP
-brokerF
-.
-%out-msg-did:bitxhub:etherappchain:.-4Ñ
-
-
-outter-metaÑ
-
+Ð
+ PŽ±´ÖÚY ÕtÑ¥DÍâŸ«AäUƒly_p¹eâ”«
+bH
+broker>
+<
+4out-msg-0x857b3305Fcf2BD0b6BFFFEf824C11eCf32BFeFd2-1
 lscc
 
-broker—È‘[{"index":4,"dst_contract_did":"did:bitxhub:etherappchain:0x30c5D3aeb4681af4D13384DBc2a717C51cb1cc11","src_contract_id":"mychannel\u0026transfer","func":"interchainCharge","args":"Alice,Alice,1","callback":"","argscb":"","rollback":"interchainRollback","argsrb":"Alice,1"}]"brokerv0ý
+broker¶È°{"index":1,"dst_chain_id":"0x857b3305Fcf2BD0b6BFFFEf824C11eCf32BFeFd2","src_contract_id":"mychannel\u0026transfer","dst_contract_id":"0x82185AC84abE50D0F21E4476a443367ebcD46732","func":"interchainCharge","args":"Alice,Alice,1","callback":"","argscb":"","rollback":"interchainRollback","argsrb":"Alice,1"}"brokerv0ý
 ²
 Org2MSP¦-----BEGIN CERTIFICATE-----
 MIICJzCCAc6gAwIBAgIQSw2UHr+381efIxVRo7pGgjAKBggqhkjOPQQDAjBzMQsw
@@ -33,4 +30,4 @@ BCQwIoAgJya0T5F25gNpz4OlRX0jrig7SIE397/Z/pVQvtP1iHowCgYIKoZIzj0E
 AwIDRwAwRAIgErFLpmI0Xie3moBv/5oLUGy7HQXh+LZOzHlicRP9c/4CIFsY8QPv
 IU2q/pIC7yVO7hKikZyn6DTaRIMdyXxSeotw
 -----END CERTIFICATE-----
-F0D [Fš1%jâœÍ…cÕžoô“:ÊœâÓ¡Užî¡£4 8+z6–ÏœŠJ²ššk¯KF‹á'Qê{Ôöíœ~­
+F0D Séõ¼J4Â†¢ïiÕö³œBE¨Dùp_u§Yý¡  Uiã‹õJ: V‘~·`è´/g~BäÿE0Þ>ê°

@@ -87,7 +87,7 @@ func TestFabSimValidator_Verify(t *testing.T) {
 
 	content := &pb.Content{
 		SrcContractId: "mychannel&transfer",
-		DstContractId: "0x30c5D3aeb4681af4D13384DBc2a717C51cb1cc11",
+		DstContractId: "0x82185AC84abE50D0F21E4476a443367ebcD46732",
 		Func:          "interchainCharge",
 		Args:          [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
 		Callback:      "",
@@ -161,7 +161,7 @@ func BenchmarkFabSimValidator_Verify(b *testing.B) {
 
 	content := &pb.Content{
 		SrcContractId: "mychannel&transfer",
-		DstContractId: "0x30c5D3aeb4681af4D13384DBc2a717C51cb1cc11",
+		DstContractId: "0x82185AC84abE50D0F21E4476a443367ebcD46732",
 		Func:          "interchainCharge",
 		Args:          [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
 		Callback:      "",
