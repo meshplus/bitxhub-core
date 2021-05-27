@@ -70,10 +70,7 @@ func (vlt *WasmValidator) initRule(address, from string, proof, payload []byte, 
 		return "", err
 	}
 
-	imports, err := validatorlib.New()
-	if err != nil {
-		return "", err
-	}
+	imports := validatorlib.New()
 	contractByte := vlt.ledger.GetCode(types.NewAddressByStr(address))
 
 	if contractByte == nil {

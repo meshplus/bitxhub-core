@@ -11,7 +11,6 @@ import (
 	"github.com/meshplus/bitxhub-kit/types"
 	"github.com/meshplus/bitxhub-model/pb"
 	"github.com/stretchr/testify/assert"
-	"github.com/wasmerio/go-ext-wasm/wasmer"
 )
 
 func TestExecute(t *testing.T) {
@@ -25,7 +24,7 @@ func TestExecute(t *testing.T) {
 
 	bytes, err := json.Marshal(contract)
 	assert.Nil(t, err)
-	imports := wasmer.NewImports()
+	imports := NewEmptyImports()
 	instances := &sync.Map{}
 	wasm, err := New(bytes, imports, instances)
 	assert.Nil(t, err)
@@ -41,6 +40,8 @@ func TestExecute(t *testing.T) {
 	ret, err := wasm.Execute(inputBytes)
 	assert.Nil(t, err)
 	fmt.Println(string(ret))
+	hash := types.NewHashByStr("")
+	fmt.Println(hash)
 }
 
 func TestImportExecute(t *testing.T) {
@@ -55,7 +56,7 @@ func TestImportExecute(t *testing.T) {
 
 	bytes, err := json.Marshal(contract)
 	assert.Nil(t, err)
-	imports, err := wasmlib.New()
+	imports := wasmlib.New()
 	assert.Nil(t, err)
 	instances := &sync.Map{}
 	wasm, err := New(bytes, imports, instances)
@@ -73,7 +74,19 @@ func TestImportExecute(t *testing.T) {
 	wasm.SetContext("hello", hello)
 	ret, err := wasm.Execute(inputBytes)
 	assert.Nil(t, err)
+	_, err = wasm.Execute(inputBytes)
+	assert.Nil(t, err)
+	_, err = wasm.Execute(inputBytes)
+	assert.Nil(t, err)
+	_, err = wasm.Execute(inputBytes)
+	assert.Nil(t, err)
+	_, err = wasm.Execute(inputBytes)
+	assert.Nil(t, err)
+	_, err = wasm.Execute(inputBytes)
+	assert.Nil(t, err)
 	fmt.Println(string(ret))
+	hash := types.NewHashByStr("")
+	fmt.Println(hash)
 }
 
 func BenchmarkImportExecute(b *testing.B) {
@@ -88,7 +101,7 @@ func BenchmarkImportExecute(b *testing.B) {
 
 	bytes, err := json.Marshal(contract)
 	assert.Nil(b, err)
-	imports, err := wasmlib.New()
+	imports := wasmlib.New()
 	assert.Nil(b, err)
 	instances := &sync.Map{}
 	wasm, err := New(bytes, imports, instances)

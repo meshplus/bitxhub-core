@@ -6,7 +6,10 @@ import (
 
 // SetString set the string type arg for wasm
 func (w *Wasm) SetString(str string) (int32, error) {
-	alloc := w.Instance.Exports["allocate"]
+	alloc, err := w.Instance.Exports.GetFunction("allocate")
+	if err != nil {
+		return 0, err
+	}
 	if alloc == nil {
 		return 0, fmt.Errorf("not found allocate method")
 	}
@@ -16,9 +19,10 @@ func (w *Wasm) SetString(str string) (int32, error) {
 	if err != nil {
 		return 0, err
 	}
-	inputPointer := allocResult.ToI32()
+	inputPointer := allocResult.(int32)
 
-	memory := w.Instance.Memory.Data()[inputPointer:]
+	store, _ := w.Instance.Exports.GetMemory("memory")
+	memory := store.Data()[inputPointer:]
 
 	var i int
 	for i = 0; i < lengthOfStr; i++ {
@@ -33,7 +37,10 @@ func (w *Wasm) SetString(str string) (int32, error) {
 
 // SetBytes set bytes type arg for wasm
 func (w *Wasm) SetBytes(b []byte) (int32, error) {
-	alloc := w.Instance.Exports["allocate"]
+	alloc, err := w.Instance.Exports.GetFunction("allocate")
+	if err != nil {
+		return 0, err
+	}
 	if alloc == nil {
 		return 0, fmt.Errorf("not found allocate method")
 	}
@@ -43,9 +50,10 @@ func (w *Wasm) SetBytes(b []byte) (int32, error) {
 	if err != nil {
 		return 0, err
 	}
-	inputPointer := allocResult.ToI32()
+	inputPointer := allocResult.(int32)
 
-	memory := w.Instance.Memory.Data()[inputPointer:]
+	store, _ := w.Instance.Exports.GetMemory("memory")
+	memory := store.Data()[inputPointer:]
 
 	var i int
 	for i = 0; i < lengthOfBytes; i++ {
@@ -60,13 +68,16 @@ func (w *Wasm) SetBytes(b []byte) (int32, error) {
 
 // FreeString free the string type arg for wasm
 func (w *Wasm) FreeString(inputPointer interface{}, str string) error {
-	dealloc := w.Instance.Exports["deallocate"]
+	dealloc, err := w.Instance.Exports.GetFunction("deallocate")
+	if err != nil {
+		return err
+	}
 	if dealloc == nil {
 		return fmt.Errorf("not found allocate method")
 	}
 	lengthOfStr := len(str)
 
-	_, err := dealloc(inputPointer, lengthOfStr)
+	_, err = dealloc(inputPointer, lengthOfStr)
 	if err != nil {
 		return err
 	}
@@ -77,13 +88,16 @@ func (w *Wasm) FreeString(inputPointer interface{}, str string) error {
 
 // FreeBytes free the bytes type arg for wasm
 func (w *Wasm) FreeBytes(inputPointer interface{}, b []byte) error {
-	dealloc := w.Instance.Exports["deallocate"]
+	dealloc, err := w.Instance.Exports.GetFunction("deallocate")
+	if err != nil {
+		return err
+	}
 	if dealloc == nil {
 		return fmt.Errorf("not found allocate method")
 	}
 	lengthOfBytes := len(b)
 
-	_, err := dealloc(inputPointer, lengthOfBytes)
+	_, err = dealloc(inputPointer, lengthOfBytes)
 	if err != nil {
 		return err
 	}
