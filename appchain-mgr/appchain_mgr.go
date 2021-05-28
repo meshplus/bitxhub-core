@@ -44,38 +44,46 @@ type auditRecord struct {
 	Desc       string    `json:"desc"`
 }
 
+var appchainStateMap = map[g.EventType][]g.GovernanceStatus{
+	g.EventRegister: {g.GovernanceUnavailable},
+	g.EventUpdate:   {g.GovernanceAvailable, g.GovernanceFrozen},
+	g.EventFreeze:   {g.GovernanceAvailable, g.GovernanceUpdating, g.GovernanceActivating},
+	g.EventActivate: {g.GovernanceFrozen},
+	g.EventLogout:   {g.GovernanceAvailable, g.GovernanceUpdating, g.GovernanceFreezing, g.GovernanceActivating, g.GovernanceFrozen},
+}
+
 func New(persister g.Persister) AppchainMgr {
 	return &AppchainManager{persister}
 }
 
-func setFSM(chain *Appchain) {
+func setFSM(chain *Appchain, lastStatus g.GovernanceStatus) {
 	chain.FSM = fsm.NewFSM(
 		string(chain.Status),
 		fsm.Events{
 			// register 3
 			{Name: string(g.EventRegister), Src: []string{string(g.GovernanceUnavailable)}, Dst: string(g.GovernanceRegisting)},
 			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceRegisting)}, Dst: string(g.GovernanceAvailable)},
-			{Name: string(g.EventReject), Src: []string{string(g.GovernanceRegisting)}, Dst: string(g.GovernanceUnavailable)},
+			{Name: string(g.EventReject), Src: []string{string(g.GovernanceRegisting)}, Dst: string(lastStatus)},
 
 			// update 1
 			{Name: string(g.EventUpdate), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceFrozen), string(g.GovernanceFreezing), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceUpdating)},
 			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceUpdating)}, Dst: string(g.GovernanceAvailable)},
-			{Name: string(g.EventReject), Src: []string{string(g.GovernanceUpdating)}, Dst: string(g.GovernanceAvailable)},
+			{Name: string(g.EventReject), Src: []string{string(g.GovernanceUpdating)}, Dst: string(lastStatus)},
 
 			// freeze 2
 			{Name: string(g.EventFreeze), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceUpdating), string(g.GovernanceActivating), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceFreezing)},
 			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceFreezing)}, Dst: string(g.GovernanceFrozen)},
-			{Name: string(g.EventReject), Src: []string{string(g.GovernanceFreezing)}, Dst: string(g.GovernanceAvailable)},
+			{Name: string(g.EventReject), Src: []string{string(g.GovernanceFreezing)}, Dst: string(lastStatus)},
 
 			// active 1
 			{Name: string(g.EventActivate), Src: []string{string(g.GovernanceFrozen), string(g.GovernanceFreezing), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceActivating)},
 			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceActivating)}, Dst: string(g.GovernanceAvailable)},
-			{Name: string(g.EventReject), Src: []string{string(g.GovernanceActivating)}, Dst: string(g.GovernanceFrozen)},
+			{Name: string(g.EventReject), Src: []string{string(g.GovernanceActivating)}, Dst: string(lastStatus)},
 
 			// logout 3
 			{Name: string(g.EventLogout), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceUpdating), string(g.GovernanceFreezing), string(g.GovernanceFrozen), string(g.GovernanceActivating)}, Dst: string(g.GovernanceLogouting)},
 			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceLogouting)}, Dst: string(g.GovernanceForbidden)},
-			{Name: string(g.EventReject), Src: []string{string(g.GovernanceLogouting)}, Dst: string(g.GovernanceAvailable)},
+			{Name: string(g.EventReject), Src: []string{string(g.GovernanceLogouting)}, Dst: string(lastStatus)},
 		},
 		fsm.Callbacks{
 			"enter_state": func(e *fsm.Event) { chain.Status = g.GovernanceStatus(chain.FSM.Current()) },
@@ -90,7 +98,7 @@ func (am *AppchainManager) GovernancePre(chainId string, event g.EventType) (boo
 		return false, []byte("this appchain do not exist")
 	}
 
-	for _, s := range g.StateMap[event] {
+	for _, s := range appchainStateMap[event] {
 		if chain.Status == s {
 			return true, nil
 		}
@@ -149,7 +157,7 @@ func (am *AppchainManager) Update(info []byte) (bool, []byte) {
 	return true, nil
 }
 
-func (am *AppchainManager) ChangeStatus(id, trigger string, _ []byte) (bool, []byte) {
+func (am *AppchainManager) ChangeStatus(id, trigger, lastStatus string, _ []byte) (bool, []byte) {
 	ok, data := am.Get(am.appchainKey(id))
 	if !ok {
 		return false, []byte(fmt.Errorf("this appchain does not exist").Error())
@@ -160,7 +168,7 @@ func (am *AppchainManager) ChangeStatus(id, trigger string, _ []byte) (bool, []b
 		return false, []byte(fmt.Sprintf("unmarshal json error: %v", err))
 	}
 
-	setFSM(chain)
+	setFSM(chain, g.GovernanceStatus(lastStatus))
 	err := chain.FSM.Event(trigger)
 	if err != nil {
 		return false, []byte(fmt.Sprintf("change status error: %v", err))

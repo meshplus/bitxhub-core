@@ -40,13 +40,3 @@ type GovernanceResult struct {
 	ProposalID string `json:"proposal_id"`
 	Extra      []byte `json:"extra"`
 }
-
-var StateMap = map[EventType][]GovernanceStatus{
-	EventRegister: {GovernanceUnavailable},
-	EventUpdate:   {GovernanceAvailable, GovernanceFrozen},
-	EventFreeze:   {GovernanceAvailable, GovernanceBindable, GovernanceUpdating, GovernanceActivating, GovernanceBinding, GovernanceUnbinding},
-	EventActivate: {GovernanceFrozen},
-	EventLogout:   {GovernanceAvailable, GovernanceUpdating, GovernanceFreezing, GovernanceActivating, GovernanceFrozen, GovernanceBinding, GovernanceUnbinding, GovernanceBindable},
-	EventBind:     {GovernanceBindable},
-	EventUnbind:   {GovernanceAvailable},
-}
