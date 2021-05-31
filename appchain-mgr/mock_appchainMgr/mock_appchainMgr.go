@@ -5,79 +5,35 @@
 package mock_appchainMgr
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockAppchainMgr is a mock of AppchainMgr interface
+// MockAppchainMgr is a mock of AppchainMgr interface.
 type MockAppchainMgr struct {
 	ctrl     *gomock.Controller
 	recorder *MockAppchainMgrMockRecorder
 }
 
-// MockAppchainMgrMockRecorder is the mock recorder for MockAppchainMgr
+// MockAppchainMgrMockRecorder is the mock recorder for MockAppchainMgr.
 type MockAppchainMgrMockRecorder struct {
 	mock *MockAppchainMgr
 }
 
-// NewMockAppchainMgr creates a new mock instance
+// NewMockAppchainMgr creates a new mock instance.
 func NewMockAppchainMgr(ctrl *gomock.Controller) *MockAppchainMgr {
 	mock := &MockAppchainMgr{ctrl: ctrl}
 	mock.recorder = &MockAppchainMgrMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockAppchainMgr) EXPECT() *MockAppchainMgrMockRecorder {
 	return m.recorder
 }
 
-// ChangeStatus mocks base method
-func (m *MockAppchainMgr) ChangeStatus(id, trigger string, extra []byte) (bool, []byte) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ChangeStatus", id, trigger, extra)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].([]byte)
-	return ret0, ret1
-}
-
-// ChangeStatus indicates an expected call of ChangeStatus
-func (mr *MockAppchainMgrMockRecorder) ChangeStatus(id, trigger, extra interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeStatus", reflect.TypeOf((*MockAppchainMgr)(nil).ChangeStatus), id, trigger, extra)
-}
-
-// CountAvailable mocks base method
-func (m *MockAppchainMgr) CountAvailable(extra []byte) (bool, []byte) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountAvailable", extra)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].([]byte)
-	return ret0, ret1
-}
-
-// CountAvailable indicates an expected call of CountAvailable
-func (mr *MockAppchainMgrMockRecorder) CountAvailable(extra interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAvailable", reflect.TypeOf((*MockAppchainMgr)(nil).CountAvailable), extra)
-}
-
-// CountAll mocks base method
-func (m *MockAppchainMgr) CountAll(extra []byte) (bool, []byte) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountAll", extra)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].([]byte)
-	return ret0, ret1
-}
-
-// CountAll indicates an expected call of CountAll
-func (mr *MockAppchainMgrMockRecorder) CountAll(extra interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAll", reflect.TypeOf((*MockAppchainMgr)(nil).CountAll), extra)
-}
-
-// All mocks base method
+// All mocks base method.
 func (m *MockAppchainMgr) All(extra []byte) (bool, []byte) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "All", extra)
@@ -86,58 +42,13 @@ func (m *MockAppchainMgr) All(extra []byte) (bool, []byte) {
 	return ret0, ret1
 }
 
-// All indicates an expected call of All
+// All indicates an expected call of All.
 func (mr *MockAppchainMgrMockRecorder) All(extra interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "All", reflect.TypeOf((*MockAppchainMgr)(nil).All), extra)
 }
 
-// QueryById mocks base method
-func (m *MockAppchainMgr) QueryById(id string, extra []byte) (bool, []byte) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "QueryById", id, extra)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].([]byte)
-	return ret0, ret1
-}
-
-// QueryById indicates an expected call of QueryById
-func (mr *MockAppchainMgrMockRecorder) QueryById(id, extra interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryById", reflect.TypeOf((*MockAppchainMgr)(nil).QueryById), id, extra)
-}
-
-// Register mocks base method
-func (m *MockAppchainMgr) Register(info []byte) (bool, []byte) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Register", info)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].([]byte)
-	return ret0, ret1
-}
-
-// Register indicates an expected call of Register
-func (mr *MockAppchainMgrMockRecorder) Register(info interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockAppchainMgr)(nil).Register), info)
-}
-
-// Update mocks base method
-func (m *MockAppchainMgr) Update(info []byte) (bool, []byte) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", info)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].([]byte)
-	return ret0, ret1
-}
-
-// Update indicates an expected call of Update
-func (mr *MockAppchainMgrMockRecorder) Update(info interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockAppchainMgr)(nil).Update), info)
-}
-
-// Audit mocks base method
+// Audit mocks base method.
 func (m *MockAppchainMgr) Audit(proposer string, isApproved int32, desc string) (bool, []byte) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Audit", proposer, isApproved, desc)
@@ -146,28 +57,58 @@ func (m *MockAppchainMgr) Audit(proposer string, isApproved int32, desc string) 
 	return ret0, ret1
 }
 
-// Audit indicates an expected call of Audit
+// Audit indicates an expected call of Audit.
 func (mr *MockAppchainMgrMockRecorder) Audit(proposer, isApproved, desc interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Audit", reflect.TypeOf((*MockAppchainMgr)(nil).Audit), proposer, isApproved, desc)
 }
 
-// FetchAuditRecords mocks base method
-func (m *MockAppchainMgr) FetchAuditRecords(id string) (bool, []byte) {
+// ChangeStatus mocks base method.
+func (m *MockAppchainMgr) ChangeStatus(id, trigger string, extra []byte) (bool, []byte) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchAuditRecords", id)
+	ret := m.ctrl.Call(m, "ChangeStatus", id, trigger, extra)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].([]byte)
 	return ret0, ret1
 }
 
-// FetchAuditRecords indicates an expected call of FetchAuditRecords
-func (mr *MockAppchainMgrMockRecorder) FetchAuditRecords(id interface{}) *gomock.Call {
+// ChangeStatus indicates an expected call of ChangeStatus.
+func (mr *MockAppchainMgrMockRecorder) ChangeStatus(id, trigger, extra interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchAuditRecords", reflect.TypeOf((*MockAppchainMgr)(nil).FetchAuditRecords), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeStatus", reflect.TypeOf((*MockAppchainMgr)(nil).ChangeStatus), id, trigger, extra)
 }
 
-// DeleteAppchain mocks base method
+// CountAll mocks base method.
+func (m *MockAppchainMgr) CountAll(extra []byte) (bool, []byte) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountAll", extra)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].([]byte)
+	return ret0, ret1
+}
+
+// CountAll indicates an expected call of CountAll.
+func (mr *MockAppchainMgrMockRecorder) CountAll(extra interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAll", reflect.TypeOf((*MockAppchainMgr)(nil).CountAll), extra)
+}
+
+// CountAvailable mocks base method.
+func (m *MockAppchainMgr) CountAvailable(extra []byte) (bool, []byte) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountAvailable", extra)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].([]byte)
+	return ret0, ret1
+}
+
+// CountAvailable indicates an expected call of CountAvailable.
+func (mr *MockAppchainMgrMockRecorder) CountAvailable(extra interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAvailable", reflect.TypeOf((*MockAppchainMgr)(nil).CountAvailable), extra)
+}
+
+// DeleteAppchain mocks base method.
 func (m *MockAppchainMgr) DeleteAppchain(id string) (bool, []byte) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteAppchain", id)
@@ -176,13 +117,28 @@ func (m *MockAppchainMgr) DeleteAppchain(id string) (bool, []byte) {
 	return ret0, ret1
 }
 
-// DeleteAppchain indicates an expected call of DeleteAppchain
+// DeleteAppchain indicates an expected call of DeleteAppchain.
 func (mr *MockAppchainMgrMockRecorder) DeleteAppchain(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAppchain", reflect.TypeOf((*MockAppchainMgr)(nil).DeleteAppchain), id)
 }
 
-// GetPubKeyByChainID mocks base method
+// FetchAuditRecords mocks base method.
+func (m *MockAppchainMgr) FetchAuditRecords(id string) (bool, []byte) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchAuditRecords", id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].([]byte)
+	return ret0, ret1
+}
+
+// FetchAuditRecords indicates an expected call of FetchAuditRecords.
+func (mr *MockAppchainMgrMockRecorder) FetchAuditRecords(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchAuditRecords", reflect.TypeOf((*MockAppchainMgr)(nil).FetchAuditRecords), id)
+}
+
+// GetPubKeyByChainID mocks base method.
 func (m *MockAppchainMgr) GetPubKeyByChainID(id string) (bool, []byte) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPubKeyByChainID", id)
@@ -191,8 +147,53 @@ func (m *MockAppchainMgr) GetPubKeyByChainID(id string) (bool, []byte) {
 	return ret0, ret1
 }
 
-// GetPubKeyByChainID indicates an expected call of GetPubKeyByChainID
+// GetPubKeyByChainID indicates an expected call of GetPubKeyByChainID.
 func (mr *MockAppchainMgrMockRecorder) GetPubKeyByChainID(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPubKeyByChainID", reflect.TypeOf((*MockAppchainMgr)(nil).GetPubKeyByChainID), id)
+}
+
+// QueryById mocks base method.
+func (m *MockAppchainMgr) QueryById(id string, extra []byte) (bool, []byte) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryById", id, extra)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].([]byte)
+	return ret0, ret1
+}
+
+// QueryById indicates an expected call of QueryById.
+func (mr *MockAppchainMgrMockRecorder) QueryById(id, extra interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryById", reflect.TypeOf((*MockAppchainMgr)(nil).QueryById), id, extra)
+}
+
+// Register mocks base method.
+func (m *MockAppchainMgr) Register(info []byte) (bool, []byte) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Register", info)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].([]byte)
+	return ret0, ret1
+}
+
+// Register indicates an expected call of Register.
+func (mr *MockAppchainMgrMockRecorder) Register(info interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockAppchainMgr)(nil).Register), info)
+}
+
+// Update mocks base method.
+func (m *MockAppchainMgr) Update(info []byte) (bool, []byte) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Update", info)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].([]byte)
+	return ret0, ret1
+}
+
+// Update indicates an expected call of Update.
+func (mr *MockAppchainMgrMockRecorder) Update(info interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockAppchainMgr)(nil).Update), info)
 }
