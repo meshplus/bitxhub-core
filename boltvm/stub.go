@@ -45,6 +45,8 @@ type Stub interface {
 	ValidationEngine() validator.Engine
 	// CrossInvoke cross contract invoke
 	CrossInvoke(address, method string, args ...*pb.Arg) *Response
+	// CrossInvokeEVM cross evm contract invoke
+	CrossInvokeEVM(address string, input []byte) *Response
 	// GetAccount get ledger account address
 	GetAccount(address string) (bool, interface{})
 }
