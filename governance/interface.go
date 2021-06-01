@@ -7,7 +7,7 @@ import (
 //go:generate mockgen -destination mock_governance/mock_governance.go -package mock_governance -source interface.go
 type Governance interface {
 	// ChangeStatus changes state of object
-	ChangeStatus(id, trigger string, extra []byte) (bool, []byte)
+	ChangeStatus(id, trigger, lastStatus string, extra []byte) (bool, []byte)
 
 	// CountAvailable counts all available objects
 	CountAvailable(extra []byte) (bool, []byte)
