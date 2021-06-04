@@ -1,17 +1,21 @@
 package appchain_mgr
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strconv"
 
 	"github.com/looplab/fsm"
 	g "github.com/meshplus/bitxhub-core/governance"
+	"github.com/meshplus/bitxhub-kit/crypto"
+	"github.com/meshplus/bitxhub-kit/crypto/asym/ecdsa"
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	PREFIX = "appchain-"
+	PREFIX            = "appchain-"
+	CHAIN_ADDR_PREFIX = "appchainAddr-"
 
 	RelaychainType = "relaychain"
 	AppchainType   = "appchain"
@@ -127,6 +131,12 @@ func (am *AppchainManager) Register(info []byte) (bool, []byte) {
 		res.IsRegistered = true
 	} else {
 		am.SetObject(am.appchainKey(chain.ID), chain)
+
+		addr, err := getAddr(chain.PublicKey)
+		if err != nil {
+			return false, []byte(err.Error())
+		}
+		am.SetObject(am.appchainAddrKey(addr), chain.ID)
 		am.Logger().WithFields(logrus.Fields{
 			"id": chain.ID,
 		}).Info("Appchain is registering")
@@ -283,6 +293,16 @@ func (am *AppchainManager) QueryById(id string, _ []byte) (bool, []byte) {
 	return true, data
 }
 
+func (am *AppchainManager) GetIdByAddr(addr string) (bool, []byte) {
+	id := ""
+	ok := am.GetObject(am.appchainAddrKey(addr), &id)
+	if !ok {
+		return false, []byte(fmt.Errorf("this appchain does not exist").Error())
+	}
+
+	return true, []byte(id)
+}
+
 // GetPubKeyByChainID can get aim chain's public key using aim chain ID
 func (am *AppchainManager) GetPubKeyByChainID(id string) (bool, []byte) {
 	ok := am.Has(am.appchainKey(id))
@@ -299,10 +319,31 @@ func (am *AppchainManager) appchainKey(id string) string {
 	return PREFIX + id
 }
 
+func (am *AppchainManager) appchainAddrKey(pub string) string {
+	return CHAIN_ADDR_PREFIX + pub
+}
+
 func (am *AppchainManager) auditRecordKey(id string) string {
 	return "audit-record-" + id
 }
 
 func (am *AppchainManager) indexMapKey(id string) string {
 	return fmt.Sprintf("index-tx-%s", id)
+}
+
+func getAddr(pubKeyStr string) (string, error) {
+	pubKeyBytes, err := base64.StdEncoding.DecodeString(pubKeyStr)
+	if err != nil {
+		return "", fmt.Errorf("decode error: %w", err)
+	}
+	pubKey, err := ecdsa.UnmarshalPublicKey(pubKeyBytes, crypto.Secp256k1)
+	if err != nil {
+		return "", fmt.Errorf("decrypt registerd public key error: %w", err)
+	}
+	addr, err := pubKey.Address()
+	if err != nil {
+		return "", fmt.Errorf("decrypt registerd public key error: %w", err)
+	}
+
+	return addr.String(), nil
 }
