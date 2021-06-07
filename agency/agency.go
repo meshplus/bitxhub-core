@@ -63,6 +63,14 @@ func RegisterExecutorConstructor(typ string, f TxsExecutorConstructor) {
 	TxsExecutorConstructorM[typ] = f
 }
 
+func GetLicenseConstructor(typ string) (LicenseConstructor, error) {
+	con, ok := LicenseConstructorM[typ]
+	if !ok {
+		return nil, fmt.Errorf("type %s is unsupported", typ)
+	}
+	return con, nil
+}
+
 func RegisterLicenseConstructor(typ string, f LicenseConstructor) {
 	LicenseConstructorM[typ] = f
 }
