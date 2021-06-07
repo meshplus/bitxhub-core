@@ -23,6 +23,8 @@ type RegisterContractFunc func() map[string]Contract
 
 type TxsExecutorConstructor func(ApplyTxFunc, RegisterContractFunc, logrus.FieldLogger) TxsExecutor
 
+type LicenseConstructor func(pubKey, verifier string) License
+
 type ContractConstructor func() Contract
 
 type RegistryConstructor func(storage.Storage, logrus.FieldLogger) Registry
@@ -33,8 +35,8 @@ var (
 	TxsExecutorConstructorM = make(map[string]TxsExecutorConstructor)
 	ContractConstructorM    = make(map[string]*ContractInfo)
 	RegisterConstructorM    = make(map[string]RegistryConstructor)
-
-	PierHAConstructorM = make(map[string]PierHAConstructor)
+	LicenseConstructorM     = make(map[string]LicenseConstructor)
+	PierHAConstructorM      = make(map[string]PierHAConstructor)
 )
 
 func RegisterRegistryConstructor(typ string, f RegistryConstructor) {
@@ -59,6 +61,10 @@ func GetExecutorConstructor(typ string) (TxsExecutorConstructor, error) {
 
 func RegisterExecutorConstructor(typ string, f TxsExecutorConstructor) {
 	TxsExecutorConstructorM[typ] = f
+}
+
+func RegisterLicenseConstructor(typ string, f LicenseConstructor) {
+	LicenseConstructorM[typ] = f
 }
 
 func RegisterContractConstructor(name string, addr *types.Address, f ContractConstructor) {
