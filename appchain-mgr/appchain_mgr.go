@@ -16,7 +16,7 @@ import (
 
 const (
 	PREFIX            = "appchain-"
-	CHAIN_ADDR_PREFIX = "appchainAddr-"
+	CHAIN_ADDR_PREFIX = "addr-"
 
 	RelaychainType = "relaychain"
 	AppchainType   = "appchain"
@@ -97,7 +97,7 @@ func setFSM(chain *Appchain, lastStatus g.GovernanceStatus) {
 }
 
 // GovernancePre checks if the appchain can do the event. (only check, not modify infomation)
-func (am *AppchainManager) GovernancePre(chainId string, event g.EventType) (bool, []byte) {
+func (am *AppchainManager) GovernancePre(chainId string, event g.EventType, _ []byte) (bool, []byte) {
 	chain := &Appchain{}
 	if ok := am.GetObject(am.appchainKey(chainId), chain); !ok {
 		return false, []byte("this appchain do not exist")

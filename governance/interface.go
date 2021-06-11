@@ -20,6 +20,9 @@ type Governance interface {
 
 	// QueryById returns object info by id
 	QueryById(id string, extra []byte) (bool, []byte)
+
+	// GovernancePre check if the object can do the event
+	GovernancePre(id string, event EventType, extra []byte) (bool, []byte)
 }
 
 type Persister interface {

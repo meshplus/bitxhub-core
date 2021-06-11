@@ -135,9 +135,9 @@ func (rm *RuleManager) BindPre(chainId, ruleAddress string, force bool) (bool, [
 }
 
 // GovernancePre checks if the rule address can do event with appchain id and record rule. (only check, not modify infomation)
-func (rm *RuleManager) GovernancePre(chainId, ruleAddress string, event governance.EventType) (bool, []byte) {
+func (rm *RuleManager) GovernancePre(ruleAddress string, event governance.EventType, chainId []byte) (bool, []byte) {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(chainId), &rules); !ok {
+	if ok := rm.GetObject(rm.ruleKey(string(chainId)), &rules); !ok {
 		return false, []byte("this appchain's rules do not exist")
 	}
 

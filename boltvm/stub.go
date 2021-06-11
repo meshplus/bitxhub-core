@@ -38,7 +38,7 @@ type Stub interface {
 	// QueryByPrefix queries object by prefix
 	Query(prefix string) (bool, [][]byte)
 	// PostEvent posts event to external
-	PostEvent(interface{})
+	PostEvent(pb.Event_EventType, interface{})
 	// PostInterchainEvent posts interchain event to external
 	PostInterchainEvent(interface{})
 	// Validator returns the instance of validator
