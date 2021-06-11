@@ -19,6 +19,8 @@ type Stub interface {
 	Logger() logrus.FieldLogger
 	// GetTxHash returns the transaction hash
 	GetTxHash() *types.Hash
+	// GetTxTimeStamp returns the transaction timeStamp
+	GetTxTimeStamp() int64
 	// GetTxIndex returns the transaction index in the block
 	GetTxIndex() uint64
 	// Has judges key
