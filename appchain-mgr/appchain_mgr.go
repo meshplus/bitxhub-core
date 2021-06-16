@@ -10,6 +10,7 @@ import (
 	g "github.com/meshplus/bitxhub-core/governance"
 	"github.com/meshplus/bitxhub-kit/crypto"
 	"github.com/meshplus/bitxhub-kit/crypto/asym/ecdsa"
+	"github.com/meshplus/bitxhub-kit/hexutil"
 	"github.com/sirupsen/logrus"
 )
 
@@ -332,13 +333,20 @@ func (am *AppchainManager) indexMapKey(id string) string {
 }
 
 func getAddr(pubKeyStr string) (string, error) {
-	pubKeyBytes, err := base64.StdEncoding.DecodeString(pubKeyStr)
-	if err != nil {
-		return "", fmt.Errorf("decode error: %w", err)
-	}
+	var pubKeyBytes []byte
+	var pubKey crypto.PublicKey
+	pubKeyBytes = hexutil.Decode(pubKeyStr)
 	pubKey, err := ecdsa.UnmarshalPublicKey(pubKeyBytes, crypto.Secp256k1)
 	if err != nil {
-		return "", fmt.Errorf("decrypt registerd public key error: %w", err)
+		pubKeyBytes, err = base64.StdEncoding.DecodeString(pubKeyStr)
+		if err != nil {
+			return "", fmt.Errorf("decode error: %w", err)
+		}
+		pubKey, err = ecdsa.UnmarshalPublicKey(pubKeyBytes, crypto.Secp256k1)
+		if err != nil {
+			return "", fmt.Errorf("decrypt registerd public key error: %w", err)
+		}
+		//return "", fmt.Errorf("decrypt registerd public key error: %w", err)
 	}
 	addr, err := pubKey.Address()
 	if err != nil {
