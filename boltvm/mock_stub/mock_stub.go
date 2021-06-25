@@ -209,6 +209,20 @@ func (mr *MockStubMockRecorder) GetTxIndex() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxIndex", reflect.TypeOf((*MockStub)(nil).GetTxIndex))
 }
 
+// GetTxTimeStamp mocks base method.
+func (m *MockStub) GetTxTimeStamp() int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTxTimeStamp")
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// GetTxTimeStamp indicates an expected call of GetTxTimeStamp.
+func (mr *MockStubMockRecorder) GetTxTimeStamp() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxTimeStamp", reflect.TypeOf((*MockStub)(nil).GetTxTimeStamp))
+}
+
 // Has mocks base method.
 func (m *MockStub) Has(key string) bool {
 	m.ctrl.T.Helper()
@@ -238,15 +252,15 @@ func (mr *MockStubMockRecorder) Logger() *gomock.Call {
 }
 
 // PostEvent mocks base method.
-func (m *MockStub) PostEvent(arg0 interface{}) {
+func (m *MockStub) PostEvent(arg0 pb.Event_EventType, arg1 interface{}) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "PostEvent", arg0)
+	m.ctrl.Call(m, "PostEvent", arg0, arg1)
 }
 
 // PostEvent indicates an expected call of PostEvent.
-func (mr *MockStubMockRecorder) PostEvent(arg0 interface{}) *gomock.Call {
+func (mr *MockStubMockRecorder) PostEvent(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostEvent", reflect.TypeOf((*MockStub)(nil).PostEvent), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostEvent", reflect.TypeOf((*MockStub)(nil).PostEvent), arg0, arg1)
 }
 
 // PostInterchainEvent mocks base method.
