@@ -19,6 +19,8 @@ type Stub interface {
 	Logger() logrus.FieldLogger
 	// GetTxHash returns the transaction hash
 	GetTxHash() *types.Hash
+	// GetTxTimeStamp returns the transaction timeStamp
+	GetTxTimeStamp() int64
 	// GetTxIndex returns the transaction index in the block
 	GetTxIndex() uint64
 	// Has judges key
@@ -38,7 +40,7 @@ type Stub interface {
 	// QueryByPrefix queries object by prefix
 	Query(prefix string) (bool, [][]byte)
 	// PostEvent posts event to external
-	PostEvent(interface{})
+	PostEvent(pb.Event_EventType, interface{})
 	// PostInterchainEvent posts interchain event to external
 	PostInterchainEvent(interface{})
 	// Validator returns the instance of validator
