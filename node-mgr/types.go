@@ -10,5 +10,5 @@ type NodeMgr interface {
 	Register(info []byte) (bool, []byte)
 
 	// GetIdByPid query node id by node pid
-	GetIdByPid(pid string) (string, error)
+	GetPidById(pid string) (string, error)
 }

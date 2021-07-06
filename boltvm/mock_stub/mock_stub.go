@@ -153,12 +153,11 @@ func (mr *MockStubMockRecorder) Get(key interface{}) *gomock.Call {
 }
 
 // GetAccount mocks base method.
-func (m *MockStub) GetAccount(address string) (bool, interface{}) {
+func (m *MockStub) GetAccount(address string) interface{} {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAccount", address)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(interface{})
-	return ret0, ret1
+	ret0, _ := ret[0].(interface{})
+	return ret0
 }
 
 // GetAccount indicates an expected call of GetAccount.
