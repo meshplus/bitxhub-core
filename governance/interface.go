@@ -45,5 +45,5 @@ type Persister interface {
 	// QueryByPrefix queries object by prefix
 	Query(prefix string) (bool, [][]byte)
 	// GetAccount get ledger account address
-	GetAccount(address string) (bool, interface{})
+	GetAccount(address string) interface{}
 }

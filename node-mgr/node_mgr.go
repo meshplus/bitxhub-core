@@ -13,8 +13,8 @@ import (
 type NodeType string
 
 const (
-	NODEPREFIX      = "node"
-	NODE_PID_PREFIX = "pid"
+	NODEPREFIX        = "node"
+	VP_NODE_ID_PREFIX = "vp-id"
 
 	VPNode  NodeType = "vpNode"
 	NVPNode NodeType = "nvpNode"
@@ -25,13 +25,16 @@ type NodeManager struct {
 }
 
 type Node struct {
-	Id       uint64                      `toml:"id" json:"id"`
-	Pid      string                      `toml:"pid" json:"pid"`
-	Account  string                      `toml:"account" json:"account"`
-	NodeType NodeType                    `toml:"node_type" json:"node_type"`
-	Primary  bool                        `toml:"primary" json:"primary"`
-	Status   governance.GovernanceStatus `toml:"status" json:"status"`
-	FSM      *fsm.FSM                    `json:"fsm"`
+	Pid      string   `toml:"pid" json:"pid"`
+	Account  string   `toml:"account" json:"account"`
+	NodeType NodeType `toml:"node_type" json:"node_type"`
+
+	// VP Node Info
+	VPNodeId uint64 `toml:"id" json:"id"`
+	Primary  bool   `toml:"primary" json:"primary"`
+
+	Status governance.GovernanceStatus `toml:"status" json:"status"`
+	FSM    *fsm.FSM                    `json:"fsm"`
 }
 
 var nodeStateMap = map[governance.EventType][]governance.GovernanceStatus{
@@ -71,9 +74,9 @@ func setFSM(node *Node, lastStatus governance.GovernanceStatus) {
 }
 
 // GovernancePre checks if the node can do the event. (only check, not modify infomation)
-func (nm *NodeManager) GovernancePre(nodeId string, event governance.EventType, _ []byte) (bool, []byte) {
+func (nm *NodeManager) GovernancePre(nodePid string, event governance.EventType, _ []byte) (bool, []byte) {
 	node := &Node{}
-	if ok := nm.GetObject(nm.nodeKey(nodeId), node); !ok {
+	if ok := nm.GetObject(nm.nodeKey(nodePid), node); !ok {
 		if event == governance.EventRegister {
 			return true, nil
 		} else {
@@ -90,9 +93,9 @@ func (nm *NodeManager) GovernancePre(nodeId string, event governance.EventType, 
 	return false, []byte(fmt.Sprintf("The node (%s) can not be %s", string(node.Status), string(event)))
 }
 
-func (nm *NodeManager) ChangeStatus(nodeId string, trigger, lastStatus string, _ []byte) (bool, []byte) {
+func (nm *NodeManager) ChangeStatus(nodePid string, trigger, lastStatus string, _ []byte) (bool, []byte) {
 	node := &Node{}
-	if ok := nm.GetObject(nm.nodeKey(nodeId), node); !ok {
+	if ok := nm.GetObject(nm.nodeKey(nodePid), node); !ok {
 		return false, []byte("this node does not exist")
 	}
 
@@ -102,7 +105,7 @@ func (nm *NodeManager) ChangeStatus(nodeId string, trigger, lastStatus string, _
 		return false, []byte(fmt.Sprintf("change status error: %v", err))
 	}
 
-	nm.SetObject(nm.nodeKey(nodeId), *node)
+	nm.SetObject(nm.nodeKey(nodePid), *node)
 	return true, nil
 }
 
@@ -113,10 +116,11 @@ func (nm *NodeManager) Register(nodeInfo []byte) (bool, []byte) {
 		return false, []byte(err.Error())
 	}
 
-	nm.SetObject(nm.nodeKey(strconv.Itoa(int(node.Id))), node)
-	nm.SetObject(nm.nodePidKey(node.Pid), node.Id)
+	nm.SetObject(nm.nodeKey(node.Pid), node)
+	nm.SetObject(nm.vpNodeIdKey(strconv.Itoa(int(node.VPNodeId))), node.Pid)
 	nm.Logger().WithFields(logrus.Fields{
-		"id": node.Id,
+		"pid":      node.Pid,
+		"nodeType": node.NodeType,
 	}).Info("Node is registering")
 
 	return true, nil
@@ -191,8 +195,8 @@ func (nm *NodeManager) All(nodeType []byte) (bool, []byte) {
 	return true, data
 }
 
-func (nm *NodeManager) QueryById(nodeId string, _ []byte) (bool, []byte) {
-	ok, data := nm.Get(nm.nodeKey(nodeId))
+func (nm *NodeManager) QueryById(nodePid string, _ []byte) (bool, []byte) {
+	ok, data := nm.Get(nm.nodeKey(nodePid))
 	if !ok {
 		return false, []byte(fmt.Errorf("this node does not exist").Error())
 	}
@@ -200,8 +204,8 @@ func (nm *NodeManager) QueryById(nodeId string, _ []byte) (bool, []byte) {
 	return true, data
 }
 
-func (nm *NodeManager) GetIdByPid(pid string) (string, error) {
-	ok, data := nm.Get(nm.nodePidKey(pid))
+func (nm *NodeManager) GetPidById(nodeId string) (string, error) {
+	ok, data := nm.Get(nm.vpNodeIdKey(nodeId))
 	if !ok {
 		return "", fmt.Errorf("this node does not exist")
 	}
@@ -209,10 +213,10 @@ func (nm *NodeManager) GetIdByPid(pid string) (string, error) {
 	return string(data), nil
 }
 
-func (nm *NodeManager) nodeKey(id string) string {
-	return fmt.Sprintf("%s-%s", NODEPREFIX, id)
+func (nm *NodeManager) nodeKey(pid string) string {
+	return fmt.Sprintf("%s-%s", NODEPREFIX, pid)
 }
 
-func (nm *NodeManager) nodePidKey(pid string) string {
-	return fmt.Sprintf("%s-%s", NODE_PID_PREFIX, pid)
+func (nm *NodeManager) vpNodeIdKey(id string) string {
+	return fmt.Sprintf("%s-%s", VP_NODE_ID_PREFIX, id)
 }

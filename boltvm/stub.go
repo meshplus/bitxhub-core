@@ -50,5 +50,5 @@ type Stub interface {
 	// CrossInvokeEVM cross evm contract invoke
 	CrossInvokeEVM(address string, input []byte) *Response
 	// GetAccount get ledger account address
-	GetAccount(address string) (bool, interface{})
+	GetAccount(address string) interface{}
 }
