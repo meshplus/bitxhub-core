@@ -7,6 +7,7 @@ import (
 	"github.com/meshplus/bitxhub-kit/storage"
 	"github.com/meshplus/bitxhub-kit/types"
 	"github.com/meshplus/bitxhub-model/pb"
+	"github.com/meshplus/bitxhub/pkg/order"
 	"github.com/sirupsen/logrus"
 )
 
@@ -31,13 +32,27 @@ type RegistryConstructor func(storage.Storage, logrus.FieldLogger) Registry
 
 type PierHAConstructor func(client HAClient, pierID string) PierHA
 
+type OrderConstructor func(opt ...order.Option) (Order, error)
+
 var (
 	TxsExecutorConstructorM = make(map[string]TxsExecutorConstructor)
 	ContractConstructorM    = make(map[string]*ContractInfo)
 	RegisterConstructorM    = make(map[string]RegistryConstructor)
-
-	PierHAConstructorM = make(map[string]PierHAConstructor)
+	PierHAConstructorM      = make(map[string]PierHAConstructor)
+	OrderConstructorM       = make(map[string]OrderConstructor)
 )
+
+func RegisterOrderConstructor(typ string, f OrderConstructor) {
+	OrderConstructorM[typ] = f
+}
+
+func GetOrderConstructor(typ string) (OrderConstructor, error) {
+	con, ok := OrderConstructorM[typ]
+	if !ok {
+		return nil, fmt.Errorf("the order type %s is unsupported", typ)
+	}
+	return con, nil
+}
 
 func RegisterRegistryConstructor(typ string, f RegistryConstructor) {
 	RegisterConstructorM[typ] = f
