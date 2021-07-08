@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/Shopify/sarama v1.27.0 // indirect
+	github.com/cbergoon/merkletree v0.2.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/mock v1.4.3
 	github.com/ethereum/go-ethereum v1.10.4
