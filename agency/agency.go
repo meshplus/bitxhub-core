@@ -2,12 +2,10 @@ package agency
 
 import (
 	"fmt"
-
 	"github.com/meshplus/bitxhub-kit/log"
 	"github.com/meshplus/bitxhub-kit/storage"
 	"github.com/meshplus/bitxhub-kit/types"
 	"github.com/meshplus/bitxhub-model/pb"
-	"github.com/meshplus/bitxhub/pkg/order"
 	"github.com/sirupsen/logrus"
 )
 
@@ -32,7 +30,7 @@ type RegistryConstructor func(storage.Storage, logrus.FieldLogger) Registry
 
 type PierHAConstructor func(client HAClient, pierID string) PierHA
 
-type OrderConstructor func(opt ...order.Option) (Order, error)
+type OrderConstructor func(opt ...ConfigOption) (Order, error)
 
 var (
 	TxsExecutorConstructorM = make(map[string]TxsExecutorConstructor)
