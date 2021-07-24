@@ -45,4 +45,14 @@ type Stub interface {
 	ValidationEngine() validator.Engine
 	// CrossInvoke cross contract invoke
 	CrossInvoke(address, method string, args ...*pb.Arg) *Response
+	// GetCurrentHeight returns the current block height
+	GetCurrentHeight() uint64
+	// SetTimeoutList set timeout list for interchain event
+	SetTimeoutList(height uint64, list []string)
+	// GetTimeoutList get timeout list for interchain event
+	GetTimeoutList(height uint64) (bool, []string)
+	// SetTimeoutList set timeout list for interchain event
+	SetTxRecord(txId string, record pb.TransactionRecord)
+	// GetTimeoutList get timeout list for interchain event
+	GetTxRecord(txId string) (bool, pb.TransactionRecord)
 }
