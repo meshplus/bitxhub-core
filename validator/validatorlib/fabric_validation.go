@@ -13,7 +13,6 @@ import (
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/meshplus/bitxhub-model/pb"
-	"github.com/meshplus/bitxid"
 )
 
 const (
@@ -199,12 +198,12 @@ func ValidatePayload(info payloadInfo, payloadByte []byte) error {
 		return fmt.Errorf("unmarshal ibtp payload content: %w", err)
 	}
 
-	if bitxid.DID(info.DstContractDID).GetAddress() != content.DstContractId {
-		return fmt.Errorf("dst contrct id not correct")
-	}
-	if info.SrcContractID != content.SrcContractId {
-		return fmt.Errorf("src contrct id not correct")
-	}
+	//if bitxid.DID(info.DstContractDID).GetAddress() != content.DstContractId {
+	//	return fmt.Errorf("dst contrct id not correct")
+	//}
+	//if info.SrcContractID != content.SrcContractId {
+	//	return fmt.Errorf("src contrct id not correct")
+	//}
 	if info.Func != content.Func {
 		return fmt.Errorf("interchain function name not correct")
 	}
