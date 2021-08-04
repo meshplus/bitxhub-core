@@ -5,5 +5,4 @@ type Registry interface{}
 type ConfigOption interface{}
 type License interface {
 	Verify(licensePath string) error
-	checkLicense(path string) error
 }
