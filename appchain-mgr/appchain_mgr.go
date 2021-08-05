@@ -50,11 +50,19 @@ type auditRecord struct {
 }
 
 var appchainStateMap = map[g.EventType][]g.GovernanceStatus{
-	g.EventRegister: {g.GovernanceUnavailable},
-	g.EventUpdate:   {g.GovernanceAvailable, g.GovernanceFrozen},
-	g.EventFreeze:   {g.GovernanceAvailable, g.GovernanceUpdating, g.GovernanceActivating},
-	g.EventActivate: {g.GovernanceFrozen},
-	g.EventLogout:   {g.GovernanceAvailable, g.GovernanceUpdating, g.GovernanceFreezing, g.GovernanceActivating, g.GovernanceFrozen},
+	g.EventRegister:        {g.GovernanceUnavailable},
+	g.EventUpdate:          {g.GovernanceAvailable},
+	g.EventActiveFreeze:    {g.GovernanceAvailable},
+	g.EventPassiveFreeze:   {g.GovernanceAvailable, g.GovernanceUpdating, g.GovernanceActivating},
+	g.EventActiveActivate:  {g.GovernanceActiveFrozen},
+	g.EventPassiveActivate: {g.GovernancePassiveFrozen},
+	g.EventLogout:          {g.GovernanceAvailable, g.GovernanceUpdating, g.GovernanceFreezing, g.GovernanceActivating, g.GovernancePassiveFrozen, g.GovernanceActiveFrozen},
+}
+
+var AppchainAvailableState = []g.GovernanceStatus{
+	g.GovernanceAvailable,
+	g.GovernanceFreezing,
+	g.GovernanceLogouting,
 }
 
 func New(persister g.Persister) AppchainMgr {
@@ -71,22 +79,28 @@ func setFSM(chain *Appchain, lastStatus g.GovernanceStatus) {
 			{Name: string(g.EventReject), Src: []string{string(g.GovernanceRegisting)}, Dst: string(lastStatus)},
 
 			// update 1
-			{Name: string(g.EventUpdate), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceFrozen), string(g.GovernanceFreezing), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceUpdating)},
+			{Name: string(g.EventUpdate), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceFreezing), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceUpdating)},
 			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceUpdating)}, Dst: string(g.GovernanceAvailable)},
 			{Name: string(g.EventReject), Src: []string{string(g.GovernanceUpdating)}, Dst: string(lastStatus)},
 
-			// freeze 2
-			{Name: string(g.EventFreeze), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceUpdating), string(g.GovernanceActivating), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceFreezing)},
-			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceFreezing)}, Dst: string(g.GovernanceFrozen)},
+			// active freeze 1
+			{Name: string(g.EventActiveFreeze), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceFreezing), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceActiveFrozen)},
+
+			// passive freeze 2
+			{Name: string(g.EventPassiveFreeze), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceUpdating), string(g.GovernanceActivating), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceFreezing)},
+			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceFreezing)}, Dst: string(g.GovernancePassiveFrozen)},
 			{Name: string(g.EventReject), Src: []string{string(g.GovernanceFreezing)}, Dst: string(lastStatus)},
 
-			// active 1
-			{Name: string(g.EventActivate), Src: []string{string(g.GovernanceFrozen), string(g.GovernanceFreezing), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceActivating)},
+			// active activate 1
+			{Name: string(g.EventActiveActivate), Src: []string{string(g.GovernanceActiveFrozen), string(g.GovernanceFreezing), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceAvailable)},
+
+			// passive activate 1
+			{Name: string(g.EventPassiveActivate), Src: []string{string(g.GovernancePassiveFrozen), string(g.GovernanceFreezing), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceActivating)},
 			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceActivating)}, Dst: string(g.GovernanceAvailable)},
 			{Name: string(g.EventReject), Src: []string{string(g.GovernanceActivating)}, Dst: string(lastStatus)},
 
 			// logout 3
-			{Name: string(g.EventLogout), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceUpdating), string(g.GovernanceFreezing), string(g.GovernanceFrozen), string(g.GovernanceActivating)}, Dst: string(g.GovernanceLogouting)},
+			{Name: string(g.EventLogout), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceUpdating), string(g.GovernanceFreezing), string(g.GovernancePassiveFrozen), string(g.GovernanceActiveFrozen), string(g.GovernanceActivating)}, Dst: string(g.GovernanceLogouting)},
 			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceLogouting)}, Dst: string(g.GovernanceForbidden)},
 			{Name: string(g.EventReject), Src: []string{string(g.GovernanceLogouting)}, Dst: string(lastStatus)},
 		},
@@ -246,8 +260,11 @@ func (am *AppchainManager) CountAvailable(_ []byte) (bool, []byte) {
 		if err := json.Unmarshal(v, a); err != nil {
 			return false, []byte(fmt.Sprintf("unmarshal json error: %v", err))
 		}
-		if a.Status == g.GovernanceAvailable {
-			count++
+		for _, s := range AppchainAvailableState {
+			if a.Status == s {
+				count++
+				break
+			}
 		}
 	}
 	return true, []byte(strconv.Itoa(count))
