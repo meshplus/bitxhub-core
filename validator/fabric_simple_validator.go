@@ -29,10 +29,10 @@ func NewFabSimValidator(logger logrus.FieldLogger) *FabSimValidator {
 }
 
 // Verify will check whether the transaction info is valid
-func (vlt *FabSimValidator) Verify(address, from string, proof, payload []byte, validators string) (bool, error) {
+func (vlt *FabSimValidator) Verify(address, from string, proof, payload []byte, validators string) (bool, uint64, error) {
 	artifact, err := validatorlib.PreCheck(proof, payload, "broker")
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 
 	signatureSet := validatorlib.GetSignatureSet(artifact)
@@ -43,7 +43,7 @@ func (vlt *FabSimValidator) Verify(address, from string, proof, payload []byte, 
 		pemCert, _ := pem.Decode([]byte(validators))
 		cert, err := x509.ParseCertificate(pemCert.Bytes)
 		if err != nil {
-			return false, err
+			return false, 0, err
 		}
 		pk = cert.PublicKey.(*ecdsa.PublicKey)
 		vlt.pkMap.Store(from, pk)
@@ -53,20 +53,20 @@ func (vlt *FabSimValidator) Verify(address, from string, proof, payload []byte, 
 
 	r, s, err := unmarshalECDSASignature(signatureSet[0].Signature)
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 
 	h := sha256.New()
 	_, err = h.Write(signatureSet[0].Data)
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 	ret := h.Sum(nil)
 	isValid := ecdsa.Verify(pk, ret, r, s)
 	if !isValid {
-		return false, fmt.Errorf("signature not right")
+		return false, 0, fmt.Errorf("signature not right")
 	}
-	return true, nil
+	return true, 0, nil
 }
 
 type ECDSASignature struct {

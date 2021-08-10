@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const wasmGasLimit = 5000000000000000
+
 func TestExecute(t *testing.T) {
 	data, err := ioutil.ReadFile("./testdata/wasm_test.wasm")
 	assert.Nil(t, err)
@@ -37,7 +39,7 @@ func TestExecute(t *testing.T) {
 	}
 	inputBytes, err := input.Marshal()
 	assert.Nil(t, err)
-	ret, err := wasm.Execute(inputBytes)
+	ret, _, err := wasm.Execute(inputBytes, wasmGasLimit)
 	assert.Nil(t, err)
 	fmt.Println(string(ret))
 	hash := types.NewHashByStr("")
@@ -72,17 +74,17 @@ func TestImportExecute(t *testing.T) {
 	inputBytes, err := input.Marshal()
 	assert.Nil(t, err)
 	wasm.SetContext("hello", hello)
-	ret, err := wasm.Execute(inputBytes)
+	ret, _, err := wasm.Execute(inputBytes, wasmGasLimit)
 	assert.Nil(t, err)
-	_, err = wasm.Execute(inputBytes)
+	_, _, err = wasm.Execute(inputBytes, wasmGasLimit)
 	assert.Nil(t, err)
-	_, err = wasm.Execute(inputBytes)
+	_, _, err = wasm.Execute(inputBytes, wasmGasLimit)
 	assert.Nil(t, err)
-	_, err = wasm.Execute(inputBytes)
+	_, _, err = wasm.Execute(inputBytes, wasmGasLimit)
 	assert.Nil(t, err)
-	_, err = wasm.Execute(inputBytes)
+	_, _, err = wasm.Execute(inputBytes, wasmGasLimit)
 	assert.Nil(t, err)
-	_, err = wasm.Execute(inputBytes)
+	_, _, err = wasm.Execute(inputBytes, wasmGasLimit)
 	assert.Nil(t, err)
 	fmt.Println(string(ret))
 	hash := types.NewHashByStr("")
@@ -118,13 +120,13 @@ func BenchmarkImportExecute(b *testing.B) {
 	assert.Nil(b, err)
 	wasm.SetContext("hello", hello)
 	for i := 0; i < 200000; i++ {
-		_, err := wasm.Execute(inputBytes)
+		_, _, err := wasm.Execute(inputBytes, wasmGasLimit)
 		assert.Nil(b, err)
 		// fmt.Println(string(ret))
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := wasm.Execute(inputBytes)
+		_, _, err := wasm.Execute(inputBytes, wasmGasLimit)
 		assert.Nil(b, err)
 		// fmt.Println(string(ret))
 	}

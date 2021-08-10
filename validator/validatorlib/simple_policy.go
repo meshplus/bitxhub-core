@@ -19,7 +19,7 @@ func (im *Imports) importFabricV13(store *wasmer.Store, wasmEnv *wasmlib.WasmEnv
 		wasmEnv,
 		fabric_validate_v13,
 	)
-	im.imports.Register(
+	im.imports.GetImportObject().Register(
 		"env",
 		map[string]wasmer.IntoExtern{
 			"fabric_validate_v13": function,
