@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	governance "github.com/meshplus/bitxhub-core/governance"
 )
 
 // MockAppchainMgr is a mock of AppchainMgr interface.
@@ -64,18 +65,18 @@ func (mr *MockAppchainMgrMockRecorder) Audit(proposer, isApproved, desc interfac
 }
 
 // ChangeStatus mocks base method.
-func (m *MockAppchainMgr) ChangeStatus(id, trigger string, extra []byte) (bool, []byte) {
+func (m *MockAppchainMgr) ChangeStatus(id, trigger, lastStatus string, extra []byte) (bool, []byte) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ChangeStatus", id, trigger, extra)
+	ret := m.ctrl.Call(m, "ChangeStatus", id, trigger, lastStatus, extra)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].([]byte)
 	return ret0, ret1
 }
 
 // ChangeStatus indicates an expected call of ChangeStatus.
-func (mr *MockAppchainMgrMockRecorder) ChangeStatus(id, trigger, extra interface{}) *gomock.Call {
+func (mr *MockAppchainMgrMockRecorder) ChangeStatus(id, trigger, lastStatus, extra interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeStatus", reflect.TypeOf((*MockAppchainMgr)(nil).ChangeStatus), id, trigger, extra)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeStatus", reflect.TypeOf((*MockAppchainMgr)(nil).ChangeStatus), id, trigger, lastStatus, extra)
 }
 
 // CountAll mocks base method.
@@ -151,6 +152,21 @@ func (m *MockAppchainMgr) GetPubKeyByChainID(id string) (bool, []byte) {
 func (mr *MockAppchainMgrMockRecorder) GetPubKeyByChainID(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPubKeyByChainID", reflect.TypeOf((*MockAppchainMgr)(nil).GetPubKeyByChainID), id)
+}
+
+// GovernancePre mocks base method.
+func (m *MockAppchainMgr) GovernancePre(id string, event governance.EventType, extra []byte) (bool, []byte) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GovernancePre", id, event, extra)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].([]byte)
+	return ret0, ret1
+}
+
+// GovernancePre indicates an expected call of GovernancePre.
+func (mr *MockAppchainMgrMockRecorder) GovernancePre(id, event, extra interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GovernancePre", reflect.TypeOf((*MockAppchainMgr)(nil).GovernancePre), id, event, extra)
 }
 
 // QueryById mocks base method.
