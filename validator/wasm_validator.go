@@ -21,46 +21,48 @@ type WasmValidator struct {
 	ledger    Ledger
 	logger    logrus.FieldLogger
 	instances *sync.Map
+	gasLimit  uint64
 }
 
 // New a validator instance
-func NewWasmValidator(ledger Ledger, logger logrus.FieldLogger, instances *sync.Map) *WasmValidator {
+func NewWasmValidator(ledger Ledger, logger logrus.FieldLogger, instances *sync.Map, gasLimit uint64) *WasmValidator {
 	return &WasmValidator{
 		ledger:    ledger,
 		logger:    logger,
 		instances: instances,
+		gasLimit:  gasLimit,
 	}
 }
 
 // Verify will check whether the transaction info is valid
-func (vlt *WasmValidator) Verify(address, from string, proof, payload []byte, validators string) (bool, error) {
+func (vlt *WasmValidator) Verify(address, from string, proof, payload []byte, validators string) (bool, uint64, error) {
 	ruleHash, err := vlt.initRule(address, from, proof, payload, validators)
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 
-	ret, err := vlt.wasm.Execute(vlt.input)
+	ret, gasUsed, err := vlt.wasm.Execute(vlt.input, vlt.gasLimit)
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 	// put wasm instance into pool
 	v, ok := vlt.instances.Load(ruleHash)
 	if !ok {
-		return false, fmt.Errorf("load wasm instance failed")
+		return false, 0, fmt.Errorf("load wasm instance failed")
 	}
 	v.(*sync.Pool).Put(vlt.wasm.Instance)
 
 	// check execution status
 	result, err := strconv.Atoi(string(ret))
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 
 	if result == 0 {
-		return false, nil
+		return false, 0, nil
 	}
 
-	return true, nil
+	return true, gasUsed, nil
 }
 
 // InitRule can import a specific rule for validator to verify the transaction

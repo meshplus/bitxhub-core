@@ -35,12 +35,13 @@ func (m *MockEngine) EXPECT() *MockEngineMockRecorder {
 }
 
 // Validate mocks base method.
-func (m *MockEngine) Validate(address, from string, proof, payload []byte, validators string) (bool, error) {
+func (m *MockEngine) Validate(address, from string, proof, payload []byte, validators string) (bool, uint64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Validate", address, from, proof, payload, validators)
 	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(uint64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // Validate indicates an expected call of Validate.
@@ -73,12 +74,13 @@ func (m *MockValidator) EXPECT() *MockValidatorMockRecorder {
 }
 
 // Verify mocks base method.
-func (m *MockValidator) Verify(address, from string, proof, payload []byte, validators string) (bool, error) {
+func (m *MockValidator) Verify(address, from string, proof, payload []byte, validators string) (bool, uint64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Verify", address, from, proof, payload, validators)
 	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(uint64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // Verify indicates an expected call of Verify.

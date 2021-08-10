@@ -54,7 +54,7 @@ func TestWasmValidator(t *testing.T) {
 	require.Nil(t, err)
 	imports := validatorlib.New()
 	require.Nil(t, err)
-	wasm, err := wasm.New(contractBytes, imports, validator.instances)
+	wasm, err := wasm.New(contractBytes, imports, validator.instances, wasmGasLimit)
 	require.Nil(t, err)
 	validator.wasm = wasm
 	err = validator.setTransaction("", "0xe02d8fdacd59020d7f292ab3278d13674f5c404d", proof, string(validators), body)
@@ -106,7 +106,7 @@ func BenchmarkHpcWasm_Verify(b *testing.B) {
 	require.Nil(b, err)
 	imports := validatorlib.New()
 	require.Nil(b, err)
-	wasm, err := wasm.New(contractBytes, imports, validator.instances)
+	wasm, err := wasm.New(contractBytes, imports, validator.instances, wasmGasLimit)
 	require.Nil(b, err)
 	validator.wasm = wasm
 	err = validator.setTransaction("", "0xe02d8fdacd59020d7f292ab3278d13674f5c404d", []byte("111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"), "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111", body)

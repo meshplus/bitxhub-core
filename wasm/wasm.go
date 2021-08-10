@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/meshplus/bitxhub-core/usegas"
 	"github.com/meshplus/bitxhub-core/wasm/wasmlib"
 	"github.com/meshplus/bitxhub-kit/types"
 	"github.com/meshplus/bitxhub-model/pb"
@@ -116,14 +117,18 @@ func EmptyImports() (*wasmer.ImportObject, error) {
 	return wasmer.NewImportObject(), nil
 }
 
-func (w *Wasm) Execute(input []byte) ([]byte, error) {
+func (w *Wasm) Execute(input []byte, wasmGasLimit uint64) (ret []byte, gasUsed uint64, err error) {
+	gasLimit := &usegas.GasLimit{}
+	gasLimit.SetLimit(wasmGasLimit)
+	w.SetContext("gaslimit", gasLimit)
+
 	payload := &pb.InvokePayload{}
 	if err := proto.Unmarshal(input, payload); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	if payload.Method == "" {
-		return nil, errorLackOfMethod
+		return nil, 0, errorLackOfMethod
 	}
 
 	// alloc, err := w.Instance.Exports.GetFunction(ALLOC_MEM)
@@ -136,7 +141,7 @@ func (w *Wasm) Execute(input []byte) ([]byte, error) {
 	// w.context[ALLOC_MEM] = alloc
 	methodName, err := w.Instance.Exports.GetFunction(payload.Method)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	slice := make([]interface{}, len(payload.Args))
 	for i := range slice {
@@ -145,47 +150,47 @@ func (w *Wasm) Execute(input []byte) ([]byte, error) {
 		case pb.Arg_I32:
 			temp, err := strconv.Atoi(string(arg.Value))
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 			slice[i] = temp
 		case pb.Arg_I64:
 			temp, err := strconv.ParseInt(string(arg.Value), 10, 64)
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 			slice[i] = temp
 		case pb.Arg_F32:
 			temp, err := strconv.ParseFloat(string(arg.Value), 32)
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 			slice[i] = temp
 		case pb.Arg_F64:
 			temp, err := strconv.ParseFloat(string(arg.Value), 64)
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 			slice[i] = temp
 		case pb.Arg_String:
 			inputPointer, err := w.SetString(string(arg.Value))
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 			slice[i] = inputPointer
 		case pb.Arg_Bytes:
 			inputPointer, err := w.SetBytes(arg.Value)
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 			slice[i] = inputPointer
 		case pb.Arg_Bool:
 			inputPointer, err := strconv.Atoi(string(arg.Value))
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 			slice[i] = inputPointer
 		default:
-			return nil, fmt.Errorf("input type not support")
+			return nil, 0, fmt.Errorf("input type not support")
 		}
 	}
 
@@ -194,23 +199,13 @@ func (w *Wasm) Execute(input []byte) ([]byte, error) {
 
 	result, err := methodName(slice...)
 	if err != nil {
-		return nil, err
-	}
-	for i := range slice {
-		arg := payload.Args[i]
-		switch arg.Type {
-		case pb.Arg_String:
-			if err := w.FreeString(slice[i], string(arg.Value)); err != nil {
-				return nil, err
-			}
-		case pb.Arg_Bytes:
-			if err := w.FreeBytes(slice[i], arg.Value); err != nil {
-				return nil, err
-			}
-		}
+		fmt.Printf("execute error: %s\n", err)
+		ret = nil
+	} else {
+		ret = []byte(strconv.Itoa(int(result.(int32))))
 	}
 
-	return []byte(strconv.Itoa(int(result.(int32)))), err
+	return ret, wasmGasLimit - w.GetContext("gaslimit").(*usegas.GasLimit).GetLimit(), err
 }
 
 func (w *Wasm) SetContext(key string, value interface{}) {

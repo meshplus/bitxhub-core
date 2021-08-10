@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const wasmGasLimit = 5000000000000000
+
 func TestExecute(t *testing.T) {
 	data, err := ioutil.ReadFile("./testdata/wasm_test.wasm")
 	assert.Nil(t, err)
@@ -26,7 +28,7 @@ func TestExecute(t *testing.T) {
 	assert.Nil(t, err)
 	imports := NewEmptyImports()
 	instances := &sync.Map{}
-	wasm, err := New(bytes, imports, instances)
+	wasm, err := New(bytes, imports, instances, wasmGasLimit)
 	assert.Nil(t, err)
 	input := &pb.InvokePayload{
 		Method: "a",
@@ -59,7 +61,7 @@ func TestImportExecute(t *testing.T) {
 	imports := wasmlib.New()
 	assert.Nil(t, err)
 	instances := &sync.Map{}
-	wasm, err := New(bytes, imports, instances)
+	wasm, err := New(bytes, imports, instances, wasmGasLimit)
 	assert.Nil(t, err)
 	input := &pb.InvokePayload{
 		Method: "start_verify",
@@ -104,7 +106,7 @@ func BenchmarkImportExecute(b *testing.B) {
 	imports := wasmlib.New()
 	assert.Nil(b, err)
 	instances := &sync.Map{}
-	wasm, err := New(bytes, imports, instances)
+	wasm, err := New(bytes, imports, instances, wasmGasLimit)
 	assert.Nil(b, err)
 	input := &pb.InvokePayload{
 		Method: "start_verify",
