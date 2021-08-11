@@ -166,6 +166,20 @@ func (mr *MockStubMockRecorder) GetAccount(address interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockStub)(nil).GetAccount), address)
 }
 
+// GetCurrentHeight mocks base method.
+func (m *MockStub) GetCurrentHeight() uint64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCurrentHeight")
+	ret0, _ := ret[0].(uint64)
+	return ret0
+}
+
+// GetCurrentHeight indicates an expected call of GetCurrentHeight.
+func (mr *MockStubMockRecorder) GetCurrentHeight() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentHeight", reflect.TypeOf((*MockStub)(nil).GetCurrentHeight))
+}
+
 // GetObject mocks base method.
 func (m *MockStub) GetObject(key string, ret interface{}) bool {
 	m.ctrl.T.Helper()
