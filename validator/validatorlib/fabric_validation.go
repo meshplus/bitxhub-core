@@ -39,15 +39,13 @@ type ValidatorInfo struct {
 }
 
 type payloadInfo struct {
-	Index          uint64 `json:"index"`
-	DstContractDID string `json:"dst_contract_did"`
-	SrcContractID  string `json:"src_contract_id"`
-	Func           string `json:"func"`
-	Args           string `json:"args"`
-	Callback       string `json:"callback"`
-	Argscb         string `json:"argscb"`
-	Rollback       string `json:"rollback"`
-	Argsrb         string `json:"argsrb"`
+	Index     uint64 `json:"index"`
+	DstFullID string `json:"dst_full_id"`
+	SrcFullID string `json:"src_full_id"`
+	Func      string `json:"func"`
+	Args      string `json:"args"`
+	Argscb    string `json:"argscb"`
+	Argsrb    string `json:"argsrb"`
 }
 
 func GetPolicyEnvelope(policy string) ([]byte, error) {
@@ -198,19 +196,18 @@ func ValidatePayload(info payloadInfo, payloadByte []byte) error {
 		return fmt.Errorf("unmarshal ibtp payload content: %w", err)
 	}
 
-	//if bitxid.DID(info.DstContractDID).GetAddress() != content.DstContractId {
-	//	return fmt.Errorf("dst contrct id not correct")
-	//}
-	//if info.SrcContractID != content.SrcContractId {
-	//	return fmt.Errorf("src contrct id not correct")
-	//}
-	if info.Func != content.Func {
+	funcSplit := strings.Split(info.Func, ",")
+	if len(funcSplit) != 3 {
+		return fmt.Errorf("incorrent function numbers")
+	}
+	if funcSplit[0] != content.Func {
 		return fmt.Errorf("interchain function name not correct")
 	}
-	if info.Callback != content.Callback {
+
+	if funcSplit[1] != content.Callback {
 		return fmt.Errorf("callback not correct")
 	}
-	if info.Rollback != content.Rollback {
+	if funcSplit[2] != content.Rollback {
 		return fmt.Errorf("rollback not correct")
 	}
 	if !checkArgs(info.Argsrb, content.ArgsRb) {
