@@ -53,7 +53,7 @@ var appchainStateMap = map[g.EventType][]g.GovernanceStatus{
 	g.EventRegister:        {g.GovernanceUnavailable},
 	g.EventUpdate:          {g.GovernanceAvailable},
 	g.EventActiveFreeze:    {g.GovernanceAvailable},
-	g.EventPassiveFreeze:   {g.GovernanceAvailable, g.GovernanceUpdating, g.GovernanceActivating},
+	g.EventPassiveFreeze:   {g.GovernanceAvailable, g.GovernanceUpdating, g.GovernanceActivating, g.GovernanceActiveFrozen},
 	g.EventActiveActivate:  {g.GovernanceActiveFrozen},
 	g.EventPassiveActivate: {g.GovernancePassiveFrozen},
 	g.EventLogout:          {g.GovernanceAvailable, g.GovernanceUpdating, g.GovernanceFreezing, g.GovernanceActivating, g.GovernancePassiveFrozen, g.GovernanceActiveFrozen},
@@ -61,6 +61,7 @@ var appchainStateMap = map[g.EventType][]g.GovernanceStatus{
 
 var AppchainAvailableState = []g.GovernanceStatus{
 	g.GovernanceAvailable,
+	g.GovernanceUpdating,
 	g.GovernanceFreezing,
 	g.GovernanceLogouting,
 }
@@ -87,7 +88,7 @@ func setFSM(chain *Appchain, lastStatus g.GovernanceStatus) {
 			{Name: string(g.EventActiveFreeze), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceFreezing), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceActiveFrozen)},
 
 			// passive freeze 2
-			{Name: string(g.EventPassiveFreeze), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceUpdating), string(g.GovernanceActivating), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceFreezing)},
+			{Name: string(g.EventPassiveFreeze), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceActiveFrozen), string(g.GovernanceUpdating), string(g.GovernanceActivating), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceFreezing)},
 			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceFreezing)}, Dst: string(g.GovernancePassiveFrozen)},
 			{Name: string(g.EventReject), Src: []string{string(g.GovernanceFreezing)}, Dst: string(lastStatus)},
 
