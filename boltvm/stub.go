@@ -22,6 +22,8 @@ type Stub interface {
 	// GetTxTimestamp returns the transaction timestamp
 	GetTxTimestamp() int64
 	// GetTxIndex returns the transaction index in the block
+	GetTxTimestamp() int64
+	// GetTxIndex returns the transaction index in the block
 	GetTxIndex() uint64
 	// Has judges key
 	Has(key string) bool
