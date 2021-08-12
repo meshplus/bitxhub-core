@@ -20,6 +20,8 @@ type Stub interface {
 	// GetTxHash returns the transaction hash
 	GetTxHash() *types.Hash
 	// GetTxIndex returns the transaction index in the block
+	GetTxTimestamp() int64
+	// GetTxIndex returns the transaction index in the block
 	GetTxIndex() uint64
 	// Has judges key
 	Has(key string) bool
