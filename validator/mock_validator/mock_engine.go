@@ -5,35 +5,36 @@
 package mock_validator
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/meshplus/bitxhub-kit/types"
-	reflect "reflect"
 )
 
-// MockEngine is a mock of Engine interface
+// MockEngine is a mock of Engine interface.
 type MockEngine struct {
 	ctrl     *gomock.Controller
 	recorder *MockEngineMockRecorder
 }
 
-// MockEngineMockRecorder is the mock recorder for MockEngine
+// MockEngineMockRecorder is the mock recorder for MockEngine.
 type MockEngineMockRecorder struct {
 	mock *MockEngine
 }
 
-// NewMockEngine creates a new mock instance
+// NewMockEngine creates a new mock instance.
 func NewMockEngine(ctrl *gomock.Controller) *MockEngine {
 	mock := &MockEngine{ctrl: ctrl}
 	mock.recorder = &MockEngineMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockEngine) EXPECT() *MockEngineMockRecorder {
 	return m.recorder
 }
 
-// Validate mocks base method
+// Validate mocks base method.
 func (m *MockEngine) Validate(address, from string, proof, payload []byte, validators string) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Validate", address, from, proof, payload, validators)
@@ -42,36 +43,36 @@ func (m *MockEngine) Validate(address, from string, proof, payload []byte, valid
 	return ret0, ret1
 }
 
-// Validate indicates an expected call of Validate
+// Validate indicates an expected call of Validate.
 func (mr *MockEngineMockRecorder) Validate(address, from, proof, payload, validators interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Validate", reflect.TypeOf((*MockEngine)(nil).Validate), address, from, proof, payload, validators)
 }
 
-// MockValidator is a mock of Validator interface
+// MockValidator is a mock of Validator interface.
 type MockValidator struct {
 	ctrl     *gomock.Controller
 	recorder *MockValidatorMockRecorder
 }
 
-// MockValidatorMockRecorder is the mock recorder for MockValidator
+// MockValidatorMockRecorder is the mock recorder for MockValidator.
 type MockValidatorMockRecorder struct {
 	mock *MockValidator
 }
 
-// NewMockValidator creates a new mock instance
+// NewMockValidator creates a new mock instance.
 func NewMockValidator(ctrl *gomock.Controller) *MockValidator {
 	mock := &MockValidator{ctrl: ctrl}
 	mock.recorder = &MockValidatorMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockValidator) EXPECT() *MockValidatorMockRecorder {
 	return m.recorder
 }
 
-// Verify mocks base method
+// Verify mocks base method.
 func (m *MockValidator) Verify(address, from string, proof, payload []byte, validators string) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Verify", address, from, proof, payload, validators)
@@ -80,36 +81,36 @@ func (m *MockValidator) Verify(address, from string, proof, payload []byte, vali
 	return ret0, ret1
 }
 
-// Verify indicates an expected call of Verify
+// Verify indicates an expected call of Verify.
 func (mr *MockValidatorMockRecorder) Verify(address, from, proof, payload, validators interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Verify", reflect.TypeOf((*MockValidator)(nil).Verify), address, from, proof, payload, validators)
 }
 
-// MockLedger is a mock of Ledger interface
+// MockLedger is a mock of Ledger interface.
 type MockLedger struct {
 	ctrl     *gomock.Controller
 	recorder *MockLedgerMockRecorder
 }
 
-// MockLedgerMockRecorder is the mock recorder for MockLedger
+// MockLedgerMockRecorder is the mock recorder for MockLedger.
 type MockLedgerMockRecorder struct {
 	mock *MockLedger
 }
 
-// NewMockLedger creates a new mock instance
+// NewMockLedger creates a new mock instance.
 func NewMockLedger(ctrl *gomock.Controller) *MockLedger {
 	mock := &MockLedger{ctrl: ctrl}
 	mock.recorder = &MockLedgerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockLedger) EXPECT() *MockLedgerMockRecorder {
 	return m.recorder
 }
 
-// GetCode mocks base method
+// GetCode mocks base method.
 func (m *MockLedger) GetCode(arg0 *types.Address) []byte {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCode", arg0)
@@ -117,7 +118,7 @@ func (m *MockLedger) GetCode(arg0 *types.Address) []byte {
 	return ret0
 }
 
-// GetCode indicates an expected call of GetCode
+// GetCode indicates an expected call of GetCode.
 func (mr *MockLedgerMockRecorder) GetCode(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCode", reflect.TypeOf((*MockLedger)(nil).GetCode), arg0)
