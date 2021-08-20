@@ -16,13 +16,13 @@ type Governance interface {
 	CountAll(extra []byte) (bool, []byte)
 
 	// ALL returns all objects
-	All(extra []byte) (bool, []byte)
+	All(extra []byte) (interface{}, error)
 
 	// QueryById returns object info by id
-	QueryById(id string, extra []byte) (bool, []byte)
+	QueryById(id string, extra []byte) (interface{}, error)
 
 	// GovernancePre check if the object can do the event
-	GovernancePre(id string, event EventType, extra []byte) (bool, []byte)
+	GovernancePre(id string, event EventType, extra []byte) (interface{}, error)
 }
 
 type Persister interface {
