@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/looplab/fsm"
 	g "github.com/meshplus/bitxhub-core/governance"
 	"github.com/meshplus/bitxhub-kit/crypto"
 	"github.com/meshplus/bitxhub-kit/crypto/asym/ecdsa"
 	"github.com/meshplus/bitxhub-kit/hexutil"
+	"github.com/meshplus/bitxid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -119,6 +121,37 @@ func (am *AppchainManager) GovernancePre(chainId string, event g.EventType, _ []
 	return false, []byte(fmt.Sprintf("The appchain (%s) can not be %s", string(chain.Status), string(event)))
 }
 
+func (appchain *Appchain) GetAdminAddress() (string, error) {
+	if appchain.PublicKey != "" {
+		return GetAddressFromPubkey(appchain.PublicKey)
+	}
+	method := bitxid.DID(appchain.ID).GetSubMethod()
+	return strings.TrimPrefix(method, "appchain"), nil
+}
+
+func GetAddressFromPubkey(pubKeyStr string) (string, error) {
+	var pubKeyBytes []byte
+	var pubKey crypto.PublicKey
+	pubKeyBytes = hexutil.Decode(pubKeyStr)
+	pubKey, err := ecdsa.UnmarshalPublicKey(pubKeyBytes, crypto.Secp256k1)
+	if err != nil {
+		pubKeyBytes, err = base64.StdEncoding.DecodeString(pubKeyStr)
+		if err != nil {
+			return "", fmt.Errorf("decode error: %w", err)
+		}
+		pubKey, err = ecdsa.UnmarshalPublicKey(pubKeyBytes, crypto.Secp256k1)
+		if err != nil {
+			return "", fmt.Errorf("decrypt registerd public key error: %w", err)
+		}
+	}
+	addr, err := pubKey.Address()
+	if err != nil {
+		return "", fmt.Errorf("decrypt registerd public key error: %w", err)
+	}
+
+	return addr.String(), nil
+}
+
 // Register registers appchain info return appchain id and error
 func (am *AppchainManager) Register(info []byte) (bool, []byte) {
 	chain := &Appchain{}
@@ -140,7 +173,7 @@ func (am *AppchainManager) Register(info []byte) (bool, []byte) {
 	} else {
 		am.SetObject(am.appchainKey(chain.ID), chain)
 
-		addr, err := getAddr(chain.PublicKey)
+		addr, err := chain.GetAdminAddress()
 		if err != nil {
 			return false, []byte(err.Error())
 		}
