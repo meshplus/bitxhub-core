@@ -43,6 +43,36 @@ type Appchain struct {
 	FSM           *fsm.FSM           `json:"fsm"`
 }
 
+func (appchain *Appchain) GetAdminAddress() (string, error) {
+	if appchain.PublicKey != "" {
+		return GetAddressFromPubkey(appchain.PublicKey)
+	}
+	return "", nil
+}
+
+func GetAddressFromPubkey(pubKeyStr string) (string, error) {
+	var pubKeyBytes []byte
+	var pubKey crypto.PublicKey
+	pubKeyBytes = hexutil.Decode(pubKeyStr)
+	pubKey, err := ecdsa.UnmarshalPublicKey(pubKeyBytes, crypto.Secp256k1)
+	if err != nil {
+		pubKeyBytes, err = base64.StdEncoding.DecodeString(pubKeyStr)
+		if err != nil {
+			return "", fmt.Errorf("decode error: %w", err)
+		}
+		pubKey, err = ecdsa.UnmarshalPublicKey(pubKeyBytes, crypto.Secp256k1)
+		if err != nil {
+			return "", fmt.Errorf("decrypt registerd public key error: %w", err)
+		}
+	}
+	addr, err := pubKey.Address()
+	if err != nil {
+		return "", fmt.Errorf("decrypt registerd public key error: %w", err)
+	}
+
+	return addr.String(), nil
+}
+
 type auditRecord struct {
 	Appchain   *Appchain `json:"appchain"`
 	IsApproved bool      `json:"is_approved"`
