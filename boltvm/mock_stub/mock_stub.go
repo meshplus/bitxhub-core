@@ -15,44 +15,42 @@ import (
 	logrus "github.com/sirupsen/logrus"
 )
 
-// MockStub is a mock of Stub interface
+// MockStub is a mock of Stub interface.
 type MockStub struct {
 	ctrl     *gomock.Controller
 	recorder *MockStubMockRecorder
 }
 
-// MockStubMockRecorder is the mock recorder for MockStub
+// MockStubMockRecorder is the mock recorder for MockStub.
 type MockStubMockRecorder struct {
 	mock *MockStub
 }
 
-// NewMockStub creates a new mock instance
+// NewMockStub creates a new mock instance.
 func NewMockStub(ctrl *gomock.Controller) *MockStub {
 	mock := &MockStub{ctrl: ctrl}
 	mock.recorder = &MockStubMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStub) EXPECT() *MockStubMockRecorder {
 	return m.recorder
 }
 
-// Caller mocks base method
-func (m *MockStub) Caller() string {
+// AddObject mocks base method.
+func (m *MockStub) AddObject(key string, value interface{}) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Caller")
-	ret0, _ := ret[0].(string)
-	return ret0
+	m.ctrl.Call(m, "AddObject", key, value)
 }
 
-// Caller indicates an expected call of Caller
-func (mr *MockStubMockRecorder) Caller() *gomock.Call {
+// AddObject indicates an expected call of AddObject.
+func (mr *MockStubMockRecorder) AddObject(key, value interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Caller", reflect.TypeOf((*MockStub)(nil).Caller))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddObject", reflect.TypeOf((*MockStub)(nil).AddObject), key, value)
 }
 
-// Callee mocks base method
+// Callee mocks base method.
 func (m *MockStub) Callee() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Callee")
@@ -60,213 +58,27 @@ func (m *MockStub) Callee() string {
 	return ret0
 }
 
-// Callee indicates an expected call of Callee
+// Callee indicates an expected call of Callee.
 func (mr *MockStubMockRecorder) Callee() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Callee", reflect.TypeOf((*MockStub)(nil).Callee))
 }
 
-// CurrentCaller mocks base method
-func (m *MockStub) CurrentCaller() string {
+// Caller mocks base method.
+func (m *MockStub) Caller() string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CurrentCaller")
+	ret := m.ctrl.Call(m, "Caller")
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
-// CurrentCaller indicates an expected call of CurrentCaller
-func (mr *MockStubMockRecorder) CurrentCaller() *gomock.Call {
+// Caller indicates an expected call of Caller.
+func (mr *MockStubMockRecorder) Caller() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentCaller", reflect.TypeOf((*MockStub)(nil).CurrentCaller))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Caller", reflect.TypeOf((*MockStub)(nil).Caller))
 }
 
-// Logger mocks base method
-func (m *MockStub) Logger() logrus.FieldLogger {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Logger")
-	ret0, _ := ret[0].(logrus.FieldLogger)
-	return ret0
-}
-
-// Logger indicates an expected call of Logger
-func (mr *MockStubMockRecorder) Logger() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Logger", reflect.TypeOf((*MockStub)(nil).Logger))
-}
-
-// GetTxHash mocks base method
-func (m *MockStub) GetTxHash() *types.Hash {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTxHash")
-	ret0, _ := ret[0].(*types.Hash)
-	return ret0
-}
-
-// GetTxHash indicates an expected call of GetTxHash
-func (mr *MockStubMockRecorder) GetTxHash() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxHash", reflect.TypeOf((*MockStub)(nil).GetTxHash))
-}
-
-// GetTxIndex mocks base method
-func (m *MockStub) GetTxIndex() uint64 {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTxIndex")
-	ret0, _ := ret[0].(uint64)
-	return ret0
-}
-
-// GetTxIndex indicates an expected call of GetTxIndex
-func (mr *MockStubMockRecorder) GetTxIndex() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxIndex", reflect.TypeOf((*MockStub)(nil).GetTxIndex))
-}
-
-// Has mocks base method
-func (m *MockStub) Has(key string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Has", key)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// Has indicates an expected call of Has
-func (mr *MockStubMockRecorder) Has(key interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Has", reflect.TypeOf((*MockStub)(nil).Has), key)
-}
-
-// Get mocks base method
-func (m *MockStub) Get(key string) (bool, []byte) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", key)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].([]byte)
-	return ret0, ret1
-}
-
-// Get indicates an expected call of Get
-func (mr *MockStubMockRecorder) Get(key interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStub)(nil).Get), key)
-}
-
-// GetObject mocks base method
-func (m *MockStub) GetObject(key string, ret interface{}) bool {
-	m.ctrl.T.Helper()
-	ret_2 := m.ctrl.Call(m, "GetObject", key, ret)
-	ret0, _ := ret_2[0].(bool)
-	return ret0
-}
-
-// GetObject indicates an expected call of GetObject
-func (mr *MockStubMockRecorder) GetObject(key, ret interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetObject", reflect.TypeOf((*MockStub)(nil).GetObject), key, ret)
-}
-
-// Set mocks base method
-func (m *MockStub) Set(key string, value []byte) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Set", key, value)
-}
-
-// Set indicates an expected call of Set
-func (mr *MockStubMockRecorder) Set(key, value interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockStub)(nil).Set), key, value)
-}
-
-// SetObject mocks base method
-func (m *MockStub) SetObject(key string, value interface{}) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetObject", key, value)
-}
-
-// SetObject indicates an expected call of SetObject
-func (mr *MockStubMockRecorder) SetObject(key, value interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetObject", reflect.TypeOf((*MockStub)(nil).SetObject), key, value)
-}
-
-// AddObject mocks base method
-func (m *MockStub) AddObject(key string, value interface{}) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddObject", key, value)
-}
-
-// AddObject indicates an expected call of AddObject
-func (mr *MockStubMockRecorder) AddObject(key, value interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddObject", reflect.TypeOf((*MockStub)(nil).AddObject), key, value)
-}
-
-// Delete mocks base method
-func (m *MockStub) Delete(key string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Delete", key)
-}
-
-// Delete indicates an expected call of Delete
-func (mr *MockStubMockRecorder) Delete(key interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStub)(nil).Delete), key)
-}
-
-// Query mocks base method
-func (m *MockStub) Query(prefix string) (bool, [][]byte) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Query", prefix)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].([][]byte)
-	return ret0, ret1
-}
-
-// Query indicates an expected call of Query
-func (mr *MockStubMockRecorder) Query(prefix interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Query", reflect.TypeOf((*MockStub)(nil).Query), prefix)
-}
-
-// PostEvent mocks base method
-func (m *MockStub) PostEvent(arg0 interface{}) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "PostEvent", arg0)
-}
-
-// PostEvent indicates an expected call of PostEvent
-func (mr *MockStubMockRecorder) PostEvent(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostEvent", reflect.TypeOf((*MockStub)(nil).PostEvent), arg0)
-}
-
-// PostInterchainEvent mocks base method
-func (m *MockStub) PostInterchainEvent(arg0 interface{}) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "PostInterchainEvent", arg0)
-}
-
-// PostInterchainEvent indicates an expected call of PostInterchainEvent
-func (mr *MockStubMockRecorder) PostInterchainEvent(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostInterchainEvent", reflect.TypeOf((*MockStub)(nil).PostInterchainEvent), arg0)
-}
-
-// ValidationEngine mocks base method
-func (m *MockStub) ValidationEngine() validator.Engine {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidationEngine")
-	ret0, _ := ret[0].(validator.Engine)
-	return ret0
-}
-
-// ValidationEngine indicates an expected call of ValidationEngine
-func (mr *MockStubMockRecorder) ValidationEngine() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidationEngine", reflect.TypeOf((*MockStub)(nil).ValidationEngine))
-}
-
-// CrossInvoke mocks base method
+// CrossInvoke mocks base method.
 func (m *MockStub) CrossInvoke(address, method string, args ...*pb.Arg) *boltvm.Response {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address, method}
@@ -278,9 +90,211 @@ func (m *MockStub) CrossInvoke(address, method string, args ...*pb.Arg) *boltvm.
 	return ret0
 }
 
-// CrossInvoke indicates an expected call of CrossInvoke
+// CrossInvoke indicates an expected call of CrossInvoke.
 func (mr *MockStubMockRecorder) CrossInvoke(address, method interface{}, args ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{address, method}, args...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CrossInvoke", reflect.TypeOf((*MockStub)(nil).CrossInvoke), varargs...)
+}
+
+// CurrentCaller mocks base method.
+func (m *MockStub) CurrentCaller() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CurrentCaller")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// CurrentCaller indicates an expected call of CurrentCaller.
+func (mr *MockStubMockRecorder) CurrentCaller() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentCaller", reflect.TypeOf((*MockStub)(nil).CurrentCaller))
+}
+
+// Delete mocks base method.
+func (m *MockStub) Delete(key string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Delete", key)
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockStubMockRecorder) Delete(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStub)(nil).Delete), key)
+}
+
+// Get mocks base method.
+func (m *MockStub) Get(key string) (bool, []byte) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", key)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].([]byte)
+	return ret0, ret1
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockStubMockRecorder) Get(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStub)(nil).Get), key)
+}
+
+// GetObject mocks base method.
+func (m *MockStub) GetObject(key string, ret interface{}) bool {
+	m.ctrl.T.Helper()
+	ret_2 := m.ctrl.Call(m, "GetObject", key, ret)
+	ret0, _ := ret_2[0].(bool)
+	return ret0
+}
+
+// GetObject indicates an expected call of GetObject.
+func (mr *MockStubMockRecorder) GetObject(key, ret interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetObject", reflect.TypeOf((*MockStub)(nil).GetObject), key, ret)
+}
+
+// GetTxHash mocks base method.
+func (m *MockStub) GetTxHash() *types.Hash {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTxHash")
+	ret0, _ := ret[0].(*types.Hash)
+	return ret0
+}
+
+// GetTxHash indicates an expected call of GetTxHash.
+func (mr *MockStubMockRecorder) GetTxHash() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxHash", reflect.TypeOf((*MockStub)(nil).GetTxHash))
+}
+
+// GetTxIndex mocks base method.
+func (m *MockStub) GetTxIndex() uint64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTxIndex")
+	ret0, _ := ret[0].(uint64)
+	return ret0
+}
+
+// GetTxIndex indicates an expected call of GetTxIndex.
+func (mr *MockStubMockRecorder) GetTxIndex() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxIndex", reflect.TypeOf((*MockStub)(nil).GetTxIndex))
+}
+
+// GetTxTimestamp mocks base method.
+func (m *MockStub) GetTxTimestamp() int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTxTimestamp")
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// GetTxTimestamp indicates an expected call of GetTxTimestamp.
+func (mr *MockStubMockRecorder) GetTxTimestamp() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxTimestamp", reflect.TypeOf((*MockStub)(nil).GetTxTimestamp))
+}
+
+// Has mocks base method.
+func (m *MockStub) Has(key string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Has", key)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Has indicates an expected call of Has.
+func (mr *MockStubMockRecorder) Has(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Has", reflect.TypeOf((*MockStub)(nil).Has), key)
+}
+
+// Logger mocks base method.
+func (m *MockStub) Logger() logrus.FieldLogger {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Logger")
+	ret0, _ := ret[0].(logrus.FieldLogger)
+	return ret0
+}
+
+// Logger indicates an expected call of Logger.
+func (mr *MockStubMockRecorder) Logger() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Logger", reflect.TypeOf((*MockStub)(nil).Logger))
+}
+
+// PostEvent mocks base method.
+func (m *MockStub) PostEvent(arg0 interface{}) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PostEvent", arg0)
+}
+
+// PostEvent indicates an expected call of PostEvent.
+func (mr *MockStubMockRecorder) PostEvent(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostEvent", reflect.TypeOf((*MockStub)(nil).PostEvent), arg0)
+}
+
+// PostInterchainEvent mocks base method.
+func (m *MockStub) PostInterchainEvent(arg0 interface{}) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PostInterchainEvent", arg0)
+}
+
+// PostInterchainEvent indicates an expected call of PostInterchainEvent.
+func (mr *MockStubMockRecorder) PostInterchainEvent(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostInterchainEvent", reflect.TypeOf((*MockStub)(nil).PostInterchainEvent), arg0)
+}
+
+// Query mocks base method.
+func (m *MockStub) Query(prefix string) (bool, [][]byte) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Query", prefix)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].([][]byte)
+	return ret0, ret1
+}
+
+// Query indicates an expected call of Query.
+func (mr *MockStubMockRecorder) Query(prefix interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Query", reflect.TypeOf((*MockStub)(nil).Query), prefix)
+}
+
+// Set mocks base method.
+func (m *MockStub) Set(key string, value []byte) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Set", key, value)
+}
+
+// Set indicates an expected call of Set.
+func (mr *MockStubMockRecorder) Set(key, value interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockStub)(nil).Set), key, value)
+}
+
+// SetObject mocks base method.
+func (m *MockStub) SetObject(key string, value interface{}) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetObject", key, value)
+}
+
+// SetObject indicates an expected call of SetObject.
+func (mr *MockStubMockRecorder) SetObject(key, value interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetObject", reflect.TypeOf((*MockStub)(nil).SetObject), key, value)
+}
+
+// ValidationEngine mocks base method.
+func (m *MockStub) ValidationEngine() validator.Engine {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidationEngine")
+	ret0, _ := ret[0].(validator.Engine)
+	return ret0
+}
+
+// ValidationEngine indicates an expected call of ValidationEngine.
+func (mr *MockStubMockRecorder) ValidationEngine() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidationEngine", reflect.TypeOf((*MockStub)(nil).ValidationEngine))
 }
