@@ -20,11 +20,9 @@ func TestFabV14ValidatorWasm_Verify(t *testing.T) {
 	require.Nil(t, err)
 
 	content := &pb.Content{
-		SrcContractId: "mychannel&transfer",
-		DstContractId: "0x668a209Dc6562707469374B8235e37b8eC25db08",
-		Func:          "get",
-		Args:          [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
-		Callback:      "interchainConfirm",
+		Func:     "get",
+		Args:     [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
+		Callback: "interchainConfirm",
 	}
 
 	bytes, err := content.Marshal()
@@ -53,11 +51,9 @@ func TestFabV14Validator_Verify(t *testing.T) {
 	require.Nil(t, err)
 
 	content := &pb.Content{
-		SrcContractId: "mychannel&transfer",
-		DstContractId: "0x668a209Dc6562707469374B8235e37b8eC25db08",
-		Func:          "get",
-		Args:          [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
-		Callback:      "interchainConfirm",
+		Func:     "get",
+		Args:     [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
+		Callback: "interchainConfirm",
 	}
 
 	bytes, err := content.Marshal()
@@ -86,13 +82,11 @@ func TestFabSimValidator_Verify(t *testing.T) {
 	require.Nil(t, err)
 
 	content := &pb.Content{
-		SrcContractId: "mychannel&transfer",
-		DstContractId: "0x30c5D3aeb4681af4D13384DBc2a717C51cb1cc11",
-		Func:          "interchainCharge",
-		Args:          [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
-		Callback:      "",
-		Rollback:      "interchainRollback",
-		ArgsRb:        [][]byte{[]byte("Alice"), []byte("1")},
+		Func:     "interchainCharge",
+		Args:     [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
+		Callback: "",
+		Rollback: "interchainRollback",
+		ArgsRb:   [][]byte{[]byte("Alice"), []byte("1")},
 	}
 
 	bytes, err := content.Marshal()
@@ -121,11 +115,9 @@ func BenchmarkFabV14Validator_Verify(b *testing.B) {
 	require.Nil(b, err)
 
 	content := &pb.Content{
-		SrcContractId: "mychannel&transfer",
-		DstContractId: "mychannel&transfer",
-		Func:          "interchainCharge",
-		Args:          [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
-		Callback:      "interchainConfirm",
+		Func:     "interchainCharge",
+		Args:     [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
+		Callback: "interchainConfirm",
 	}
 
 	bytes, err := content.Marshal()
@@ -160,13 +152,11 @@ func BenchmarkFabSimValidator_Verify(b *testing.B) {
 	require.Nil(b, err)
 
 	content := &pb.Content{
-		SrcContractId: "mychannel&transfer",
-		DstContractId: "0x30c5D3aeb4681af4D13384DBc2a717C51cb1cc11",
-		Func:          "interchainCharge",
-		Args:          [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
-		Callback:      "",
-		Rollback:      "interchainRollback",
-		ArgsRb:        [][]byte{[]byte("Alice"), []byte("1")},
+		Func:     "interchainCharge",
+		Args:     [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
+		Callback: "",
+		Rollback: "interchainRollback",
+		ArgsRb:   [][]byte{[]byte("Alice"), []byte("1")},
 	}
 
 	bytes, err := content.Marshal()
@@ -199,11 +189,9 @@ func BenchmarkFabComplexValidator_Verify(b *testing.B) {
 	require.Nil(b, err)
 
 	content := &pb.Content{
-		SrcContractId: "mychannel&transfer",
-		DstContractId: "mychannel&transfer",
-		Func:          "interchainCharge",
-		Args:          [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
-		Callback:      "interchainConfirm",
+		Func:     "interchainCharge",
+		Args:     [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
+		Callback: "interchainConfirm",
 	}
 
 	bytes, err := content.Marshal()

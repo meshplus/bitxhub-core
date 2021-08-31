@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	appchain_mgr "github.com/meshplus/bitxhub-core/appchain-mgr"
 	governance "github.com/meshplus/bitxhub-core/governance"
 )
 
@@ -35,11 +36,11 @@ func (m *MockAppchainMgr) EXPECT() *MockAppchainMgrMockRecorder {
 }
 
 // All mocks base method.
-func (m *MockAppchainMgr) All(extra []byte) (bool, []byte) {
+func (m *MockAppchainMgr) All(extra []byte) (interface{}, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "All", extra)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].([]byte)
+	ret0, _ := ret[0].(interface{})
+	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
@@ -139,27 +140,12 @@ func (mr *MockAppchainMgrMockRecorder) FetchAuditRecords(id interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchAuditRecords", reflect.TypeOf((*MockAppchainMgr)(nil).FetchAuditRecords), id)
 }
 
-// GetPubKeyByChainID mocks base method.
-func (m *MockAppchainMgr) GetPubKeyByChainID(id string) (bool, []byte) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPubKeyByChainID", id)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].([]byte)
-	return ret0, ret1
-}
-
-// GetPubKeyByChainID indicates an expected call of GetPubKeyByChainID.
-func (mr *MockAppchainMgrMockRecorder) GetPubKeyByChainID(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPubKeyByChainID", reflect.TypeOf((*MockAppchainMgr)(nil).GetPubKeyByChainID), id)
-}
-
 // GovernancePre mocks base method.
-func (m *MockAppchainMgr) GovernancePre(id string, event governance.EventType, extra []byte) (bool, []byte) {
+func (m *MockAppchainMgr) GovernancePre(id string, event governance.EventType, extra []byte) (interface{}, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GovernancePre", id, event, extra)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].([]byte)
+	ret0, _ := ret[0].(interface{})
+	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
@@ -170,11 +156,11 @@ func (mr *MockAppchainMgrMockRecorder) GovernancePre(id, event, extra interface{
 }
 
 // QueryById mocks base method.
-func (m *MockAppchainMgr) QueryById(id string, extra []byte) (bool, []byte) {
+func (m *MockAppchainMgr) QueryById(id string, extra []byte) (interface{}, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueryById", id, extra)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].([]byte)
+	ret0, _ := ret[0].(interface{})
+	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
@@ -185,31 +171,31 @@ func (mr *MockAppchainMgrMockRecorder) QueryById(id, extra interface{}) *gomock.
 }
 
 // Register mocks base method.
-func (m *MockAppchainMgr) Register(info []byte) (bool, []byte) {
+func (m *MockAppchainMgr) Register(chainInfo *appchain_mgr.Appchain) (bool, []byte) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Register", info)
+	ret := m.ctrl.Call(m, "Register", chainInfo)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].([]byte)
 	return ret0, ret1
 }
 
 // Register indicates an expected call of Register.
-func (mr *MockAppchainMgrMockRecorder) Register(info interface{}) *gomock.Call {
+func (mr *MockAppchainMgrMockRecorder) Register(chainInfo interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockAppchainMgr)(nil).Register), info)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockAppchainMgr)(nil).Register), chainInfo)
 }
 
 // Update mocks base method.
-func (m *MockAppchainMgr) Update(info []byte) (bool, []byte) {
+func (m *MockAppchainMgr) Update(updateInfo *appchain_mgr.Appchain) (bool, []byte) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", info)
+	ret := m.ctrl.Call(m, "Update", updateInfo)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].([]byte)
 	return ret0, ret1
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockAppchainMgrMockRecorder) Update(info interface{}) *gomock.Call {
+func (mr *MockAppchainMgrMockRecorder) Update(updateInfo interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockAppchainMgr)(nil).Update), info)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockAppchainMgr)(nil).Update), updateInfo)
 }

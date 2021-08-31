@@ -7,10 +7,10 @@ type AppchainMgr interface {
 	governance.Governance
 
 	// Register registers object info, return object id and error
-	Register(info []byte) (bool, []byte)
+	Register(chainInfo *Appchain) (bool, []byte)
 
 	// Update updates available or frozen object
-	Update(info []byte) (bool, []byte)
+	Update(updateInfo *Appchain) (bool, []byte)
 
 	// Audit bitxhub manager audit appchain register info
 	// caller is the bitxhub manager address
@@ -22,7 +22,4 @@ type AppchainMgr interface {
 
 	// DeleteAppchain deletes appchain
 	DeleteAppchain(id string) (bool, []byte)
-
-	// GetPubKeyByChainID can get aim chain's public key using aim chain ID
-	GetPubKeyByChainID(id string) (bool, []byte)
 }
