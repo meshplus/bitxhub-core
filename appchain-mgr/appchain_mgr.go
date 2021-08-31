@@ -43,6 +43,7 @@ type Appchain struct {
 	DidDocAddr    string             `json:"did_doc_addr"`
 	DidDocHash    string             `json:"did_doc_hash"`
 	Rule          string             `json:"rule"`
+	RuleUrl       string             `json:"rule_url"`
 	FSM           *fsm.FSM           `json:"fsm"`
 }
 
