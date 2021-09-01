@@ -19,6 +19,7 @@ type RuleManager struct {
 
 type Rule struct {
 	Address string                      `json:"address"`
+	RuleUrl string                      `json:"rule_url"`
 	ChainID string                      `json:"chain_id"`
 	Master  bool                        `json:"master"`
 	Status  governance.GovernanceStatus `json:"status"`
@@ -26,10 +27,10 @@ type Rule struct {
 }
 
 var ruleStateMap = map[governance.EventType][]governance.GovernanceStatus{
-	governance.EventLogout:   {governance.GovernanceBindable},
-	governance.EventRegister: {governance.GovernanceBindable},
-	governance.EventUpdate:   {governance.GovernanceBindable},
-	governance.EventUnbind:   {governance.GovernanceAvailable},
+	governance.EventBind:   {governance.GovernanceBindable},
+	governance.EventLogout: {governance.GovernanceBindable},
+	governance.EventUpdate: {governance.GovernanceBindable},
+	governance.EventUnbind: {governance.GovernanceAvailable},
 }
 
 var ruleAvailableMap = map[governance.GovernanceStatus]struct{}{
@@ -66,10 +67,8 @@ func (rule *Rule) setFSM(lastStatus governance.GovernanceStatus) {
 	rule.FSM = fsm.NewFSM(
 		string(rule.Status),
 		fsm.Events{
-			// register(bind) 1
-			{Name: string(governance.EventRegister), Src: []string{string(governance.GovernanceBindable), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceBinding)},
-			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceBinding)}, Dst: string(governance.GovernanceAvailable)},
-			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceBinding)}, Dst: string(lastStatus)},
+			// bind
+			{Name: string(governance.EventBind), Src: []string{string(governance.GovernanceBindable), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceAvailable)},
 
 			// update(bind) 1
 			{Name: string(governance.EventUpdate), Src: []string{string(governance.GovernanceBindable), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceBinding)},
@@ -100,12 +99,12 @@ func (rule *Rule) setFSM(lastStatus governance.GovernanceStatus) {
 }
 
 // Register record rule
-func (rm *RuleManager) Register(chainID, ruleAddress string) (bool, []byte) {
+func (rm *RuleManager) Register(chainID, ruleAddress, ruleUrl string) (bool, []byte) {
 	rules := make([]*Rule, 0)
-	_ = rm.GetObject(rm.ruleKey(chainID), &rules)
+	_ = rm.GetObject(RuleKey(chainID), &rules)
 
-	rules = append(rules, &Rule{ruleAddress, chainID, false, governance.GovernanceBindable, nil})
-	rm.SetObject(rm.ruleKey(chainID), rules)
+	rules = append(rules, &Rule{ruleAddress, ruleUrl, chainID, false, governance.GovernanceBindable, nil})
+	rm.SetObject(RuleKey(chainID), rules)
 
 	return true, nil
 }
@@ -113,7 +112,7 @@ func (rm *RuleManager) Register(chainID, ruleAddress string) (bool, []byte) {
 // GovernancePre checks if the rule address can do event with appchain id and record rule. (only check, not modify infomation)
 func (rm *RuleManager) GovernancePre(ruleAddress string, event governance.EventType, chainID []byte) (interface{}, error) {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(string(chainID)), &rules); !ok {
+	if ok := rm.GetObject(RuleKey(string(chainID)), &rules); !ok {
 		if event == governance.EventRegister {
 			return nil, nil
 		} else {
@@ -166,7 +165,7 @@ func (rm *RuleManager) GovernancePre(ruleAddress string, event governance.EventT
 
 func (rm *RuleManager) ChangeStatus(ruleAddress, trigger, lastStatus string, chainID []byte) (bool, []byte) {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(string(chainID)), &rules); !ok {
+	if ok := rm.GetObject(RuleKey(string(chainID)), &rules); !ok {
 		return false, []byte("this appchain's rules do not exist")
 	}
 
@@ -186,7 +185,7 @@ func (rm *RuleManager) ChangeStatus(ruleAddress, trigger, lastStatus string, cha
 		return false, []byte("the rule does not exist ")
 	}
 
-	rm.SetObject(rm.ruleKey(string(chainID)), rules)
+	rm.SetObject(RuleKey(string(chainID)), rules)
 
 	return true, nil
 }
@@ -194,7 +193,7 @@ func (rm *RuleManager) ChangeStatus(ruleAddress, trigger, lastStatus string, cha
 // CountAvailable counts all rules of one appchain including available
 func (rm *RuleManager) CountAvailable(chainID []byte) (bool, []byte) {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(string(chainID)), &rules); !ok {
+	if ok := rm.GetObject(RuleKey(string(chainID)), &rules); !ok {
 		return true, []byte(strconv.Itoa(0))
 	}
 
@@ -210,7 +209,7 @@ func (rm *RuleManager) CountAvailable(chainID []byte) (bool, []byte) {
 
 func (rm *RuleManager) CountAll(chainID []byte) (bool, []byte) {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(string(chainID)), &rules); !ok {
+	if ok := rm.GetObject(RuleKey(string(chainID)), &rules); !ok {
 		return true, []byte(strconv.Itoa(0))
 	}
 
@@ -220,7 +219,7 @@ func (rm *RuleManager) CountAll(chainID []byte) (bool, []byte) {
 // Appchains returns all appchains
 func (rm *RuleManager) All(chainID []byte) (interface{}, error) {
 	ret := make([]*Rule, 0)
-	ok := rm.GetObject(rm.ruleKey(string(chainID)), &ret)
+	ok := rm.GetObject(RuleKey(string(chainID)), &ret)
 	if !ok {
 		return nil, nil
 	}
@@ -230,7 +229,7 @@ func (rm *RuleManager) All(chainID []byte) (interface{}, error) {
 
 func (rm *RuleManager) QueryById(ruleAddress string, chainID []byte) (interface{}, error) {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(string(chainID)), &rules); !ok {
+	if ok := rm.GetObject(RuleKey(string(chainID)), &rules); !ok {
 		return nil, fmt.Errorf("this appchain's rules do not exist")
 	}
 
@@ -245,7 +244,7 @@ func (rm *RuleManager) QueryById(ruleAddress string, chainID []byte) (interface{
 
 func (rm *RuleManager) GetMaster(chainID string) (*Rule, error) {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(chainID), &rules); !ok {
+	if ok := rm.GetObject(RuleKey(chainID), &rules); !ok {
 		return nil, nil
 	}
 
@@ -260,7 +259,7 @@ func (rm *RuleManager) GetMaster(chainID string) (*Rule, error) {
 
 func (rm *RuleManager) HasMaster(chainID string) bool {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(chainID), &rules); !ok {
+	if ok := rm.GetObject(RuleKey(chainID), &rules); !ok {
 		return false
 	}
 
@@ -282,6 +281,6 @@ func (rm *RuleManager) IsAvailable(chainID, ruleAddress string) bool {
 	return rule.(*Rule).IsAvailable()
 }
 
-func (rm *RuleManager) ruleKey(id string) string {
-	return RULEPREFIX + id
+func RuleKey(chainID string) string {
+	return fmt.Sprintf("%s-%s", RULEPREFIX, chainID)
 }
