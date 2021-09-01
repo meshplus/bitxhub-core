@@ -116,23 +116,23 @@ func (s *Service) setFSM(lastStatus governance.GovernanceStatus) {
 	)
 }
 
-func (sm *ServiceManager) GovernancePre(id string, event governance.EventType, _ []byte) (interface{}, []byte, error) {
+func (sm *ServiceManager) GovernancePre(id string, event governance.EventType, _ []byte) (interface{}, error) {
 	service := &Service{}
 	if ok := sm.GetObject(ServiceKey(id), service); !ok {
 		if event == governance.EventRegister {
-			return nil, nil, nil
+			return nil, nil
 		} else {
-			return nil, nil, fmt.Errorf("the service does not exist")
+			return nil, fmt.Errorf("the service does not exist")
 		}
 	}
 
 	for _, s := range serviceStateMap[event] {
 		if service.Status == s {
-			return service, nil, nil
+			return service, nil
 		}
 	}
 
-	return nil, nil, fmt.Errorf("the service (%s) can not be %s", string(service.Status), string(event))
+	return nil, fmt.Errorf("the service (%s) can not be %s", string(service.Status), string(event))
 }
 
 func (sm *ServiceManager) ChangeStatus(id, trigger, lastStatus string, _ []byte) (bool, []byte) {
@@ -181,18 +181,16 @@ func (sm *ServiceManager) CountAll(_ []byte) (bool, []byte) {
 }
 
 func (sm *ServiceManager) All(_ []byte) (interface{}, error) {
-	ok, value := sm.Query(SERVICE_PREFIX)
-	if !ok {
-		return nil, nil
-	}
-
 	ret := make([]*Service, 0)
-	for _, data := range value {
-		service := &Service{}
-		if err := json.Unmarshal(data, service); err != nil {
-			return nil, err
+	ok, value := sm.Query(SERVICE_PREFIX)
+	if ok {
+		for _, data := range value {
+			service := &Service{}
+			if err := json.Unmarshal(data, service); err != nil {
+				return nil, err
+			}
+			ret = append(ret, service)
 		}
-		ret = append(ret, service)
 	}
 
 	return ret, nil

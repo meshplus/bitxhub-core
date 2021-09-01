@@ -242,18 +242,16 @@ func (am *AppchainManager) CountAll(_ []byte) (bool, []byte) {
 
 // Appchains returns all appchains
 func (am *AppchainManager) All(_ []byte) (interface{}, error) {
-	ok, value := am.Query(PREFIX)
-	if !ok {
-		return nil, nil
-	}
-
 	ret := make([]*Appchain, 0)
-	for _, data := range value {
-		chain := &Appchain{}
-		if err := json.Unmarshal(data, chain); err != nil {
-			return nil, err
+	ok, value := am.Query(PREFIX)
+	if ok {
+		for _, data := range value {
+			chain := &Appchain{}
+			if err := json.Unmarshal(data, chain); err != nil {
+				return nil, err
+			}
+			ret = append(ret, chain)
 		}
-		ret = append(ret, chain)
 	}
 
 	return ret, nil
