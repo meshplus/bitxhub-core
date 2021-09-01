@@ -87,12 +87,19 @@ func (rule *Rule) setFSM(lastStatus governance.GovernanceStatus) {
 		fsm.Callbacks{
 			"enter_state": func(e *fsm.Event) {
 				rule.Status = governance.GovernanceStatus(rule.FSM.Current())
+
+				// After the status change, if the rule is bound or the master authentication rule is updated successfully,
+				// we need to enable the master identifier of the master rule
 				if e.Event == string(governance.EventApprove) {
 					if rule.Status == governance.GovernanceAvailable {
 						rule.Master = true
 					} else {
 						rule.Master = false
 					}
+				}
+
+				if e.Event == string(governance.EventBind) {
+					rule.Master = true
 				}
 			},
 		},
@@ -220,10 +227,7 @@ func (rm *RuleManager) CountAll(chainID []byte) (bool, []byte) {
 // Appchains returns all appchains
 func (rm *RuleManager) All(chainID []byte) (interface{}, error) {
 	ret := make([]*Rule, 0)
-	ok := rm.GetObject(RuleKey(string(chainID)), &ret)
-	if !ok {
-		return nil, nil
-	}
+	_ = rm.GetObject(RuleKey(string(chainID)), &ret)
 
 	return ret, nil
 }

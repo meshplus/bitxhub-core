@@ -178,18 +178,16 @@ func (nm *NodeManager) CountAll(nodeType []byte) (bool, []byte) {
 
 // All returns all nodes
 func (nm *NodeManager) All(_ []byte) (interface{}, error) {
-	ok, value := nm.Query(NODEPREFIX)
-	if !ok {
-		return nil, nil
-	}
-
 	ret := make([]*Node, 0)
-	for _, data := range value {
-		node := &Node{}
-		if err := json.Unmarshal(data, node); err != nil {
-			return nil, err
+	ok, value := nm.Query(NODEPREFIX)
+	if ok {
+		for _, data := range value {
+			node := &Node{}
+			if err := json.Unmarshal(data, node); err != nil {
+				return nil, err
+			}
+			ret = append(ret, node)
 		}
-		ret = append(ret, node)
 	}
 
 	return ret, nil
