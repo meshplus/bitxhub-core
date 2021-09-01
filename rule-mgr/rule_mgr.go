@@ -41,6 +41,7 @@ var ruleAvailableMap = map[governance.GovernanceStatus]struct{}{
 var defaultRuleMap = map[string]struct{}{
 	validator.FabricRuleAddr:    {},
 	validator.SimFabricRuleAddr: {},
+	validator.HappyRuleAddr:     {},
 }
 
 func New(persister governance.Persister) RuleMgr {
