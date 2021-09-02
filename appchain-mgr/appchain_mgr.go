@@ -46,6 +46,8 @@ var appchainStateMap = map[g.EventType][]g.GovernanceStatus{
 	g.EventFreeze:   {g.GovernanceAvailable, g.GovernanceUpdating, g.GovernanceActivating},
 	g.EventActivate: {g.GovernanceFrozen},
 	g.EventLogout:   {g.GovernanceAvailable, g.GovernanceUpdating, g.GovernanceFreezing, g.GovernanceActivating, g.GovernanceFrozen},
+	g.EventPause:    {g.GovernanceAvailable, g.GovernanceFrozen},
+	g.EventUnpause:  {g.GovernanceFrozen},
 }
 
 var appchainAvailableMap = map[g.GovernanceStatus]struct{}{
@@ -93,6 +95,12 @@ func (chain *Appchain) setFSM(lastStatus g.GovernanceStatus) {
 			{Name: string(g.EventLogout), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceUpdating), string(g.GovernanceFreezing), string(g.GovernanceFrozen), string(g.GovernanceActivating)}, Dst: string(g.GovernanceLogouting)},
 			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceLogouting)}, Dst: string(g.GovernanceForbidden)},
 			{Name: string(g.EventReject), Src: []string{string(g.GovernanceLogouting)}, Dst: string(lastStatus)},
+
+			// pause
+			{Name: string(g.EventPause), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceFrozen)}, Dst: string(g.GovernanceFrozen)},
+
+			// unpause
+			{Name: string(g.EventUnpause), Src: []string{string(g.GovernanceFrozen)}, Dst: string(lastStatus)},
 		},
 		fsm.Callbacks{
 			"enter_state": func(e *fsm.Event) { chain.Status = g.GovernanceStatus(chain.FSM.Current()) },
