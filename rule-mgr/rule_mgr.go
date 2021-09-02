@@ -250,7 +250,7 @@ func (rm *RuleManager) QueryById(ruleAddress string, chainID []byte) (interface{
 func (rm *RuleManager) GetMaster(chainID string) (*Rule, error) {
 	rules := make([]*Rule, 0)
 	if ok := rm.GetObject(RuleKey(chainID), &rules); !ok {
-		return nil, nil
+		return nil, fmt.Errorf("the master rule is not exist")
 	}
 
 	for _, r := range rules {
@@ -259,7 +259,7 @@ func (rm *RuleManager) GetMaster(chainID string) (*Rule, error) {
 		}
 	}
 
-	return nil, nil
+	return nil, fmt.Errorf("the master rule is not exist")
 }
 
 func (rm *RuleManager) HasMaster(chainID string) bool {
