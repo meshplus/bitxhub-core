@@ -43,7 +43,7 @@ func (vlt *WasmValidator) Verify(address, from string, proof, payload []byte, va
 
 	ret, gasUsed, err := vlt.wasm.Execute(vlt.input, vlt.gasLimit)
 	if err != nil {
-		return false, 0, err
+		return false, gasUsed, err
 	}
 	// put wasm instance into pool
 	v, ok := vlt.instances.Load(ruleHash)

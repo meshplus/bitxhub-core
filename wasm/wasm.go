@@ -146,52 +146,30 @@ func (w *Wasm) Execute(input []byte, wasmGasLimit uint64) (ret []byte, gasUsed u
 	slice := make([]interface{}, len(payload.Args))
 	for i := range slice {
 		arg := payload.Args[i]
+		var temp interface{}
+		var err error
 		switch arg.Type {
 		case pb.Arg_I32:
-			temp, err := strconv.Atoi(string(arg.Value))
-			if err != nil {
-				return nil, 0, err
-			}
-			slice[i] = temp
+			temp, err = strconv.Atoi(string(arg.Value))
 		case pb.Arg_I64:
-			temp, err := strconv.ParseInt(string(arg.Value), 10, 64)
-			if err != nil {
-				return nil, 0, err
-			}
-			slice[i] = temp
+			temp, err = strconv.ParseInt(string(arg.Value), 10, 64)
 		case pb.Arg_F32:
-			temp, err := strconv.ParseFloat(string(arg.Value), 32)
-			if err != nil {
-				return nil, 0, err
-			}
-			slice[i] = temp
+			temp, err = strconv.ParseFloat(string(arg.Value), 32)
 		case pb.Arg_F64:
-			temp, err := strconv.ParseFloat(string(arg.Value), 64)
-			if err != nil {
-				return nil, 0, err
-			}
-			slice[i] = temp
+			temp, err = strconv.ParseFloat(string(arg.Value), 64)
 		case pb.Arg_String:
-			inputPointer, err := w.SetString(string(arg.Value))
-			if err != nil {
-				return nil, 0, err
-			}
-			slice[i] = inputPointer
+			temp, err = w.SetString(string(arg.Value))
 		case pb.Arg_Bytes:
-			inputPointer, err := w.SetBytes(arg.Value)
-			if err != nil {
-				return nil, 0, err
-			}
-			slice[i] = inputPointer
+			temp, err = w.SetBytes(arg.Value)
 		case pb.Arg_Bool:
-			inputPointer, err := strconv.Atoi(string(arg.Value))
-			if err != nil {
-				return nil, 0, err
-			}
-			slice[i] = inputPointer
+			temp, err = strconv.Atoi(string(arg.Value))
 		default:
-			return nil, 0, fmt.Errorf("input type not support")
+			err = fmt.Errorf("input type not support")
 		}
+		if err != nil {
+			return nil, wasmGasLimit - w.GetContext("gaslimit").(*usegas.GasLimit).GetLimit(), err
+		}
+		slice[i] = temp
 	}
 
 	w.env.Ctx[CONTEXT_ARGMAP] = w.argMap
