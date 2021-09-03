@@ -15,8 +15,8 @@ type GasLimit struct {
 }
 
 func (g *GasLimit) GetLimit() uint64 {
-	g.Lock()
-	defer g.Unlock()
+	g.RLock()
+	defer g.RUnlock()
 
 	return g.limit
 }
@@ -39,7 +39,6 @@ func usegas(env interface{}, args []wasmer.Value) ([]wasmer.Value, error) {
 		return []wasmer.Value{}, fmt.Errorf("run out of gas limit")
 	}
 	remain := gasL - gasPrice
-	//fmt.Println(remain)
 
 	gasLimit.SetLimit(remain)
 	return []wasmer.Value{}, nil

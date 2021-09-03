@@ -1,22 +1,18 @@
 package appchain_mgr
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strconv"
 
 	"github.com/looplab/fsm"
+	"github.com/meshplus/bitxhub-core/governance"
 	g "github.com/meshplus/bitxhub-core/governance"
-	"github.com/meshplus/bitxhub-kit/crypto"
-	"github.com/meshplus/bitxhub-kit/crypto/asym/ecdsa"
-	"github.com/meshplus/bitxhub-kit/hexutil"
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	PREFIX            = "appchain-"
-	CHAIN_ADDR_PREFIX = "addr-"
+	PREFIX = "appchain"
 
 	RelaychainType = "relaychain"
 	AppchainType   = "appchain"
@@ -28,19 +24,14 @@ type AppchainManager struct {
 }
 
 type Appchain struct {
-	ID            string             `json:"id"`
-	Name          string             `json:"name"`
-	Validators    string             `json:"validators"`
-	ConsensusType string             `json:"consensus_type"`
-	Status        g.GovernanceStatus `json:"status"`
-	ChainType     string             `json:"chain_type"`
-	Desc          string             `json:"desc"`
-	Version       string             `json:"version"`
-	PublicKey     string             `json:"public_key"`
-	OwnerDID      string             `json:"owner_did"`
-	DidDocAddr    string             `json:"did_doc_addr"`
-	DidDocHash    string             `json:"did_doc_hash"`
-	FSM           *fsm.FSM           `json:"fsm"`
+	ID        string `json:"id"`
+	TrustRoot []byte `json:"trust_root"`
+	Broker    string `json:"broker"`
+	Desc      string `json:"desc"`
+	Version   uint64 `json:"version"`
+
+	Status g.GovernanceStatus `json:"status"`
+	FSM    *fsm.FSM           `json:"fsm"`
 }
 
 type auditRecord struct {
@@ -55,20 +46,28 @@ var appchainStateMap = map[g.EventType][]g.GovernanceStatus{
 	g.EventFreeze:   {g.GovernanceAvailable, g.GovernanceUpdating, g.GovernanceActivating},
 	g.EventActivate: {g.GovernanceFrozen},
 	g.EventLogout:   {g.GovernanceAvailable, g.GovernanceUpdating, g.GovernanceFreezing, g.GovernanceActivating, g.GovernanceFrozen},
+	g.EventPause:    {g.GovernanceAvailable, g.GovernanceFrozen},
+	g.EventUnpause:  {g.GovernanceFrozen},
 }
 
-var AppchainAvailableState = []g.GovernanceStatus{
-	g.GovernanceAvailable,
-	g.GovernanceUpdating,
-	g.GovernanceFreezing,
-	g.GovernanceLogouting,
+var appchainAvailableMap = map[g.GovernanceStatus]struct{}{
+	g.GovernanceAvailable: {},
+	g.GovernanceFreezing:  {},
 }
 
 func New(persister g.Persister) AppchainMgr {
 	return &AppchainManager{persister}
 }
 
-func setFSM(chain *Appchain, lastStatus g.GovernanceStatus) {
+func (a *Appchain) IsAvailable() bool {
+	if _, ok := appchainAvailableMap[a.Status]; ok {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (chain *Appchain) setFSM(lastStatus g.GovernanceStatus) {
 	chain.FSM = fsm.NewFSM(
 		string(chain.Status),
 		fsm.Events{
@@ -96,6 +95,12 @@ func setFSM(chain *Appchain, lastStatus g.GovernanceStatus) {
 			{Name: string(g.EventLogout), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceUpdating), string(g.GovernanceFreezing), string(g.GovernanceFrozen), string(g.GovernanceActivating)}, Dst: string(g.GovernanceLogouting)},
 			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceLogouting)}, Dst: string(g.GovernanceForbidden)},
 			{Name: string(g.EventReject), Src: []string{string(g.GovernanceLogouting)}, Dst: string(lastStatus)},
+
+			// pause
+			{Name: string(g.EventPause), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceFrozen)}, Dst: string(g.GovernanceFrozen)},
+
+			// unpause
+			{Name: string(g.EventUnpause), Src: []string{string(g.GovernanceFrozen)}, Dst: string(lastStatus)},
 		},
 		fsm.Callbacks{
 			"enter_state": func(e *fsm.Event) { chain.Status = g.GovernanceStatus(chain.FSM.Current()) },
@@ -104,73 +109,47 @@ func setFSM(chain *Appchain, lastStatus g.GovernanceStatus) {
 }
 
 // GovernancePre checks if the appchain can do the event. (only check, not modify infomation)
-func (am *AppchainManager) GovernancePre(chainId string, event g.EventType, _ []byte) (bool, []byte) {
+// return *appchain, extra info, error
+func (am *AppchainManager) GovernancePre(chainId string, event g.EventType, _ []byte) (interface{}, error) {
 	chain := &Appchain{}
 	if ok := am.GetObject(am.appchainKey(chainId), chain); !ok {
-		return false, []byte("this appchain do not exist")
+		if event == governance.EventRegister {
+			return nil, nil
+		} else {
+			return nil, fmt.Errorf("the appchain does not exist")
+		}
 	}
 
 	for _, s := range appchainStateMap[event] {
 		if chain.Status == s {
-			return true, nil
+			return chain, nil
 		}
 	}
 
-	return false, []byte(fmt.Sprintf("The appchain (%s) can not be %s", string(chain.Status), string(event)))
+	return nil, fmt.Errorf("the appchain (%s) can not be %s", string(chain.Status), string(event))
 }
 
-// Register registers appchain info return appchain id and error
-func (am *AppchainManager) Register(info []byte) (bool, []byte) {
-	chain := &Appchain{}
-	if err := json.Unmarshal(info, chain); err != nil {
-		return false, []byte(err.Error())
-	}
+// Register registers appchain info
+func (am *AppchainManager) Register(chainInfo *Appchain) (bool, []byte) {
 
-	res := &g.RegisterResult{}
-	res.ID = chain.ID
+	am.SetObject(am.appchainKey(chainInfo.ID), chainInfo)
+	am.Logger().WithFields(logrus.Fields{
+		"id": chainInfo.ID,
+	}).Info("Appchain is registering")
 
-	tmpChain := &Appchain{}
-	ok := am.GetObject(am.appchainKey(chain.ID), tmpChain)
-
-	if ok && tmpChain.Status != g.GovernanceUnavailable {
-		am.Persister.Logger().WithFields(logrus.Fields{
-			"id": chain.ID,
-		}).Info("Appchain has registered")
-		res.IsRegistered = true
-	} else {
-		am.SetObject(am.appchainKey(chain.ID), chain)
-
-		addr, err := getAddr(chain.PublicKey)
-		if err != nil {
-			return false, []byte(err.Error())
-		}
-		am.SetObject(am.appchainAddrKey(addr), chain.ID)
-		am.Logger().WithFields(logrus.Fields{
-			"id": chain.ID,
-		}).Info("Appchain is registering")
-		res.IsRegistered = false
-	}
-
-	resData, err := json.Marshal(res)
-	if err != nil {
-		return false, []byte(err.Error())
-	}
-
-	return true, resData
+	return true, nil
 }
 
-func (am *AppchainManager) Update(info []byte) (bool, []byte) {
-	chain := &Appchain{}
-	if err := json.Unmarshal(info, chain); err != nil {
-		return false, []byte(err.Error())
-	}
-
-	ok := am.Has(am.appchainKey(chain.ID))
+func (am *AppchainManager) Update(updateInfo *Appchain) (bool, []byte) {
+	var chain Appchain
+	ok := am.GetObject(am.appchainKey(updateInfo.ID), &chain)
 	if !ok {
 		return false, []byte("this appchain does not exist")
 	}
 
-	am.SetObject(am.appchainKey(chain.ID), chain)
+	chain.Desc = updateInfo.Desc
+	chain.Version++
+	am.SetObject(am.appchainKey(updateInfo.ID), chain)
 
 	return true, nil
 }
@@ -178,7 +157,7 @@ func (am *AppchainManager) Update(info []byte) (bool, []byte) {
 func (am *AppchainManager) ChangeStatus(id, trigger, lastStatus string, _ []byte) (bool, []byte) {
 	ok, data := am.Get(am.appchainKey(id))
 	if !ok {
-		return false, []byte(fmt.Errorf("this appchain does not exist").Error())
+		return false, []byte(fmt.Sprintf("this appchain does not exist"))
 	}
 
 	chain := &Appchain{}
@@ -186,7 +165,7 @@ func (am *AppchainManager) ChangeStatus(id, trigger, lastStatus string, _ []byte
 		return false, []byte(fmt.Sprintf("unmarshal json error: %v", err))
 	}
 
-	setFSM(chain, g.GovernanceStatus(lastStatus))
+	chain.setFSM(g.GovernanceStatus(lastStatus))
 	err := chain.FSM.Event(trigger)
 	if err != nil {
 		return false, []byte(fmt.Sprintf("change status error: %v", err))
@@ -253,11 +232,8 @@ func (am *AppchainManager) CountAvailable(_ []byte) (bool, []byte) {
 		if err := json.Unmarshal(v, a); err != nil {
 			return false, []byte(fmt.Sprintf("unmarshal json error: %v", err))
 		}
-		for _, s := range AppchainAvailableState {
-			if a.Status == s {
-				count++
-				break
-			}
+		if a.IsAvailable() {
+			count++
 		}
 	}
 	return true, []byte(strconv.Itoa(count))
@@ -273,65 +249,34 @@ func (am *AppchainManager) CountAll(_ []byte) (bool, []byte) {
 }
 
 // Appchains returns all appchains
-func (am *AppchainManager) All(_ []byte) (bool, []byte) {
-	ok, value := am.Query(PREFIX)
-	if !ok {
-		return true, nil
-	}
-
+func (am *AppchainManager) All(_ []byte) (interface{}, error) {
 	ret := make([]*Appchain, 0)
-	for _, data := range value {
-		chain := &Appchain{}
-		if err := json.Unmarshal(data, chain); err != nil {
-			return false, []byte(err.Error())
+	ok, value := am.Query(PREFIX)
+	if ok {
+		for _, data := range value {
+			chain := &Appchain{}
+			if err := json.Unmarshal(data, chain); err != nil {
+				return nil, err
+			}
+			ret = append(ret, chain)
 		}
-		ret = append(ret, chain)
 	}
 
-	data, err := json.Marshal(ret)
-	if err != nil {
-		return false, []byte(err.Error())
-	}
-	return true, data
+	return ret, nil
 }
 
-func (am *AppchainManager) QueryById(id string, _ []byte) (bool, []byte) {
-	ok, data := am.Get(am.appchainKey(id))
+func (am *AppchainManager) QueryById(id string, _ []byte) (interface{}, error) {
+	var appchain Appchain
+	ok := am.GetObject(am.appchainKey(id), &appchain)
 	if !ok {
-		return false, []byte(fmt.Errorf("this appchain does not exist").Error())
+		return nil, fmt.Errorf("this appchain does not exist")
 	}
 
-	return true, data
-}
-
-func (am *AppchainManager) GetIdByAddr(addr string) (bool, []byte) {
-	id := ""
-	ok := am.GetObject(am.appchainAddrKey(addr), &id)
-	if !ok {
-		return false, []byte(fmt.Errorf("this appchain does not exist").Error())
-	}
-
-	return true, []byte(id)
-}
-
-// GetPubKeyByChainID can get aim chain's public key using aim chain ID
-func (am *AppchainManager) GetPubKeyByChainID(id string) (bool, []byte) {
-	ok := am.Has(am.appchainKey(id))
-	if !ok {
-		return false, []byte("chain is not existed")
-	} else {
-		chain := &Appchain{}
-		am.GetObject(am.appchainKey(id), chain)
-		return true, []byte(chain.PublicKey)
-	}
+	return &appchain, nil
 }
 
 func (am *AppchainManager) appchainKey(id string) string {
-	return PREFIX + id
-}
-
-func (am *AppchainManager) appchainAddrKey(pub string) string {
-	return CHAIN_ADDR_PREFIX + pub
+	return fmt.Sprintf("%s-%s", PREFIX, id)
 }
 
 func (am *AppchainManager) auditRecordKey(id string) string {
@@ -340,28 +285,4 @@ func (am *AppchainManager) auditRecordKey(id string) string {
 
 func (am *AppchainManager) indexMapKey(id string) string {
 	return fmt.Sprintf("index-tx-%s", id)
-}
-
-func getAddr(pubKeyStr string) (string, error) {
-	var pubKeyBytes []byte
-	var pubKey crypto.PublicKey
-	pubKeyBytes = hexutil.Decode(pubKeyStr)
-	pubKey, err := ecdsa.UnmarshalPublicKey(pubKeyBytes, crypto.Secp256k1)
-	if err != nil {
-		pubKeyBytes, err = base64.StdEncoding.DecodeString(pubKeyStr)
-		if err != nil {
-			return "", fmt.Errorf("decode error: %w", err)
-		}
-		pubKey, err = ecdsa.UnmarshalPublicKey(pubKeyBytes, crypto.Secp256k1)
-		if err != nil {
-			return "", fmt.Errorf("decrypt registerd public key error: %w", err)
-		}
-		//return "", fmt.Errorf("decrypt registerd public key error: %w", err)
-	}
-	addr, err := pubKey.Address()
-	if err != nil {
-		return "", fmt.Errorf("decrypt registerd public key error: %w", err)
-	}
-
-	return addr.String(), nil
 }

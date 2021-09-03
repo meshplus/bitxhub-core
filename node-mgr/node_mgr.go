@@ -37,21 +37,29 @@ type Node struct {
 	FSM    *fsm.FSM                    `json:"fsm"`
 }
 
+var nodeAvailableMap = map[governance.GovernanceStatus]struct{}{
+	governance.GovernanceAvailable: {},
+	governance.GovernanceLogouting: {},
+}
+
 var nodeStateMap = map[governance.EventType][]governance.GovernanceStatus{
 	governance.EventRegister: {governance.GovernanceUnavailable},
 	governance.EventLogout:   {governance.GovernanceAvailable},
-}
-
-var NodeAvailableState = []governance.GovernanceStatus{
-	governance.GovernanceAvailable,
-	governance.GovernanceLogouting,
 }
 
 func New(persister governance.Persister) NodeMgr {
 	return &NodeManager{persister}
 }
 
-func setFSM(node *Node, lastStatus governance.GovernanceStatus) {
+func (n *Node) IsAvailable() bool {
+	if _, ok := nodeAvailableMap[n.Status]; ok {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (node *Node) setFSM(lastStatus governance.GovernanceStatus) {
 	node.FSM = fsm.NewFSM(
 		string(node.Status),
 		fsm.Events{
@@ -73,24 +81,25 @@ func setFSM(node *Node, lastStatus governance.GovernanceStatus) {
 	)
 }
 
-// GovernancePre checks if the node can do the event. (only check, not modify infomation)
-func (nm *NodeManager) GovernancePre(nodePid string, event governance.EventType, _ []byte) (bool, []byte) {
+// GovernancePre checks if the appchain can do the event. (only check, not modify infomation)
+// return *node, extra info, error
+func (nm *NodeManager) GovernancePre(nodePid string, event governance.EventType, _ []byte) (interface{}, error) {
 	node := &Node{}
 	if ok := nm.GetObject(nm.nodeKey(nodePid), node); !ok {
 		if event == governance.EventRegister {
-			return true, nil
+			return nil, nil
 		} else {
-			return false, []byte("this node does not exist")
+			return nil, fmt.Errorf("the node does not exist")
 		}
 	}
 
 	for _, s := range nodeStateMap[event] {
 		if node.Status == s {
-			return true, nil
+			return node, nil
 		}
 	}
 
-	return false, []byte(fmt.Sprintf("The node (%s) can not be %s", string(node.Status), string(event)))
+	return nil, fmt.Errorf("the node (%s) can not be %s", string(node.Status), string(event))
 }
 
 func (nm *NodeManager) ChangeStatus(nodePid string, trigger, lastStatus string, _ []byte) (bool, []byte) {
@@ -99,7 +108,7 @@ func (nm *NodeManager) ChangeStatus(nodePid string, trigger, lastStatus string, 
 		return false, []byte("this node does not exist")
 	}
 
-	setFSM(node, governance.GovernanceStatus(lastStatus))
+	node.setFSM(governance.GovernanceStatus(lastStatus))
 	err := node.FSM.Event(trigger)
 	if err != nil {
 		return false, []byte(fmt.Sprintf("change status error: %v", err))
@@ -140,11 +149,8 @@ func (nm *NodeManager) CountAvailable(nodeType []byte) (bool, []byte) {
 			return false, []byte(fmt.Sprintf("unmarshal json error: %v", err))
 		}
 		if node.NodeType == NodeType(nodeType) {
-			for _, s := range NodeAvailableState {
-				if node.Status == s {
-					count++
-					break
-				}
+			if node.IsAvailable() {
+				count++
 			}
 		}
 	}
@@ -171,37 +177,30 @@ func (nm *NodeManager) CountAll(nodeType []byte) (bool, []byte) {
 }
 
 // All returns all nodes
-func (nm *NodeManager) All(nodeType []byte) (bool, []byte) {
-	ok, value := nm.Query(NODEPREFIX)
-	if !ok {
-		return true, nil
-	}
-
+func (nm *NodeManager) All(_ []byte) (interface{}, error) {
 	ret := make([]*Node, 0)
-	for _, data := range value {
-		node := &Node{}
-		if err := json.Unmarshal(data, node); err != nil {
-			return false, []byte(err.Error())
-		}
-		if node.NodeType == NodeType((nodeType)) {
+	ok, value := nm.Query(NODEPREFIX)
+	if ok {
+		for _, data := range value {
+			node := &Node{}
+			if err := json.Unmarshal(data, node); err != nil {
+				return nil, err
+			}
 			ret = append(ret, node)
 		}
 	}
 
-	data, err := json.Marshal(ret)
-	if err != nil {
-		return false, []byte(err.Error())
-	}
-	return true, data
+	return ret, nil
 }
 
-func (nm *NodeManager) QueryById(nodePid string, _ []byte) (bool, []byte) {
-	ok, data := nm.Get(nm.nodeKey(nodePid))
+func (nm *NodeManager) QueryById(nodePid string, _ []byte) (interface{}, error) {
+	var node Node
+	ok := nm.GetObject(nm.nodeKey(nodePid), &node)
 	if !ok {
-		return false, []byte(fmt.Errorf("this node does not exist").Error())
+		return nil, fmt.Errorf("this node does not exist")
 	}
 
-	return true, data
+	return &node, nil
 }
 
 func (nm *NodeManager) GetPidById(nodeId string) (string, error) {

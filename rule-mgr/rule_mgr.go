@@ -1,13 +1,12 @@
 package rule_mgr
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 
 	"github.com/looplab/fsm"
 	"github.com/meshplus/bitxhub-core/governance"
-	"github.com/sirupsen/logrus"
+	"github.com/meshplus/bitxhub-core/validator"
 )
 
 const (
@@ -20,28 +19,60 @@ type RuleManager struct {
 
 type Rule struct {
 	Address string                      `json:"address"`
-	ChainId string                      `json:"chain_id"`
+	RuleUrl string                      `json:"rule_url"`
+	ChainID string                      `json:"chain_id"`
 	Master  bool                        `json:"master"`
 	Status  governance.GovernanceStatus `json:"status"`
 	FSM     *fsm.FSM                    `json:"fsm"`
 }
 
 var ruleStateMap = map[governance.EventType][]governance.GovernanceStatus{
-	governance.EventLogout: {governance.GovernanceBindable},
 	governance.EventBind:   {governance.GovernanceBindable},
+	governance.EventLogout: {governance.GovernanceBindable},
+	governance.EventUpdate: {governance.GovernanceBindable},
 	governance.EventUnbind: {governance.GovernanceAvailable},
+}
+
+var ruleAvailableMap = map[governance.GovernanceStatus]struct{}{
+	governance.GovernanceAvailable: {},
+	governance.GovernanceUnbinding: {},
+}
+
+var defaultRuleMap = map[string]struct{}{
+	validator.FabricRuleAddr:    {},
+	validator.SimFabricRuleAddr: {},
+	validator.HappyRuleAddr:     {},
 }
 
 func New(persister governance.Persister) RuleMgr {
 	return &RuleManager{persister}
 }
 
-func setFSM(rule *Rule, lastStatus governance.GovernanceStatus) {
+func (r *Rule) IsAvailable() bool {
+	if _, ok := ruleAvailableMap[r.Status]; ok {
+		return true
+	} else {
+		return false
+	}
+}
+
+func IsDefault(addr string) bool {
+	if _, ok := defaultRuleMap[addr]; ok {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (rule *Rule) setFSM(lastStatus governance.GovernanceStatus) {
 	rule.FSM = fsm.NewFSM(
 		string(rule.Status),
 		fsm.Events{
-			// bind 1
-			{Name: string(governance.EventBind), Src: []string{string(governance.GovernanceBindable), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceBinding)},
+			// bind
+			{Name: string(governance.EventBind), Src: []string{string(governance.GovernanceBindable), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceAvailable)},
+
+			// update(bind) 1
+			{Name: string(governance.EventUpdate), Src: []string{string(governance.GovernanceBindable), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceBinding)},
 			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceBinding)}, Dst: string(governance.GovernanceAvailable)},
 			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceBinding)}, Dst: string(lastStatus)},
 
@@ -56,6 +87,9 @@ func setFSM(rule *Rule, lastStatus governance.GovernanceStatus) {
 		fsm.Callbacks{
 			"enter_state": func(e *fsm.Event) {
 				rule.Status = governance.GovernanceStatus(rule.FSM.Current())
+
+				// After the status change, if the rule is bound or the master authentication rule is updated successfully,
+				// we need to enable the master identifier of the master rule
 				if e.Event == string(governance.EventApprove) {
 					if rule.Status == governance.GovernanceAvailable {
 						rule.Master = true
@@ -63,102 +97,83 @@ func setFSM(rule *Rule, lastStatus governance.GovernanceStatus) {
 						rule.Master = false
 					}
 				}
+
+				if e.Event == string(governance.EventBind) {
+					rule.Master = true
+				}
 			},
 		},
 	)
 }
 
 // Register record rule
-func (rm *RuleManager) Register(chainId, ruleAddress string) (bool, []byte) {
-	res := &governance.RegisterResult{}
-	res.ID = ruleAddress
-	res.IsRegistered = false
-
+func (rm *RuleManager) Register(chainID, ruleAddress, ruleUrl string) (bool, []byte) {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(chainId), &rules); ok {
-		for _, r := range rules {
-			if ruleAddress == r.Address {
-				rm.Persister.Logger().WithFields(logrus.Fields{
-					"id":   chainId,
-					"addr": ruleAddress,
-				}).Info("Rule has deployed")
-				res.IsRegistered = true
-				break
-			}
-		}
-	}
+	_ = rm.GetObject(RuleKey(chainID), &rules)
 
-	if !res.IsRegistered {
-		rules = append(rules, &Rule{ruleAddress, chainId, false, governance.GovernanceBindable, nil})
-		rm.SetObject(rm.ruleKey(chainId), rules)
-	}
-
-	resData, err := json.Marshal(res)
-	if err != nil {
-		return false, []byte(err.Error())
-	}
-
-	return true, resData
-}
-
-// BindPre checks if the rule address can bind with appchain id and record rule. (only check, not modify infomation)
-// force will be true when update master rule
-func (rm *RuleManager) BindPre(chainId, ruleAddress string, force bool) (bool, []byte) {
-	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(chainId), &rules); !ok {
-		return false, []byte("this appchain's rules do not exist")
-	}
-
-	isExisted := false
-	for _, r := range rules {
-		if ruleAddress == r.Address {
-			if r.Status != governance.GovernanceBindable {
-				return false, []byte("The rule is in an unbindable state: " + r.Status)
-			} else {
-				isExisted = true
-			}
-		} else {
-			if governance.GovernanceAvailable == r.Status && !force {
-				return false, []byte("There is already a bound (available) validation rule. Please unbind the rule before binding other validation rules")
-			}
-			if true == r.Master && governance.GovernanceAvailable != r.Status {
-				return false, []byte(fmt.Sprintf("The master rule is changing(%s) now. Please wait until the proposal close before binding new rule", r.Status))
-			}
-		}
-	}
-
-	if !isExisted {
-		return false, []byte("the rule does not exist ")
-	}
+	rules = append(rules, &Rule{ruleAddress, ruleUrl, chainID, false, governance.GovernanceBindable, nil})
+	rm.SetObject(RuleKey(chainID), rules)
 
 	return true, nil
 }
 
 // GovernancePre checks if the rule address can do event with appchain id and record rule. (only check, not modify infomation)
-func (rm *RuleManager) GovernancePre(ruleAddress string, event governance.EventType, chainId []byte) (bool, []byte) {
+func (rm *RuleManager) GovernancePre(ruleAddress string, event governance.EventType, chainID []byte) (interface{}, error) {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(string(chainId)), &rules); !ok {
-		return false, []byte("this appchain's rules do not exist")
-	}
-
-	for _, r := range rules {
-		if ruleAddress == r.Address {
-			for _, s := range ruleStateMap[event] {
-				if r.Status == s {
-					return true, nil
-				}
-			}
-			return false, []byte(fmt.Sprintf("The rule (%s) can not be %s", string(r.Status), string(event)))
+	if ok := rm.GetObject(RuleKey(string(chainID)), &rules); !ok {
+		if event == governance.EventRegister {
+			return nil, nil
+		} else {
+			return nil, fmt.Errorf("this appchain's rules do not exist")
 		}
 	}
 
-	return false, []byte("the rule does not exist ")
+	// check current rule status
+	var rule *Rule
+	statusOk := false
+	exist := false
+	for _, r := range rules {
+		if ruleAddress == r.Address {
+			exist = true
+			rule = r
+			for _, s := range ruleStateMap[event] {
+				if r.Status == s {
+					statusOk = true
+					break
+				}
+			}
+			break
+		}
+	}
 
+	if !exist {
+		if event == governance.EventRegister {
+			return nil, nil
+		} else {
+			return nil, fmt.Errorf("the rule (%s) does not exist ", ruleAddress)
+		}
+	}
+
+	if !statusOk {
+		return nil, fmt.Errorf("the rule (%s) can not be %s", string(rule.Status), string(event))
+	}
+
+	switch event {
+	case governance.EventUpdate:
+		for _, r := range rules {
+			if true == r.Master && governance.GovernanceAvailable != r.Status {
+				return nil, fmt.Errorf("The master rule is changing(%s) now. Please wait until the proposal close before updating new rule", r.Status)
+			}
+		}
+		fallthrough
+	default:
+		return rule, nil
+	}
 }
 
-func (rm *RuleManager) ChangeStatus(ruleAddress, trigger, lastStatus string, chainId []byte) (bool, []byte) {
+func (rm *RuleManager) ChangeStatus(ruleAddress, trigger, lastStatus string, chainID []byte) (bool, []byte) {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(string(chainId)), &rules); !ok {
+	if ok := rm.GetObject(RuleKey(string(chainID)), &rules); !ok {
 		return false, []byte("this appchain's rules do not exist")
 	}
 
@@ -166,7 +181,7 @@ func (rm *RuleManager) ChangeStatus(ruleAddress, trigger, lastStatus string, cha
 	for _, r := range rules {
 		if ruleAddress == r.Address {
 			flag = true
-			setFSM(r, governance.GovernanceStatus(lastStatus))
+			r.setFSM(governance.GovernanceStatus(lastStatus))
 			err := r.FSM.Event(trigger)
 			if err != nil {
 				return false, []byte(fmt.Sprintf("change status error: %v", err))
@@ -178,21 +193,21 @@ func (rm *RuleManager) ChangeStatus(ruleAddress, trigger, lastStatus string, cha
 		return false, []byte("the rule does not exist ")
 	}
 
-	rm.SetObject(rm.ruleKey(string(chainId)), rules)
+	rm.SetObject(RuleKey(string(chainID)), rules)
 
 	return true, nil
 }
 
 // CountAvailable counts all rules of one appchain including available
-func (rm *RuleManager) CountAvailable(chainId []byte) (bool, []byte) {
+func (rm *RuleManager) CountAvailable(chainID []byte) (bool, []byte) {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(string(chainId)), &rules); !ok {
+	if ok := rm.GetObject(RuleKey(string(chainID)), &rules); !ok {
 		return true, []byte(strconv.Itoa(0))
 	}
 
 	count := 0
 	for _, r := range rules {
-		if governance.GovernanceAvailable == r.Status {
+		if r.IsAvailable() {
 			count++
 		}
 	}
@@ -200,9 +215,9 @@ func (rm *RuleManager) CountAvailable(chainId []byte) (bool, []byte) {
 	return true, []byte(strconv.Itoa(count))
 }
 
-func (rm *RuleManager) CountAll(chainId []byte) (bool, []byte) {
+func (rm *RuleManager) CountAll(chainID []byte) (bool, []byte) {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(string(chainId)), &rules); !ok {
+	if ok := rm.GetObject(RuleKey(string(chainID)), &rules); !ok {
 		return true, []byte(strconv.Itoa(0))
 	}
 
@@ -210,71 +225,46 @@ func (rm *RuleManager) CountAll(chainId []byte) (bool, []byte) {
 }
 
 // Appchains returns all appchains
-func (rm *RuleManager) All(chainId []byte) (bool, []byte) {
-	ok, data := rm.Get(rm.ruleKey(string(chainId)))
-	if !ok {
-		return true, nil
-	}
+func (rm *RuleManager) All(chainID []byte) (interface{}, error) {
+	ret := make([]*Rule, 0)
+	_ = rm.GetObject(RuleKey(string(chainID)), &ret)
 
-	return true, data
+	return ret, nil
 }
 
-func (rm *RuleManager) QueryById(ruleAddress string, chainId []byte) (bool, []byte) {
+func (rm *RuleManager) QueryById(ruleAddress string, chainID []byte) (interface{}, error) {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(string(chainId)), &rules); !ok {
-		return false, []byte(fmt.Errorf("this appchain's rules do not exist").Error())
+	if ok := rm.GetObject(RuleKey(string(chainID)), &rules); !ok {
+		return nil, fmt.Errorf("this appchain's rules do not exist")
 	}
 
 	for _, r := range rules {
 		if ruleAddress == r.Address {
-			ruleData, err := json.Marshal(r)
-			if err != nil {
-				return false, []byte(fmt.Sprintf("marshal rule error: %v", err))
-			}
-			return true, ruleData
+			return r, nil
 		}
 	}
 
-	return false, []byte(fmt.Errorf("this rule does not exist").Error())
+	return nil, fmt.Errorf("this rule does not exist")
 }
 
-func (rm *RuleManager) GetAvailableRuleAddress(chainId string) (bool, []byte) {
+func (rm *RuleManager) GetMaster(chainID string) (*Rule, error) {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(chainId), &rules); !ok {
-		return false, []byte("this appchain's rules do not exist")
-	}
-
-	for _, r := range rules {
-		if governance.GovernanceAvailable == r.Status {
-			return true, []byte(r.Address)
-		}
-	}
-
-	return false, []byte("this appchain's available rule does not exist")
-}
-
-func (rm *RuleManager) GetMaster(chainId string) (bool, []byte) {
-	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(chainId), &rules); !ok {
-		return false, []byte("this appchain's rules do not exist")
+	if ok := rm.GetObject(RuleKey(chainID), &rules); !ok {
+		return nil, fmt.Errorf("the master rule is not exist")
 	}
 
 	for _, r := range rules {
 		if true == r.Master {
-			ruleData, err := json.Marshal(r)
-			if err != nil {
-				return false, []byte(fmt.Sprintf("marshal rule error: %v", err))
-			}
-			return true, ruleData
+			return r, nil
 		}
 	}
 
-	return false, []byte("this appchain's master rule does not exist")
+	return nil, fmt.Errorf("the master rule is not exist")
 }
 
-func (rm *RuleManager) HasMaster(chainId string) bool {
+func (rm *RuleManager) HasMaster(chainID string) bool {
 	rules := make([]*Rule, 0)
-	if ok := rm.GetObject(rm.ruleKey(chainId), &rules); !ok {
+	if ok := rm.GetObject(RuleKey(chainID), &rules); !ok {
 		return false
 	}
 
@@ -287,25 +277,15 @@ func (rm *RuleManager) HasMaster(chainId string) bool {
 	return false
 }
 
-func (rm *RuleManager) IsAvailable(chainId, ruleAddress string) (bool, []byte) {
-	is, data := rm.QueryById(ruleAddress, []byte(chainId))
-
-	if !is {
-		return false, []byte("get rule info error: " + string(data))
+func (rm *RuleManager) IsAvailable(chainID, ruleAddress string) bool {
+	rule, err := rm.QueryById(ruleAddress, []byte(chainID))
+	if err != nil {
+		return false
 	}
 
-	rule := &Rule{}
-	if err := json.Unmarshal(data, rule); err != nil {
-		return false, []byte("unmarshal rule error: " + err.Error())
-	}
-
-	if rule.Status != governance.GovernanceAvailable {
-		return false, []byte("the rule status is " + string(rule.Status))
-	}
-
-	return true, nil
+	return rule.(*Rule).IsAvailable()
 }
 
-func (rm *RuleManager) ruleKey(id string) string {
-	return RULEPREFIX + id
+func RuleKey(chainID string) string {
+	return fmt.Sprintf("%s-%s", RULEPREFIX, chainID)
 }
