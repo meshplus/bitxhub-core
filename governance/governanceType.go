@@ -47,8 +47,9 @@ type GovernanceResult struct {
 }
 
 type InvokeRecord struct {
-	Succeed int64 `json:"succeed"`
-	Failure int64 `json:"failure"`
+	Addr    string `json:"addr"`
+	Succeed int64  `json:"succeed"`
+	Failure int64  `json:"failure"`
 }
 
 type EvaluationRecord struct {

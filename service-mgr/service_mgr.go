@@ -39,8 +39,8 @@ type Service struct {
 	Details    string              `json:"details"`     // Detailed description of the service
 	CreateTime int64               `json:"create_time"` // service create time
 
-	Score             float64                        `json:"score"`
-	EvaluationRecords []*governance.EvaluationRecord `json:"evaluation_records"`
+	Score             float64                                 `json:"score"`
+	EvaluationRecords map[string]*governance.EvaluationRecord `json:"evaluation_records"`
 
 	InvokeCount       uint64                              `json:"invoke_count"`
 	InvokeSuccessRate float64                             `json:"invoke_success_rate"`
@@ -56,6 +56,7 @@ var serviceStateMap = map[governance.EventType][]governance.GovernanceStatus{
 	governance.EventFreeze:   {governance.GovernanceAvailable, governance.GovernanceUpdating, governance.GovernanceActivating},
 	governance.EventActivate: {governance.GovernanceFrozen},
 	governance.EventPause:    {governance.GovernanceAvailable, governance.GovernanceUpdating, governance.GovernanceFreezing, governance.GovernanceActivating, governance.GovernanceLogouting},
+	governance.EventUnpause:  {governance.GovernancePause},
 	governance.EventLogout:   {governance.GovernanceAvailable, governance.GovernanceUpdating, governance.GovernanceFreezing, governance.GovernanceActivating, governance.GovernanceFrozen, governance.GovernancePause},
 }
 
@@ -73,6 +74,16 @@ func (s *Service) IsAvailable() bool {
 		return true
 	} else {
 		return false
+	}
+}
+
+func (s *Service) CheckPermission(serviceId string) bool {
+	_, ok := s.Permission[serviceId]
+
+	if ok {
+		return false
+	} else {
+		return true
 	}
 }
 
@@ -101,7 +112,10 @@ func (s *Service) setFSM(lastStatus governance.GovernanceStatus) {
 			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceActivating)}, Dst: string(lastStatus)},
 
 			// pause
-			{Name: string(governance.EventPause), Src: []string{string(governance.GovernanceAvailable), string(governance.GovernanceUpdating), string(governance.GovernanceFreezing), string(governance.GovernanceActivating), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernancePause)},
+			{Name: string(governance.EventPause), Src: []string{string(governance.GovernanceAvailable), string(governance.GovernanceUpdating), string(governance.GovernanceFreezing), string(governance.GovernanceActivating)}, Dst: string(governance.GovernancePause)},
+
+			// unpause
+			{Name: string(governance.EventUnpause), Src: []string{string(governance.GovernancePause)}, Dst: string(governance.GovernanceAvailable)},
 
 			// logout 3
 			{Name: string(governance.EventLogout), Src: []string{string(governance.GovernanceAvailable), string(governance.GovernanceUpdating), string(governance.GovernanceFreezing), string(governance.GovernanceFrozen), string(governance.GovernanceActivating), string(governance.GovernancePause)}, Dst: string(governance.GovernanceLogouting)},
@@ -120,9 +134,9 @@ func (sm *ServiceManager) GovernancePre(id string, event governance.EventType, _
 	service := &Service{}
 	if ok := sm.GetObject(ServiceKey(id), service); !ok {
 		if event == governance.EventRegister {
-			return nil, nil
+			return service, nil
 		} else {
-			return nil, fmt.Errorf("the service does not exist")
+			return service, fmt.Errorf("the service does not exist")
 		}
 	}
 
@@ -132,13 +146,13 @@ func (sm *ServiceManager) GovernancePre(id string, event governance.EventType, _
 		}
 	}
 
-	return nil, fmt.Errorf("the service (%s) can not be %s", string(service.Status), string(event))
+	return service, fmt.Errorf("the service (%s) can not be %s", string(service.Status), string(event))
 }
 
 func (sm *ServiceManager) ChangeStatus(id, trigger, lastStatus string, _ []byte) (bool, []byte) {
 	service := &Service{}
 	if ok := sm.GetObject(ServiceKey(id), service); !ok {
-		return false, []byte("this service does not exist")
+		return false, []byte(fmt.Sprintf("this service does not exist: %s", id))
 	}
 
 	service.setFSM(governance.GovernanceStatus(lastStatus))
@@ -200,7 +214,7 @@ func (sm *ServiceManager) QueryById(id string, _ []byte) (interface{}, error) {
 	var service Service
 	ok := sm.GetObject(ServiceKey(id), &service)
 	if !ok {
-		return nil, fmt.Errorf("this service does not exist")
+		return nil, fmt.Errorf("this service does not exist: %s", id)
 	}
 
 	return &service, nil
@@ -208,18 +222,20 @@ func (sm *ServiceManager) QueryById(id string, _ []byte) (interface{}, error) {
 
 func (sm *ServiceManager) GetIDListByChainID(chainID string) (map[string]struct{}, error) {
 	serviceMap := make(map[string]struct{})
-	ok := sm.GetObject(AppchainServicesKey(chainID), serviceMap)
+	ok := sm.GetObject(AppchainServicesKey(chainID), &serviceMap)
 	if !ok {
-		return nil, fmt.Errorf("this service does not exist")
+		return nil, fmt.Errorf("the service list does not exist: %s", chainID)
 	}
 
 	return serviceMap, nil
 }
 
 func (sm *ServiceManager) PackageServiceInfo(chainID, serviceID, name, typ, intro string, ordered bool, permits, details string, createTime int64, status governance.GovernanceStatus) (*Service, error) {
-	permission := make(map[string]struct{})
-	for _, id := range strings.Split(permits, ",") {
-		permission[id] = struct{}{}
+	permission := make(map[string]struct{}, 0)
+	if permits != "" {
+		for _, id := range strings.Split(permits, ",") {
+			permission[id] = struct{}{}
+		}
 	}
 
 	service := &Service{
@@ -244,24 +260,25 @@ func (sm *ServiceManager) PackageServiceInfo(chainID, serviceID, name, typ, intr
 }
 
 func (sm *ServiceManager) Register(info *Service) (bool, []byte) {
-	sm.SetObject(ServiceKey(info.ServiceID), *info)
+	chainServiceID := fmt.Sprintf("%s:%s", info.ChainID, info.ServiceID)
+	sm.SetObject(ServiceKey(chainServiceID), *info)
 
 	serviceMap := make(map[string]struct{})
 	_ = sm.GetObject(AppchainServicesKey(info.ChainID), serviceMap)
-	serviceMap[info.ServiceID] = struct{}{}
+	serviceMap[chainServiceID] = struct{}{}
 	sm.SetObject(AppchainServicesKey(info.ChainID), serviceMap)
 
 	sm.Logger().WithFields(logrus.Fields{
-		"chainID":   info.ChainID,
-		"serviceID": info.ServiceID,
+		"chainServiceID": chainServiceID,
 	}).Info("service is registering")
 
 	return true, nil
 }
 
 func (sm *ServiceManager) Update(updateInfo *Service) (bool, []byte) {
+	chainServiceID := fmt.Sprintf("%s:%s", updateInfo.ChainID, updateInfo.ServiceID)
 	service := &Service{}
-	ok := sm.GetObject(ServiceKey(updateInfo.ServiceID), service)
+	ok := sm.GetObject(ServiceKey(chainServiceID), service)
 	if !ok {
 		return false, []byte("the service is not exist")
 	}
@@ -271,9 +288,9 @@ func (sm *ServiceManager) Update(updateInfo *Service) (bool, []byte) {
 	service.Ordered = updateInfo.Ordered
 	service.Details = updateInfo.Details
 	service.Permission = updateInfo.Permission
-	sm.SetObject(ServiceKey(updateInfo.ServiceID), *service)
+	sm.SetObject(ServiceKey(chainServiceID), *service)
 	sm.Logger().WithFields(logrus.Fields{
-		"id": updateInfo.ServiceID,
+		"chainServiceId": chainServiceID,
 	}).Info("service is updating")
 
 	return true, nil
