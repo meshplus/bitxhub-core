@@ -249,10 +249,10 @@ func (sm *ServiceManager) PackageServiceInfo(chainID, serviceID, name, typ, intr
 		Details:           details,
 		CreateTime:        createTime,
 		Score:             0,
-		EvaluationRecords: nil,
+		EvaluationRecords: make(map[string]*governance.EvaluationRecord),
 		InvokeCount:       0,
 		InvokeSuccessRate: 0,
-		InvokeRecords:     nil,
+		InvokeRecords:     make(map[string]*governance.InvokeRecord),
 		Status:            status,
 	}
 
