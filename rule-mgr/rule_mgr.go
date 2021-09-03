@@ -20,6 +20,7 @@ type RuleManager struct {
 
 type Rule struct {
 	Address string                      `json:"address"`
+	Url     string                      `json:"url"`
 	ChainId string                      `json:"chain_id"`
 	Master  bool                        `json:"master"`
 	Status  governance.GovernanceStatus `json:"status"`
@@ -69,7 +70,7 @@ func setFSM(rule *Rule, lastStatus governance.GovernanceStatus) {
 }
 
 // Register record rule
-func (rm *RuleManager) Register(chainId, ruleAddress string) (bool, []byte) {
+func (rm *RuleManager) Register(chainId, ruleAddress, ruleUrl string) (bool, []byte) {
 	res := &governance.RegisterResult{}
 	res.ID = ruleAddress
 	res.IsRegistered = false
@@ -89,7 +90,7 @@ func (rm *RuleManager) Register(chainId, ruleAddress string) (bool, []byte) {
 	}
 
 	if !res.IsRegistered {
-		rules = append(rules, &Rule{ruleAddress, chainId, false, governance.GovernanceBindable, nil})
+		rules = append(rules, &Rule{ruleAddress, ruleUrl, chainId, false, governance.GovernanceBindable, nil})
 		rm.SetObject(rm.ruleKey(chainId), rules)
 	}
 
