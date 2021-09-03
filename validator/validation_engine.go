@@ -18,13 +18,13 @@ type ValidationEngine struct {
 	fabValidator    Validator
 	simFabValidator Validator
 	happyValidator  Validator
-
+	wasmGasLimit    uint64
 	ledger Ledger
 	logger logrus.FieldLogger
 }
 
 // New a validator instance
-func NewValidationEngine(ledger Ledger, instances *sync.Map, logger logrus.FieldLogger) *ValidationEngine {
+func NewValidationEngine(ledger Ledger, instances *sync.Map, logger logrus.FieldLogger, gasLimit uint64) *ValidationEngine {
 	return &ValidationEngine{
 		ledger:          ledger,
 		logger:          logger,
@@ -32,11 +32,12 @@ func NewValidationEngine(ledger Ledger, instances *sync.Map, logger logrus.Field
 		simFabValidator: NewFabSimValidator(logger),
 		happyValidator:  &HappyValidator{},
 		instances:       instances,
+		wasmGasLimit:    gasLimit,
 	}
 }
 
 // Verify will check whether the transaction info is valid
-func (ve *ValidationEngine) Validate(address, from string, proof, payload []byte, validators string) (bool, error) {
+func (ve *ValidationEngine) Validate(address, from string, proof, payload []byte, validators string) (bool, uint64, error) {
 	vlt := ve.getValidator(address)
 
 	return vlt.Verify(address, from, proof, payload, validators)
@@ -59,5 +60,5 @@ func (ve *ValidationEngine) getValidator(address string) Validator {
 		ve.instances = &sync.Map{}
 	}
 
-	return NewWasmValidator(ve.ledger, ve.logger, ve.instances)
+	return NewWasmValidator(ve.ledger, ve.logger, ve.instances, ve.wasmGasLimit)
 }

@@ -5,12 +5,12 @@ import "github.com/meshplus/bitxhub-kit/types"
 // Engine runs for validation
 //go:generate mockgen -destination mock_validator/mock_engine.go -package mock_validator -source validator.go
 type Engine interface {
-	Validate(address, from string, proof, payload []byte, validators string) (bool, error)
+	Validate(address, from string, proof, payload []byte, validators string) (bool, uint64, error)
 }
 
 // Validator chooses specific method to verify transaction
 type Validator interface {
-	Verify(address, from string, proof, payload []byte, validators string) (bool, error)
+	Verify(address, from string, proof, payload []byte, validators string) (bool, uint64, error)
 }
 
 type Ledger interface {

@@ -103,7 +103,7 @@ func (im *Imports) importECDSA(store *wasmer.Store, wasmEnv *wasmlib.WasmEnv) {
 		wasmEnv,
 		ecdsa_verify,
 	)
-	im.imports.Register(
+	im.imports.GetImportObject().Register(
 		"env",
 		map[string]wasmer.IntoExtern{
 			"ecdsa_verify": function,

@@ -59,7 +59,7 @@ func TestWasmValidator(t *testing.T) {
 	validator.wasm = wasm
 	err = validator.setTransaction("", "0xe02d8fdacd59020d7f292ab3278d13674f5c404d", proof, string(validators), body)
 	require.Nil(t, err)
-	ret, err := validator.wasm.Execute(validator.input)
+	ret, _, err := validator.wasm.Execute(validator.input, wasmGasLimit)
 	require.Nil(t, err)
 	result, err := strconv.Atoi(string(ret))
 	require.Nil(t, err)
@@ -117,7 +117,7 @@ func BenchmarkHpcWasm_Verify(b *testing.B) {
 	// }
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := validator.wasm.Execute(validator.input)
+		_, _, err := validator.wasm.Execute(validator.input, wasmGasLimit)
 		require.Nil(b, err)
 	}
 }

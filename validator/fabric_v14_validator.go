@@ -35,7 +35,7 @@ func NewFabV14Validator(logger logrus.FieldLogger) *FabV14Validator {
 }
 
 // Verify will check whether the transaction info is valid
-func (vlt *FabV14Validator) Verify(address, from string, proof, payload []byte, validators string) (bool, error) {
+func (vlt *FabV14Validator) Verify(address, from string, proof, payload []byte, validators string) (bool, uint64, error) {
 	var (
 		vInfo  *validatorlib.ValidatorInfo
 		policy policies.Policy
@@ -45,7 +45,7 @@ func (vlt *FabV14Validator) Verify(address, from string, proof, payload []byte, 
 	if !ok {
 		vInfo, err = validatorlib.UnmarshalValidatorInfo([]byte(validators))
 		if err != nil {
-			return false, err
+			return false, 0, err
 		}
 		vlt.evMap.Store(from, vInfo)
 	} else {
@@ -55,7 +55,7 @@ func (vlt *FabV14Validator) Verify(address, from string, proof, payload []byte, 
 	// Get the validation artifacts that help validate the chaincodeID and policy
 	artifact, err := validatorlib.PreCheck(proof, payload, vInfo.Cid)
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 
 	signatureSet := validatorlib.GetSignatureSet(artifact)
@@ -64,12 +64,12 @@ func (vlt *FabV14Validator) Verify(address, from string, proof, payload []byte, 
 	if !ok {
 		pe, err := validatorlib.NewPolicyEvaluator(vInfo.ConfByte)
 		if err != nil {
-			return false, err
+			return false, 0, err
 		}
 		pp := cauthdsl.NewPolicyProvider(pe.IdentityDeserializer)
 		policy, _, err = pp.NewPolicy([]byte(vInfo.Policy))
 		if err != nil {
-			return false, err
+			return false, 0, err
 		}
 		vlt.ppMap.Store(vInfo.ChainId, policy)
 		vlt.peMap.Store(vInfo.ChainId, pe)
@@ -81,7 +81,7 @@ func (vlt *FabV14Validator) Verify(address, from string, proof, payload []byte, 
 	return vlt.EvaluateSignedData(signatureSet, pe.(*validatorlib.PolicyEvaluator).IdentityDeserializer, policy)
 }
 
-func (vlt *FabV14Validator) EvaluateSignedData(signedData []*protoutil.SignedData, identityDeserializer mspi.IdentityDeserializer, policy policies.Policy) (bool, error) {
+func (vlt *FabV14Validator) EvaluateSignedData(signedData []*protoutil.SignedData, identityDeserializer mspi.IdentityDeserializer, policy policies.Policy) (bool, uint64, error) {
 	idMap := map[string]struct{}{}
 	identities := make([]mspi.Identity, 0, len(signedData))
 	ids := make([]string, 0, len(signedData))
@@ -126,11 +126,11 @@ func (vlt *FabV14Validator) EvaluateSignedData(signedData []*protoutil.SignedDat
 	_, ok := vlt.keyMap.Load(idStr)
 	if !ok {
 		if err := policy.EvaluateIdentities(identities); err != nil {
-			return false, err
+			return false, 0, err
 		}
 		vlt.keyMap.Store(idStr, struct{}{})
-		return true, nil
+		return true, 0, nil
 	}
 
-	return true, nil
+	return true, 0, nil
 }
