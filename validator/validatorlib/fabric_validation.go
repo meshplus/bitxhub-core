@@ -48,17 +48,17 @@ type payloadInfo struct {
 	Argsrb    string `json:"argsrb"`
 }
 
-func GetPolicyEnvelope(policy string) ([]byte, error) {
-	policyEnv, err := cauthdsl.FromString(policy)
-	if err != nil {
-		return nil, err
-	}
-	policyBytes, err := proto.Marshal(policyEnv)
-	if err != nil {
-		return nil, err
-	}
-	return policyBytes, nil
-}
+// func GetPolicyEnvelope(policy string) ([]byte, error) {
+// 	policyEnv, err := cauthdsl.FromString(policy)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	policyBytes, err := proto.Marshal(policyEnv)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return policyBytes, nil
+// }
 
 func UnmarshalValidatorInfo(validatorBytes []byte) (*ValidatorInfo, error) {
 	vInfo := &ValidatorInfo{}

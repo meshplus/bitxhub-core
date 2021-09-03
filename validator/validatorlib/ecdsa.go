@@ -37,6 +37,7 @@ type ECDSASignature struct {
 }
 
 func ecdsa_verify(env interface{}, args []wasmer.Value) ([]wasmer.Value, error) {
+	// ctx := env.(*wasmlib.WasmEnv).Ctx
 	memory, err := env.(*wasmlib.WasmEnv).Instance.Exports.GetMemory("memory")
 	if err != nil {
 		return nil, err
@@ -44,10 +45,11 @@ func ecdsa_verify(env interface{}, args []wasmer.Value) ([]wasmer.Value, error) 
 	sig_ptr := args[0].I64()
 	digest_ptr := args[1].I64()
 	pubkey_ptr := args[2].I64()
-	data := env.(*wasmlib.WasmEnv).Ctx["data"].(map[int]int)
-	signature := memory.Data()[sig_ptr : sig_ptr+70]
+	pubkey_len := args[3].I64()
+	// data := ctx["argmap"].(map[int]int)
+	signature := memory.Data()[sig_ptr : sig_ptr+71]
 	digest := memory.Data()[digest_ptr : digest_ptr+32]
-	pubkey := memory.Data()[pubkey_ptr : pubkey_ptr+int64(data[int(pubkey_ptr)])]
+	pubkey := memory.Data()[pubkey_ptr : pubkey_ptr+pubkey_len]
 	pemCert, _ := pem.Decode(pubkey)
 	var cert *x509.Certificate
 	cert, err = x509.ParseCertificate(pemCert.Bytes)
@@ -97,7 +99,7 @@ func (im *Imports) importECDSA(store *wasmer.Store, wasmEnv *wasmlib.WasmEnv) {
 	function := wasmer.NewFunctionWithEnvironment(
 		store,
 		wasmer.NewFunctionType(
-			wasmer.NewValueTypes(wasmer.I64, wasmer.I64, wasmer.I64),
+			wasmer.NewValueTypes(wasmer.I64, wasmer.I64, wasmer.I64, wasmer.I64),
 			wasmer.NewValueTypes(wasmer.I32),
 		),
 		wasmEnv,
