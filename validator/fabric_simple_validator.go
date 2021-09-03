@@ -41,6 +41,9 @@ func (vlt *FabSimValidator) Verify(address, from string, proof, payload []byte, 
 	raw, ok := vlt.pkMap.Load(from)
 	if !ok {
 		pemCert, _ := pem.Decode([]byte(validators))
+		if pemCert == nil {
+			return false, fmt.Errorf("invalid validators information: %s", validators)
+		}
 		cert, err := x509.ParseCertificate(pemCert.Bytes)
 		if err != nil {
 			return false, err
