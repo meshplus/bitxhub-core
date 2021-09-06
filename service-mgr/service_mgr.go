@@ -55,7 +55,7 @@ var serviceStateMap = map[governance.EventType][]governance.GovernanceStatus{
 	governance.EventUpdate:   {governance.GovernanceAvailable, governance.GovernanceFrozen},
 	governance.EventFreeze:   {governance.GovernanceAvailable, governance.GovernanceUpdating, governance.GovernanceActivating},
 	governance.EventActivate: {governance.GovernanceFrozen},
-	governance.EventPause:    {governance.GovernanceAvailable, governance.GovernanceUpdating, governance.GovernanceFreezing, governance.GovernanceActivating, governance.GovernanceLogouting},
+	governance.EventPause:    {governance.GovernanceAvailable, governance.GovernanceUpdating, governance.GovernanceFreezing, governance.GovernanceActivating},
 	governance.EventUnpause:  {governance.GovernancePause},
 	governance.EventLogout:   {governance.GovernanceAvailable, governance.GovernanceUpdating, governance.GovernanceFreezing, governance.GovernanceActivating, governance.GovernanceFrozen, governance.GovernancePause},
 }
