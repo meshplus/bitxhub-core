@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/iancoleman/orderedmap"
 	"github.com/looplab/fsm"
 	"github.com/meshplus/bitxhub-core/governance"
 	"github.com/sirupsen/logrus"
@@ -14,6 +15,7 @@ type NodeType string
 
 const (
 	NODEPREFIX        = "node"
+	NODETYPE_PREFIX   = "type"
 	VP_NODE_ID_PREFIX = "vp-id"
 
 	VPNode  NodeType = "vpNode"
@@ -85,7 +87,7 @@ func (node *Node) setFSM(lastStatus governance.GovernanceStatus) {
 // return *node, extra info, error
 func (nm *NodeManager) GovernancePre(nodePid string, event governance.EventType, _ []byte) (interface{}, error) {
 	node := &Node{}
-	if ok := nm.GetObject(nm.nodeKey(nodePid), node); !ok {
+	if ok := nm.GetObject(NodeKey(nodePid), node); !ok {
 		if event == governance.EventRegister {
 			return nil, nil
 		} else {
@@ -104,7 +106,7 @@ func (nm *NodeManager) GovernancePre(nodePid string, event governance.EventType,
 
 func (nm *NodeManager) ChangeStatus(nodePid string, trigger, lastStatus string, _ []byte) (bool, []byte) {
 	node := &Node{}
-	if ok := nm.GetObject(nm.nodeKey(nodePid), node); !ok {
+	if ok := nm.GetObject(NodeKey(nodePid), node); !ok {
 		return false, []byte("this node does not exist")
 	}
 
@@ -114,7 +116,7 @@ func (nm *NodeManager) ChangeStatus(nodePid string, trigger, lastStatus string, 
 		return false, []byte(fmt.Sprintf("change status error: %v", err))
 	}
 
-	nm.SetObject(nm.nodeKey(nodePid), *node)
+	nm.SetObject(NodeKey(nodePid), *node)
 	return true, nil
 }
 
@@ -125,8 +127,14 @@ func (nm *NodeManager) Register(nodeInfo []byte) (bool, []byte) {
 		return false, []byte(err.Error())
 	}
 
-	nm.SetObject(nm.nodeKey(node.Pid), node)
-	nm.SetObject(nm.vpNodeIdKey(strconv.Itoa(int(node.VPNodeId))), node.Pid)
+	nm.SetObject(NodeKey(node.Pid), node)
+	nodePidMap := orderedmap.New()
+	_ = nm.GetObject(NodeTypeKey(string(node.NodeType)), nodePidMap)
+	nodePidMap.Set(node.Pid, struct{}{})
+	nm.SetObject(NodeTypeKey(string(node.NodeType)), *nodePidMap)
+	if node.NodeType == VPNode {
+		nm.SetObject(VpNodeIdKey(strconv.Itoa(int(node.VPNodeId))), node.Pid)
+	}
 	nm.Logger().WithFields(logrus.Fields{
 		"pid":      node.Pid,
 		"nodeType": node.NodeType,
@@ -137,43 +145,27 @@ func (nm *NodeManager) Register(nodeInfo []byte) (bool, []byte) {
 
 // CountAvailable counts all available nodes (available、logouting)
 func (nm *NodeManager) CountAvailable(nodeType []byte) (bool, []byte) {
-	ok, value := nm.Query(NODEPREFIX)
-	if !ok {
+	nodes, err := nm.GetNodesByType(string(nodeType))
+	if err != nil {
 		return true, []byte("0")
 	}
 
 	count := 0
-	for _, v := range value {
-		node := &Node{}
-		if err := json.Unmarshal(v, node); err != nil {
-			return false, []byte(fmt.Sprintf("unmarshal json error: %v", err))
-		}
-		if node.NodeType == NodeType(nodeType) {
-			if node.IsAvailable() {
-				count++
-			}
+	for _, node := range nodes {
+		if node.IsAvailable() {
+			count++
 		}
 	}
 	return true, []byte(strconv.Itoa(count))
 }
 
 func (nm *NodeManager) CountAll(nodeType []byte) (bool, []byte) {
-	ok, value := nm.Query(NODEPREFIX)
-	if !ok {
+	nodes, err := nm.GetNodesByType(string(nodeType))
+	if err != nil {
 		return true, []byte("0")
 	}
 
-	count := 0
-	for _, v := range value {
-		node := &Node{}
-		if err := json.Unmarshal(v, node); err != nil {
-			return false, []byte(fmt.Sprintf("unmarshal json error: %v", err))
-		}
-		if node.NodeType == NodeType(nodeType) {
-			count++
-		}
-	}
-	return true, []byte(strconv.Itoa(count))
+	return true, []byte(strconv.Itoa(len(nodes)))
 }
 
 // All returns all nodes
@@ -195,7 +187,7 @@ func (nm *NodeManager) All(_ []byte) (interface{}, error) {
 
 func (nm *NodeManager) QueryById(nodePid string, _ []byte) (interface{}, error) {
 	var node Node
-	ok := nm.GetObject(nm.nodeKey(nodePid), &node)
+	ok := nm.GetObject(NodeKey(nodePid), &node)
 	if !ok {
 		return nil, fmt.Errorf("this node does not exist")
 	}
@@ -203,8 +195,26 @@ func (nm *NodeManager) QueryById(nodePid string, _ []byte) (interface{}, error) 
 	return &node, nil
 }
 
+func (nm *NodeManager) GetNodesByType(typ string) ([]*Node, error) {
+	ret := make([]*Node, 0)
+
+	nodePidMap := orderedmap.New()
+	ok := nm.GetObject(NodeTypeKey(typ), nodePidMap)
+	if ok {
+		for _, pid := range nodePidMap.Keys() {
+			node := &Node{}
+			if okk := nm.GetObject(NodeKey(pid), node); !okk {
+				return nil, fmt.Errorf("the node %s is not exist", pid)
+			}
+			ret = append(ret, node)
+		}
+	}
+
+	return ret, nil
+}
+
 func (nm *NodeManager) GetPidById(nodeId string) (string, error) {
-	ok, data := nm.Get(nm.vpNodeIdKey(nodeId))
+	ok, data := nm.Get(VpNodeIdKey(nodeId))
 	if !ok {
 		return "", fmt.Errorf("this node does not exist")
 	}
@@ -212,10 +222,14 @@ func (nm *NodeManager) GetPidById(nodeId string) (string, error) {
 	return string(data), nil
 }
 
-func (nm *NodeManager) nodeKey(pid string) string {
+func NodeKey(pid string) string {
 	return fmt.Sprintf("%s-%s", NODEPREFIX, pid)
 }
 
-func (nm *NodeManager) vpNodeIdKey(id string) string {
+func NodeTypeKey(typ string) string {
+	return fmt.Sprintf("%s-%s", NODETYPE_PREFIX, typ)
+}
+
+func VpNodeIdKey(id string) string {
 	return fmt.Sprintf("%s-%s", VP_NODE_ID_PREFIX, id)
 }

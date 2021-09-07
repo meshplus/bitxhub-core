@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/iancoleman/orderedmap"
 	"github.com/looplab/fsm"
 	"github.com/meshplus/bitxhub-core/governance"
 	"github.com/sirupsen/logrus"
@@ -14,6 +15,7 @@ import (
 const (
 	SERVICE_PREFIX          = "service"
 	SERVICE_APPCHAIN_PREFIX = "appchain"
+	SERVICE_TYPE_PREFIX     = "type"
 )
 
 type ServiceManager struct {
@@ -220,14 +222,24 @@ func (sm *ServiceManager) QueryById(id string, _ []byte) (interface{}, error) {
 	return &service, nil
 }
 
-func (sm *ServiceManager) GetIDListByChainID(chainID string) (map[string]struct{}, error) {
-	serviceMap := make(map[string]struct{})
-	ok := sm.GetObject(AppchainServicesKey(chainID), &serviceMap)
+func (sm *ServiceManager) GetIDListByChainID(chainID string) ([]string, error) {
+	serviceMap := orderedmap.New()
+	ok := sm.GetObject(AppchainServicesKey(chainID), serviceMap)
 	if !ok {
-		return nil, fmt.Errorf("the service list does not exist: %s", chainID)
+		return nil, fmt.Errorf("the service id list of the chain does not exist: %s", chainID)
 	}
 
-	return serviceMap, nil
+	return serviceMap.Keys(), nil
+}
+
+func (sm *ServiceManager) GetIDListByType(typ string) ([]string, error) {
+	serviceMap := orderedmap.New()
+	ok := sm.GetObject(ServicesTypeKey(typ), serviceMap)
+	if !ok {
+		return nil, fmt.Errorf("this type service id list does not exist: %s", typ)
+	}
+
+	return serviceMap.Keys(), nil
 }
 
 func (sm *ServiceManager) PackageServiceInfo(chainID, serviceID, name, typ, intro string, ordered bool, permits, details string, createTime int64, status governance.GovernanceStatus) (*Service, error) {
@@ -263,10 +275,15 @@ func (sm *ServiceManager) Register(info *Service) (bool, []byte) {
 	chainServiceID := fmt.Sprintf("%s:%s", info.ChainID, info.ServiceID)
 	sm.SetObject(ServiceKey(chainServiceID), *info)
 
-	serviceMap := make(map[string]struct{})
+	serviceMap := orderedmap.New()
 	_ = sm.GetObject(AppchainServicesKey(info.ChainID), serviceMap)
-	serviceMap[chainServiceID] = struct{}{}
-	sm.SetObject(AppchainServicesKey(info.ChainID), serviceMap)
+	serviceMap.Set(chainServiceID, struct{}{})
+	sm.SetObject(AppchainServicesKey(info.ChainID), *serviceMap)
+
+	serviceMap = orderedmap.New()
+	_ = sm.GetObject(ServicesTypeKey(string(info.Type)), serviceMap)
+	serviceMap.Set(chainServiceID, struct{}{})
+	sm.SetObject(ServicesTypeKey(string(info.Type)), *serviceMap)
 
 	sm.Logger().WithFields(logrus.Fields{
 		"chainServiceID": chainServiceID,
@@ -302,4 +319,8 @@ func ServiceKey(id string) string {
 
 func AppchainServicesKey(id string) string {
 	return fmt.Sprintf("%s-%s", SERVICE_APPCHAIN_PREFIX, id)
+}
+
+func ServicesTypeKey(typ string) string {
+	return fmt.Sprintf("%s-%s", SERVICE_TYPE_PREFIX, typ)
 }
