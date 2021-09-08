@@ -69,19 +69,21 @@ func (rule *Rule) setFSM(lastStatus governance.GovernanceStatus) {
 		string(rule.Status),
 		fsm.Events{
 			// bind
-			{Name: string(governance.EventBind), Src: []string{string(governance.GovernanceBindable), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceAvailable)},
-
-			// update(bind) 1
-			{Name: string(governance.EventUpdate), Src: []string{string(governance.GovernanceBindable), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceBinding)},
+			{Name: string(governance.EventBind), Src: []string{string(governance.GovernanceBindable)}, Dst: string(governance.GovernanceBinding)},
 			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceBinding)}, Dst: string(governance.GovernanceAvailable)},
 			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceBinding)}, Dst: string(lastStatus)},
 
-			// unbind 1
-			{Name: string(governance.EventUnbind), Src: []string{string(governance.GovernanceAvailable), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceUnbinding)},
+			// update(bind)
+			{Name: string(governance.EventUpdate), Src: []string{string(governance.GovernanceBindable)}, Dst: string(governance.GovernanceBinding)},
+			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceBinding)}, Dst: string(governance.GovernanceAvailable)},
+			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceBinding)}, Dst: string(lastStatus)},
+
+			// unbind
+			{Name: string(governance.EventUnbind), Src: []string{string(governance.GovernanceAvailable)}, Dst: string(governance.GovernanceUnbinding)},
 			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceUnbinding)}, Dst: string(governance.GovernanceBindable)},
 			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceUnbinding)}, Dst: string(lastStatus)},
 
-			// logout 3
+			// logout
 			{Name: string(governance.EventLogout), Src: []string{string(governance.GovernanceBindable)}, Dst: string(governance.GovernanceForbidden)},
 		},
 		fsm.Callbacks{
