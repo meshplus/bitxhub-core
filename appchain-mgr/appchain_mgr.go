@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/looplab/fsm"
 	"github.com/meshplus/bitxhub-core/governance"
 	g "github.com/meshplus/bitxhub-core/governance"
+	"github.com/meshplus/bitxhub-model/constant"
 	"github.com/sirupsen/logrus"
 )
 
@@ -65,6 +67,10 @@ func (a *Appchain) IsAvailable() bool {
 	} else {
 		return false
 	}
+}
+
+func (a *Appchain) IsBitXHub() bool {
+	return strings.EqualFold(a.Broker, constant.InterBrokerContractAddr.Address().String())
 }
 
 func (chain *Appchain) setFSM(lastStatus g.GovernanceStatus) {
