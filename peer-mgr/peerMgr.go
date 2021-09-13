@@ -21,6 +21,9 @@ type BasicPeerManager interface {
 
 	// CountConnectedPeers counts connected peer numbers
 	CountConnectedPeers() uint64
+
+	// Peers return all peers including local peer.
+	Peers() map[uint64]*peer.AddrInfo
 }
 
 //go:generate mockgen -destination mock_orderPeermgr/mock_orderPeermgr.go -package mock_orderPeermgr -source peermgr.go
@@ -48,6 +51,6 @@ type OrderPeerManager interface {
 	// Disconnect disconnect with all vp peers.
 	Disconnect(vpInfos map[uint64]*pb.VpInfo)
 
-	// Peers return all peers including local peer.
-	Peers() map[uint64]*pb.VpInfo
+	// OrderPeers return all OrderPeers include account and id.
+	OrderPeers() map[uint64]*pb.VpInfo
 }
