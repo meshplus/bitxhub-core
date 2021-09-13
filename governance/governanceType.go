@@ -30,6 +30,8 @@ const (
 	EventReject   EventType = "reject"
 	EventBind     EventType = "bind"
 	EventUnbind   EventType = "unbind"
+	EventPause    EventType = "pause"
+	EventUnpause  EventType = "unpause"
 	EventTransfer EventType = "transfer"
 )
 

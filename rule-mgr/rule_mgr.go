@@ -111,12 +111,14 @@ func (rm *RuleManager) BindPre(chainId, ruleAddress string, force bool) (bool, [
 	}
 
 	isExisted := false
+	newRule := &Rule{}
 	for _, r := range rules {
 		if ruleAddress == r.Address {
 			if r.Status != governance.GovernanceBindable {
 				return false, []byte("The rule is in an unbindable state: " + r.Status)
 			} else {
 				isExisted = true
+				newRule = r
 			}
 		} else {
 			if governance.GovernanceAvailable == r.Status && !force {
@@ -132,7 +134,11 @@ func (rm *RuleManager) BindPre(chainId, ruleAddress string, force bool) (bool, [
 		return false, []byte("the rule does not exist ")
 	}
 
-	return true, nil
+	ruleData, err := json.Marshal(newRule)
+	if err != nil {
+		return false, []byte(string(fmt.Sprintf("marshal rule err: %v", err)))
+	}
+	return true, ruleData
 }
 
 // GovernancePre checks if the rule address can do event with appchain id and record rule. (only check, not modify infomation)
