@@ -65,20 +65,6 @@ func (mr *MockBasicPeerManagerMockRecorder) CountConnectedPeers() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountConnectedPeers", reflect.TypeOf((*MockBasicPeerManager)(nil).CountConnectedPeers))
 }
 
-// Peers mocks base method.
-func (m *MockBasicPeerManager) Peers() map[uint64]*pb.VpInfo {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Peers")
-	ret0, _ := ret[0].(map[uint64]*pb.VpInfo)
-	return ret0
-}
-
-// Peers indicates an expected call of Peers.
-func (mr *MockBasicPeerManagerMockRecorder) Peers() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Peers", reflect.TypeOf((*MockBasicPeerManager)(nil).Peers))
-}
-
 // Send mocks base method.
 func (m *MockBasicPeerManager) Send(arg0 peer_mgr.KeyType, arg1 *pb.Message) (*pb.Message, error) {
 	m.ctrl.T.Helper()
