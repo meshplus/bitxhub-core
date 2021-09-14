@@ -20,6 +20,7 @@ const (
 	GovernanceBindable     GovernanceStatus = "bindable"
 	GovernanceForbidden    GovernanceStatus = "forbidden"
 	GovernanceTransferring GovernanceStatus = "transfering"
+	GovernanceTransferred  GovernanceStatus = "transferred"
 
 	EventRegister EventType = "register"
 	EventUpdate   EventType = "update"
