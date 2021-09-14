@@ -21,6 +21,7 @@ const (
 	GovernanceForbidden    GovernanceStatus = "forbidden"
 	GovernanceTransferring GovernanceStatus = "transfering"
 	GovernancePause        GovernanceStatus = "pause"
+	GovernanceTransferred  GovernanceStatus = "transferred"
 
 	EventRegister EventType = "register"
 	EventUpdate   EventType = "update"
