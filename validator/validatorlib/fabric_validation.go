@@ -1,9 +1,9 @@
 package validatorlib
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/gogo/protobuf/proto"
 	mb "github.com/hyperledger/fabric-protos-go/msp"
@@ -39,13 +39,12 @@ type ValidatorInfo struct {
 }
 
 type payloadInfo struct {
-	Index     uint64 `json:"index"`
-	DstFullID string `json:"dst_full_id"`
-	SrcFullID string `json:"src_full_id"`
-	Func      string `json:"func"`
-	Args      string `json:"args"`
-	Argscb    string `json:"argscb"`
-	Argsrb    string `json:"argsrb"`
+	Index     uint64   `json:"index"`
+	DstFullID string   `json:"dst_full_id"`
+	SrcFullID string   `json:"src_full_id"`
+	Func      string   `json:"func"`
+	Args      []string `json:"args"`
+	Hash      [32]byte `json:"hash"`
 }
 
 func GetPolicyEnvelope(policy string) ([]byte, error) {
@@ -187,6 +186,10 @@ func ValidatePayload(info payloadInfo, payloadByte []byte) error {
 		return err
 	}
 
+	if !bytes.Equal(info.Hash[:], payload.Hash) {
+		return fmt.Errorf("interchain function payload hash not correct")
+	}
+
 	if payload.Encrypted {
 		return nil
 	}
@@ -196,41 +199,21 @@ func ValidatePayload(info payloadInfo, payloadByte []byte) error {
 		return fmt.Errorf("unmarshal ibtp payload content: %w", err)
 	}
 
-	funcSplit := strings.Split(info.Func, ",")
-	if len(funcSplit) != 3 {
-		return fmt.Errorf("incorrent function numbers")
-	}
-	if funcSplit[0] != content.Func {
+	if info.Func != content.Func {
 		return fmt.Errorf("interchain function name not correct")
 	}
 
-	if funcSplit[1] != content.Callback {
-		return fmt.Errorf("callback not correct")
-	}
-	if funcSplit[2] != content.Rollback {
-		return fmt.Errorf("rollback not correct")
-	}
-	if !checkArgs(info.Argsrb, content.ArgsRb) {
-		return fmt.Errorf("args for rollback not correct")
-	}
-	if !checkArgs(info.Argscb, content.ArgsCb) {
-		return fmt.Errorf("args for callback not correct")
-	}
 	if !checkArgs(info.Args, content.Args) {
 		return fmt.Errorf("args for interchain not correct")
 	}
 	return nil
 }
 
-func checkArgs(args string, argArr [][]byte) bool {
-	if args == "" && len(argArr) == 0 {
-		return true
-	}
-	argsSplit := strings.Split(args, ",")
-	if len(argsSplit) != len(argArr) {
+func checkArgs(args []string, argArr [][]byte) bool {
+	if len(args) != len(argArr) {
 		return false
 	}
-	for index, arg := range argsSplit {
+	for index, arg := range args {
 		if arg != string(argArr[index]) {
 			return false
 		}
