@@ -39,6 +39,17 @@ type ValidatorInfo struct {
 	Cid      string   `json:"cid"`
 }
 
+type receiptInfo struct {
+	Func string   `json:"func"`
+	Args []string `json:"args"`
+}
+
+type responsePayload struct {
+	Ok      bool   `json:"ok"`
+	Message string `json:"message"`
+	Data    string `json:"data"`
+}
+
 type payloadInfo struct {
 	Index          uint64 `json:"index"`
 	DstContractDID string `json:"dst_contract_did"`
@@ -49,18 +60,6 @@ type payloadInfo struct {
 	Argscb         string `json:"argscb"`
 	Rollback       string `json:"rollback"`
 	Argsrb         string `json:"argsrb"`
-}
-
-func GetPolicyEnvelope(policy string) ([]byte, error) {
-	policyEnv, err := cauthdsl.FromString(policy)
-	if err != nil {
-		return nil, err
-	}
-	policyBytes, err := proto.Marshal(policyEnv)
-	if err != nil {
-		return nil, err
-	}
-	return policyBytes, nil
 }
 
 func UnmarshalValidatorInfo(validatorBytes []byte) (*ValidatorInfo, error) {
@@ -131,6 +130,23 @@ func PreCheck(proof, payload []byte, cid string) (*valiadationArtifacts, error) 
 		return nil, err
 	}
 
+	pRespPayload, err := protoutil.UnmarshalProposalResponsePayload(artifact.prp)
+	if err != nil {
+		err = fmt.Errorf("GetProposalResponsePayload error %s", err)
+		return nil, err
+	}
+	respPayload, err := protoutil.UnmarshalChaincodeAction(pRespPayload.Extension)
+	if err != nil {
+		err = fmt.Errorf("GetChaincodeAction error %s", err)
+		return nil, err
+	}
+	respContent := &responsePayload{}
+	if err := json.Unmarshal(respPayload.Response.Payload, respContent); err != nil {
+		return nil, err
+	}
+	if respContent.Data == "" {
+		return artifact, nil
+	}
 	err = ValidatePayload(artifact.payload, payload)
 	if err != nil {
 		return nil, err
@@ -149,6 +165,24 @@ func ValidateV14(proof, payload, policyBytes []byte, confByte []string, cid, fro
 	err = ValidateChainCodeID(artifact.prp, cid)
 	if err != nil {
 		return err
+	}
+
+	pRespPayload, err := protoutil.UnmarshalProposalResponsePayload(artifact.prp)
+	if err != nil {
+		err = fmt.Errorf("GetProposalResponsePayload error %s", err)
+		return err
+	}
+	respPayload, err := protoutil.UnmarshalChaincodeAction(pRespPayload.Extension)
+	if err != nil {
+		err = fmt.Errorf("GetChaincodeAction error %s", err)
+		return err
+	}
+	respContent := &responsePayload{}
+	if err := json.Unmarshal(respPayload.Response.Payload, respContent); err != nil {
+		return err
+	}
+	if respContent.Data == "" {
+		return nil
 	}
 
 	err = ValidatePayload(artifact.payload, payload)
