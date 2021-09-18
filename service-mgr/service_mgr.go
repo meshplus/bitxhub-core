@@ -224,20 +224,14 @@ func (sm *ServiceManager) QueryById(id string, _ []byte) (interface{}, error) {
 
 func (sm *ServiceManager) GetIDListByChainID(chainID string) ([]string, error) {
 	serviceMap := orderedmap.New()
-	ok := sm.GetObject(AppchainServicesKey(chainID), serviceMap)
-	if !ok {
-		return nil, fmt.Errorf("the service id list of the chain does not exist: %s", chainID)
-	}
+	_ = sm.GetObject(AppchainServicesKey(chainID), serviceMap)
 
 	return serviceMap.Keys(), nil
 }
 
 func (sm *ServiceManager) GetIDListByType(typ string) ([]string, error) {
 	serviceMap := orderedmap.New()
-	ok := sm.GetObject(ServicesTypeKey(typ), serviceMap)
-	if !ok {
-		return nil, fmt.Errorf("this type service id list does not exist: %s", typ)
-	}
+	_ = sm.GetObject(ServicesTypeKey(typ), serviceMap)
 
 	return serviceMap.Keys(), nil
 }
