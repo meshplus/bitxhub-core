@@ -15,6 +15,7 @@ require (
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible // indirect
 	github.com/lestrrat-go/strftime v1.0.3 // indirect
+	github.com/libp2p/go-libp2p-core v0.3.0
 	github.com/looplab/fsm v0.2.0
 	github.com/magiconair/properties v1.8.4 // indirect
 	github.com/meshplus/bitxhub-kit v1.2.1-0.20210830031953-cf5f83f2e1dd
