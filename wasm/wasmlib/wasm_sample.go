@@ -1,8 +1,6 @@
 package wasmlib
 
 import (
-	"fmt"
-
 	"github.com/wasmerio/wasmer-go/wasmer"
 )
 
@@ -34,7 +32,6 @@ func (im *Imports) importWasmLib(store *wasmer.Store, wasmEnv *WasmEnv) {
 		wasmEnv,
 		test_verify,
 	)
-	fmt.Println(function)
 	im.imports.Register(
 		"env",
 		map[string]wasmer.IntoExtern{
