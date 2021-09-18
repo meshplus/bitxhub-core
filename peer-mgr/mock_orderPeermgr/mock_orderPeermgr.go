@@ -66,10 +66,10 @@ func (mr *MockBasicPeerManagerMockRecorder) CountConnectedPeers() *gomock.Call {
 }
 
 // Peers mocks base method.
-func (m *MockBasicPeerManager) Peers() map[uint64]*pb.VpInfo {
+func (m *MockBasicPeerManager) Peers() map[uint64]*peer.AddrInfo {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Peers")
-	ret0, _ := ret[0].(map[uint64]*pb.VpInfo)
+	ret0, _ := ret[0].(map[uint64]*peer.AddrInfo)
 	return ret0
 }
 
@@ -223,6 +223,20 @@ func (mr *MockOrderPeerManagerMockRecorder) Disconnect(vpInfos interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Disconnect", reflect.TypeOf((*MockOrderPeerManager)(nil).Disconnect), vpInfos)
 }
 
+// OrderPeers mocks base method.
+func (m *MockOrderPeerManager) OrderPeers() map[uint64]*pb.VpInfo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OrderPeers")
+	ret0, _ := ret[0].(map[uint64]*pb.VpInfo)
+	return ret0
+}
+
+// OrderPeers indicates an expected call of OrderPeers.
+func (mr *MockOrderPeerManagerMockRecorder) OrderPeers() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrderPeers", reflect.TypeOf((*MockOrderPeerManager)(nil).OrderPeers))
+}
+
 // OtherPeers mocks base method.
 func (m *MockOrderPeerManager) OtherPeers() map[uint64]*peer.AddrInfo {
 	m.ctrl.T.Helper()
@@ -238,10 +252,10 @@ func (mr *MockOrderPeerManagerMockRecorder) OtherPeers() *gomock.Call {
 }
 
 // Peers mocks base method.
-func (m *MockOrderPeerManager) Peers() map[uint64]*pb.VpInfo {
+func (m *MockOrderPeerManager) Peers() map[uint64]*peer.AddrInfo {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Peers")
-	ret0, _ := ret[0].(map[uint64]*pb.VpInfo)
+	ret0, _ := ret[0].(map[uint64]*peer.AddrInfo)
 	return ret0
 }
 
