@@ -141,11 +141,10 @@ func PreCheck(proof, payload []byte, cid string) (*valiadationArtifacts, error) 
 		return nil, err
 	}
 	respContent := &responsePayload{}
-	if err := json.Unmarshal(respPayload.Response.Payload, respContent); err != nil {
-		return nil, err
-	}
-	if respContent.Data == "" {
-		return artifact, nil
+	if err := json.Unmarshal(respPayload.Response.Payload, respContent); err == nil {
+		if respContent.Data == "" {
+			return artifact, nil
+		}
 	}
 	err = ValidatePayload(artifact.payload, payload)
 	if err != nil {
@@ -178,11 +177,18 @@ func ValidateV14(proof, payload, policyBytes []byte, confByte []string, cid, fro
 		return err
 	}
 	respContent := &responsePayload{}
-	if err := json.Unmarshal(respPayload.Response.Payload, respContent); err != nil {
-		return err
-	}
-	if respContent.Data == "" {
-		return nil
+	if err := json.Unmarshal(respPayload.Response.Payload, respContent); err == nil {
+		if respContent.Data == "" {
+			return nil
+		}
+		signatureSet := GetSignatureSet(artifact)
+
+		pe, err := NewPolicyEvaluator(confByte)
+		if err != nil {
+			return err
+		}
+
+		return pe.Evaluate(policyBytes, signatureSet)
 	}
 
 	err = ValidatePayload(artifact.payload, payload)
