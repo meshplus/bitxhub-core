@@ -2,6 +2,7 @@ package validatorlib
 
 import (
 	"github.com/meshplus/bitxhub-core/wasm/wasmlib"
+	"github.com/meshplus/bitxhub-model/pb"
 	"github.com/wasmerio/wasmer-go/wasmer"
 )
 
@@ -31,7 +32,12 @@ func fabric_validate_v14(env interface{}, args []wasmer.Value) ([]wasmer.Value, 
 		return []wasmer.Value{wasmer.NewI32(0)}, nil
 	}
 
-	if err := ValidatePayload(artifact.payload, payload); err != nil {
+	ibtp := &pb.IBTP{}
+	if err := ibtp.Unmarshal(payload); err == nil {
+		return nil, err
+	}
+
+	if err := ValidatePayload(artifact.payload, ibtp.Payload, ibtp.Index); err != nil {
 		return []wasmer.Value{wasmer.NewI32(0)}, nil
 	}
 

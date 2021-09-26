@@ -146,7 +146,13 @@ func PreCheck(proof, payload []byte, cid string) (*valiadationArtifacts, error) 
 			return artifact, nil
 		}
 	}
-	err = ValidatePayload(artifact.payload, payload)
+
+	ibtp := &pb.IBTP{}
+	if err := ibtp.Unmarshal(payload); err != nil {
+		return nil, err
+	}
+
+	err = ValidatePayload(artifact.payload, ibtp.Payload, ibtp.Index)
 	if err != nil {
 		return nil, err
 	}
@@ -183,6 +189,10 @@ func ValidateV14(proof, payload, policyBytes []byte, confByte []string, cid, fro
 		}
 		signatureSet := GetSignatureSet(artifact)
 
+		if signatureSet == nil {
+			return fmt.Errorf("no signature set found for artifact")
+		}
+
 		pe, err := NewPolicyEvaluator(confByte)
 		if err != nil {
 			return err
@@ -191,12 +201,21 @@ func ValidateV14(proof, payload, policyBytes []byte, confByte []string, cid, fro
 		return pe.Evaluate(policyBytes, signatureSet)
 	}
 
-	err = ValidatePayload(artifact.payload, payload)
+	ibtp := &pb.IBTP{}
+	if err := ibtp.Unmarshal(payload); err != nil {
+		return err
+	}
+
+	err = ValidatePayload(artifact.payload, ibtp.Payload, ibtp.Index)
 	if err != nil {
 		return err
 	}
 
 	signatureSet := GetSignatureSet(artifact)
+
+	if signatureSet == nil {
+		return fmt.Errorf("no signature set found for artifact")
+	}
 
 	pe, err := NewPolicyEvaluator(confByte)
 	if err != nil {
@@ -224,7 +243,7 @@ func ValidateChainCodeID(prp []byte, name string) error {
 	return nil
 }
 
-func ValidatePayload(info payloadInfo, payloadByte []byte) error {
+func ValidatePayload(info payloadInfo, payloadByte []byte, index uint64) error {
 	payload := &pb.Payload{}
 	if err := payload.Unmarshal(payloadByte); err != nil {
 		return err
@@ -237,6 +256,10 @@ func ValidatePayload(info payloadInfo, payloadByte []byte) error {
 	content := &pb.Content{}
 	if err := content.Unmarshal(payload.Content); err != nil {
 		return fmt.Errorf("unmarshal ibtp payload content: %w", err)
+	}
+
+	if info.Index != index {
+		return fmt.Errorf("index not correct")
 	}
 
 	if bitxid.DID(info.DstContractDID).GetAddress() != content.DstContractId {
@@ -328,6 +351,14 @@ func (id *PolicyEvaluator) Evaluate(policyBytes []byte, signatureSet []*protouti
 }
 
 func GetSignatureSet(artifact *valiadationArtifacts) []*protoutil.SignedData {
+	if artifact.endorsements == nil {
+		return nil
+	}
+
+	if len(artifact.endorsements) == 0 {
+		return nil
+	}
+
 	signatureSet := []*protoutil.SignedData{}
 	for _, endorsement := range artifact.endorsements {
 		data := make([]byte, len(artifact.prp)+len(endorsement.Endorser))
