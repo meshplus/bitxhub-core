@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 
@@ -59,6 +60,10 @@ func (vlt *FabV14Validator) Verify(address, from string, proof, payload []byte, 
 	}
 
 	signatureSet := validatorlib.GetSignatureSet(artifact)
+
+	if signatureSet == nil {
+		return false, fmt.Errorf("no signature set found for artifact")
+	}
 
 	raw, ok = vlt.ppMap.Load(vInfo.ChainId)
 	if !ok {
