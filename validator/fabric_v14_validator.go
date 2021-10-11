@@ -35,7 +35,7 @@ func NewFabV14Validator(logger logrus.FieldLogger) *FabV14Validator {
 }
 
 // Verify will check whether the transaction info is valid
-func (vlt *FabV14Validator) Verify(address, from string, proof, payload []byte, validators string) (bool, uint64, error) {
+func (vlt *FabV14Validator) Verify(from string, proof, payload []byte, validators string) (bool, uint64, error) {
 	var (
 		vInfo  *validatorlib.ValidatorInfo
 		policy policies.Policy

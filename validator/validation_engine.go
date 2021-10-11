@@ -1,8 +1,10 @@
 package validator
 
 import (
+	"fmt"
 	"sync"
 
+	"github.com/meshplus/bitxhub-kit/types"
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,8 +21,8 @@ type ValidationEngine struct {
 	simFabValidator Validator
 	happyValidator  Validator
 	wasmGasLimit    uint64
-	ledger Ledger
-	logger logrus.FieldLogger
+	ledger          Ledger
+	logger          logrus.FieldLogger
 }
 
 // New a validator instance
@@ -38,27 +40,35 @@ func NewValidationEngine(ledger Ledger, instances *sync.Map, logger logrus.Field
 
 // Verify will check whether the transaction info is valid
 func (ve *ValidationEngine) Validate(address, from string, proof, payload []byte, validators string) (bool, uint64, error) {
-	vlt := ve.getValidator(address)
+	vlt, err := ve.getValidator(address)
+	if err != nil {
+		return false, 0, err
+	}
 
-	return vlt.Verify(address, from, proof, payload, validators)
+	return vlt.Verify(from, proof, payload, validators)
 }
 
-func (ve *ValidationEngine) getValidator(address string) Validator {
+func (ve *ValidationEngine) getValidator(address string) (Validator, error) {
 	if address == FabricRuleAddr {
-		return ve.fabValidator
+		return ve.fabValidator, nil
 	}
 
 	if address == SimFabricRuleAddr {
-		return ve.simFabValidator
+		return ve.simFabValidator, nil
 	}
 
 	if address == HappyRuleAddr {
-		return ve.happyValidator
+		return ve.happyValidator, nil
 	}
 
 	if ve.instances == nil {
 		ve.instances = &sync.Map{}
 	}
 
-	return NewWasmValidator(ve.ledger, ve.logger, ve.instances, ve.wasmGasLimit)
+	contractByte := ve.ledger.GetCode(types.NewAddressByStr(address))
+	if contractByte == nil {
+		return nil, fmt.Errorf("this rule address %s does not exist", address)
+	}
+
+	return NewWasmValidator(contractByte, ve.logger, ve.instances, ve.wasmGasLimit), nil
 }

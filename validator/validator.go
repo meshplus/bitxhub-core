@@ -10,7 +10,7 @@ type Engine interface {
 
 // Validator chooses specific method to verify transaction
 type Validator interface {
-	Verify(address, from string, proof, payload []byte, validators string) (bool, uint64, error)
+	Verify(from string, proof, payload []byte, validators string) (bool, uint64, error)
 }
 
 type Ledger interface {
