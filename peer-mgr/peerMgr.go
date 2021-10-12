@@ -23,7 +23,7 @@ type BasicPeerManager interface {
 	CountConnectedPeers() uint64
 
 	// Peers return all peers including local peer.
-	Peers() map[uint64]*peer.AddrInfo
+	Peers() map[string]*peer.AddrInfo
 }
 
 //go:generate mockgen -destination mock_orderPeermgr/mock_orderPeermgr.go -package mock_orderPeermgr -source peermgr.go
