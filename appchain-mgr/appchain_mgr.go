@@ -7,18 +7,31 @@ import (
 	"strings"
 
 	"github.com/looplab/fsm"
-	"github.com/meshplus/bitxhub-core/governance"
 	g "github.com/meshplus/bitxhub-core/governance"
-	"github.com/meshplus/bitxhub-model/constant"
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	PREFIX = "appchain"
+	Prefix                 = "appchain"
+	ChainNumPrefix         = "chain-num"
+	ChainOccupyNamePrefix  = "chain-occupy-name"
+	ChainOccupyAdminPrefix = "chain-occupy-admin"
+	ChainAdminsPrefix      = "chain-admins"
 
 	RelaychainType = "relaychain"
 	AppchainType   = "appchain"
 	FabricType     = "fabric"
+
+	ChainTypeFabric1_4_3     = "Fabric v1.4.3"
+	ChainTypeFabric1_4_4     = "Fabric v1.4.4"
+	ChainTypeHyperchain1_8_3 = "Hyperchain V1.8.3"
+	ChainTypeHyperchain1_8_6 = "Hyperchain V1.8.6"
+	ChainTypeFlato1_0_0      = "Flato V1.0.0"
+	ChainTypeFlato1_0_3      = "Flato V1.0.3"
+	ChainTypeFlato1_0_6      = "Flato V1.0.6"
+	ChainTypeBCOS2_6_0       = "BCOS V2.6.0"
+	ChainTypeCITA20_2_2      = "CITA V20.2.2"
+	ChainTypeETH             = "ETH"
 )
 
 type AppchainManager struct {
@@ -27,13 +40,21 @@ type AppchainManager struct {
 
 type Appchain struct {
 	ID        string `json:"id"`
+	ChainName string `json:"chain_name"`
+	ChainType string `json:"chain_type"`
 	TrustRoot []byte `json:"trust_root"`
-	Broker    string `json:"broker"`
+	Broker    []byte `json:"broker"`
 	Desc      string `json:"desc"`
 	Version   uint64 `json:"version"`
 
 	Status g.GovernanceStatus `json:"status"`
 	FSM    *fsm.FSM           `json:"fsm"`
+}
+
+type FabricBroker struct {
+	ChannelID     string `json:"channel_id"`
+	ChaincodeID   string `json:"chaincode_id"`
+	BrokerVersion string `json:"broker_version"`
 }
 
 type auditRecord struct {
@@ -43,13 +64,13 @@ type auditRecord struct {
 }
 
 var appchainStateMap = map[g.EventType][]g.GovernanceStatus{
-	g.EventRegister: {g.GovernanceUnavailable},
 	g.EventUpdate:   {g.GovernanceAvailable, g.GovernanceFrozen},
 	g.EventFreeze:   {g.GovernanceAvailable, g.GovernanceUpdating, g.GovernanceActivating},
 	g.EventActivate: {g.GovernanceFrozen},
 	g.EventLogout:   {g.GovernanceAvailable, g.GovernanceUpdating, g.GovernanceFreezing, g.GovernanceActivating, g.GovernanceFrozen},
-	g.EventPause:    {g.GovernanceAvailable, g.GovernanceFrozen},
-	g.EventUnpause:  {g.GovernanceFrozen},
+
+	g.EventPause:   {g.GovernanceAvailable, g.GovernanceFrozen},
+	g.EventUnpause: {g.GovernanceFrozen},
 }
 
 var appchainAvailableMap = map[g.GovernanceStatus]struct{}{
@@ -70,18 +91,13 @@ func (a *Appchain) IsAvailable() bool {
 }
 
 func (a *Appchain) IsBitXHub() bool {
-	return strings.EqualFold(a.Broker, constant.InterBrokerContractAddr.Address().String())
+	return strings.EqualFold(a.ChainType, RelaychainType)
 }
 
 func (chain *Appchain) setFSM(lastStatus g.GovernanceStatus) {
 	chain.FSM = fsm.NewFSM(
 		string(chain.Status),
 		fsm.Events{
-			// register 3
-			{Name: string(g.EventRegister), Src: []string{string(g.GovernanceUnavailable)}, Dst: string(g.GovernanceRegisting)},
-			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceRegisting)}, Dst: string(g.GovernanceAvailable)},
-			{Name: string(g.EventReject), Src: []string{string(g.GovernanceRegisting)}, Dst: string(lastStatus)},
-
 			// update 1
 			{Name: string(g.EventUpdate), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceFrozen), string(g.GovernanceFreezing), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceUpdating)},
 			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceUpdating)}, Dst: string(g.GovernanceAvailable)},
@@ -118,12 +134,8 @@ func (chain *Appchain) setFSM(lastStatus g.GovernanceStatus) {
 // return *appchain, extra info, error
 func (am *AppchainManager) GovernancePre(chainId string, event g.EventType, _ []byte) (interface{}, error) {
 	chain := &Appchain{}
-	if ok := am.GetObject(am.appchainKey(chainId), chain); !ok {
-		if event == governance.EventRegister {
-			return nil, nil
-		} else {
-			return nil, fmt.Errorf("the appchain does not exist")
-		}
+	if ok := am.GetObject(AppchainKey(chainId), chain); !ok {
+		return nil, fmt.Errorf("the appchain does not exist")
 	}
 
 	for _, s := range appchainStateMap[event] {
@@ -135,33 +147,44 @@ func (am *AppchainManager) GovernancePre(chainId string, event g.EventType, _ []
 	return nil, fmt.Errorf("the appchain (%s) can not be %s", string(chain.Status), string(event))
 }
 
-// Register registers appchain info
+// Register registers appchain info, return chain id
 func (am *AppchainManager) Register(chainInfo *Appchain) (bool, []byte) {
+	num := 0
+	_ = am.GetObject(ChainNumPrefix, &num)
+	chainInfo.ID = fmt.Sprintf("%s%d", Prefix, num+1)
 
-	am.SetObject(am.appchainKey(chainInfo.ID), chainInfo)
+	am.SetObject(AppchainKey(chainInfo.ID), *chainInfo)
+	am.SetObject(ChainNumPrefix, num+1)
+
 	am.Logger().WithFields(logrus.Fields{
 		"id": chainInfo.ID,
 	}).Info("Appchain is registering")
 
-	return true, nil
+	return true, []byte(chainInfo.ID)
 }
 
 func (am *AppchainManager) Update(updateInfo *Appchain) (bool, []byte) {
-	var chain Appchain
-	ok := am.GetObject(am.appchainKey(updateInfo.ID), &chain)
+	chain := &Appchain{}
+	ok := am.GetObject(AppchainKey(updateInfo.ID), chain)
 	if !ok {
-		return false, []byte("this appchain does not exist")
+		return false, []byte(fmt.Sprintf("this appchain(%s) does not exist", updateInfo.ID))
 	}
 
+	chain.ChainName = updateInfo.ChainName
 	chain.Desc = updateInfo.Desc
+	chain.TrustRoot = updateInfo.TrustRoot
 	chain.Version++
-	am.SetObject(am.appchainKey(updateInfo.ID), chain)
+	am.SetObject(AppchainKey(updateInfo.ID), chain)
+
+	am.Logger().WithFields(logrus.Fields{
+		"id": updateInfo.ID,
+	}).Info("Appchain is updating")
 
 	return true, nil
 }
 
 func (am *AppchainManager) ChangeStatus(id, trigger, lastStatus string, _ []byte) (bool, []byte) {
-	ok, data := am.Get(am.appchainKey(id))
+	ok, data := am.Get(AppchainKey(id))
 	if !ok {
 		return false, []byte(fmt.Sprintf("this appchain does not exist"))
 	}
@@ -177,12 +200,12 @@ func (am *AppchainManager) ChangeStatus(id, trigger, lastStatus string, _ []byte
 		return false, []byte(fmt.Sprintf("change status error: %v", err))
 	}
 
-	am.SetObject(am.appchainKey(id), *chain)
+	am.SetObject(AppchainKey(id), *chain)
 	return true, nil
 }
 
 func (am *AppchainManager) DeleteAppchain(id string) (bool, []byte) {
-	am.Delete(am.appchainKey(id))
+	am.Delete(AppchainKey(id))
 	am.Logger().Infof("delete appchain:%s", id)
 	return true, nil
 }
@@ -190,7 +213,7 @@ func (am *AppchainManager) DeleteAppchain(id string) (bool, []byte) {
 // Audit bitxhub manager audit appchain register info
 func (am *AppchainManager) Audit(proposer string, isApproved int32, desc string) (bool, []byte) {
 	chain := &Appchain{}
-	ok := am.GetObject(am.appchainKey(proposer), chain)
+	ok := am.GetObject(AppchainKey(proposer), chain)
 	if !ok {
 		return false, []byte("this appchain does not exist")
 	}
@@ -208,7 +231,7 @@ func (am *AppchainManager) Audit(proposer string, isApproved int32, desc string)
 	records = append(records, record)
 
 	am.SetObject(am.auditRecordKey(proposer), records)
-	am.SetObject(am.appchainKey(proposer), chain)
+	am.SetObject(AppchainKey(proposer), chain)
 
 	return true, []byte(fmt.Sprintf("audit %s successfully", proposer))
 }
@@ -227,7 +250,7 @@ func (am *AppchainManager) FetchAuditRecords(id string) (bool, []byte) {
 
 // CountAvailableAppchains counts all available appchains
 func (am *AppchainManager) CountAvailable(_ []byte) (bool, []byte) {
-	ok, value := am.Query(PREFIX)
+	ok, value := am.Query(Prefix)
 	if !ok {
 		return true, []byte("0")
 	}
@@ -247,7 +270,7 @@ func (am *AppchainManager) CountAvailable(_ []byte) (bool, []byte) {
 
 // CountAppchains counts all appchains including approved, rejected or registered
 func (am *AppchainManager) CountAll(_ []byte) (bool, []byte) {
-	ok, value := am.Query(PREFIX)
+	ok, value := am.Query(Prefix)
 	if !ok {
 		return true, []byte("0")
 	}
@@ -257,7 +280,7 @@ func (am *AppchainManager) CountAll(_ []byte) (bool, []byte) {
 // Appchains returns all appchains
 func (am *AppchainManager) All(_ []byte) (interface{}, error) {
 	ret := make([]*Appchain, 0)
-	ok, value := am.Query(PREFIX)
+	ok, value := am.Query(Prefix)
 	if ok {
 		for _, data := range value {
 			chain := &Appchain{}
@@ -273,16 +296,28 @@ func (am *AppchainManager) All(_ []byte) (interface{}, error) {
 
 func (am *AppchainManager) QueryById(id string, _ []byte) (interface{}, error) {
 	var appchain Appchain
-	ok := am.GetObject(am.appchainKey(id), &appchain)
+	ok := am.GetObject(AppchainKey(id), &appchain)
 	if !ok {
-		return nil, fmt.Errorf("this appchain does not exist")
+		return nil, fmt.Errorf("this appchain(%s) does not exist", id)
 	}
 
 	return &appchain, nil
 }
 
-func (am *AppchainManager) appchainKey(id string) string {
-	return fmt.Sprintf("%s-%s", PREFIX, id)
+func AppchainKey(id string) string {
+	return fmt.Sprintf("%s-%s", Prefix, id)
+}
+
+func AppchainOccupyNameKey(name string) string {
+	return fmt.Sprintf("%s-%s", ChainOccupyNamePrefix, name)
+}
+
+func AppchainOccupyAdminKey(addr string) string {
+	return fmt.Sprintf("%s-%s", ChainOccupyAdminPrefix, addr)
+}
+
+func AppchainAdminKey(id string) string {
+	return fmt.Sprintf("%s-%s", ChainAdminsPrefix, id)
 }
 
 func (am *AppchainManager) auditRecordKey(id string) string {

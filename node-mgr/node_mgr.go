@@ -72,7 +72,7 @@ func (node *Node) setFSM(lastStatus governance.GovernanceStatus) {
 
 			// logout 3
 			{Name: string(governance.EventLogout), Src: []string{string(governance.GovernanceAvailable)}, Dst: string(governance.GovernanceLogouting)},
-			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceUnavailable)},
+			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceForbidden)},
 			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceLogouting)}, Dst: string(lastStatus)},
 		},
 		fsm.Callbacks{
@@ -121,12 +121,7 @@ func (nm *NodeManager) ChangeStatus(nodePid string, trigger, lastStatus string, 
 }
 
 // Register record node info
-func (nm *NodeManager) Register(nodeInfo []byte) (bool, []byte) {
-	node := &Node{}
-	if err := json.Unmarshal(nodeInfo, node); err != nil {
-		return false, []byte(err.Error())
-	}
-
+func (nm *NodeManager) Register(node *Node) (bool, []byte) {
 	nm.SetObject(NodeKey(node.Pid), node)
 	nodePidMap := orderedmap.New()
 	_ = nm.GetObject(NodeTypeKey(string(node.NodeType)), nodePidMap)

@@ -1,16 +1,19 @@
 package rule_mgr
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 
 	"github.com/looplab/fsm"
+	appchain_mgr "github.com/meshplus/bitxhub-core/appchain-mgr"
 	"github.com/meshplus/bitxhub-core/governance"
 	"github.com/meshplus/bitxhub-core/validator"
+	"github.com/sirupsen/logrus"
 )
 
 const (
-	RULEPREFIX = "rule-"
+	RulePrefix = "rule"
 )
 
 type RuleManager struct {
@@ -18,12 +21,13 @@ type RuleManager struct {
 }
 
 type Rule struct {
-	Address string                      `json:"address"`
-	RuleUrl string                      `json:"rule_url"`
-	ChainID string                      `json:"chain_id"`
-	Master  bool                        `json:"master"`
-	Status  governance.GovernanceStatus `json:"status"`
-	FSM     *fsm.FSM                    `json:"fsm"`
+	Address    string                      `json:"address"`
+	RuleUrl    string                      `json:"rule_url"`
+	ChainID    string                      `json:"chain_id"`
+	Master     bool                        `json:"master"`
+	CreateTime int64                       `json:"create_time"`
+	Status     governance.GovernanceStatus `json:"status"`
+	FSM        *fsm.FSM                    `json:"fsm"`
 }
 
 var ruleStateMap = map[governance.EventType][]governance.GovernanceStatus{
@@ -38,10 +42,23 @@ var ruleAvailableMap = map[governance.GovernanceStatus]struct{}{
 	governance.GovernanceUnbinding: {},
 }
 
-var defaultRuleMap = map[string]struct{}{
-	validator.FabricRuleAddr:    {},
-	validator.SimFabricRuleAddr: {},
-	validator.HappyRuleAddr:     {},
+var defaultRuleMap = map[string]map[string]struct{}{
+	appchain_mgr.ChainTypeFabric1_4_3: {
+		validator.FabricRuleAddr:    {},
+		validator.SimFabricRuleAddr: {},
+	},
+	appchain_mgr.ChainTypeFabric1_4_4: {
+		validator.FabricRuleAddr:    {},
+		validator.SimFabricRuleAddr: {},
+	},
+	appchain_mgr.ChainTypeHyperchain1_8_3: {},
+	appchain_mgr.ChainTypeHyperchain1_8_6: {},
+	appchain_mgr.ChainTypeFlato1_0_0:      {},
+	appchain_mgr.ChainTypeFlato1_0_3:      {},
+	appchain_mgr.ChainTypeFlato1_0_6:      {},
+	appchain_mgr.ChainTypeBCOS2_6_0:       {},
+	appchain_mgr.ChainTypeCITA20_2_2:      {},
+	appchain_mgr.ChainTypeETH:             {},
 }
 
 func New(persister governance.Persister) RuleMgr {
@@ -56,8 +73,11 @@ func (r *Rule) IsAvailable() bool {
 	}
 }
 
-func IsDefault(addr string) bool {
-	if _, ok := defaultRuleMap[addr]; ok {
+func IsDefault(addr, chainType string) bool {
+	if addr == validator.HappyRuleAddr {
+		return true
+	}
+	if _, ok := defaultRuleMap[chainType][addr]; ok {
 		return true
 	} else {
 		return false
@@ -68,10 +88,8 @@ func (rule *Rule) setFSM(lastStatus governance.GovernanceStatus) {
 	rule.FSM = fsm.NewFSM(
 		string(rule.Status),
 		fsm.Events{
-			// bind
-			{Name: string(governance.EventBind), Src: []string{string(governance.GovernanceBindable)}, Dst: string(governance.GovernanceBinding)},
-			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceBinding)}, Dst: string(governance.GovernanceAvailable)},
-			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceBinding)}, Dst: string(lastStatus)},
+			// bind(bind first)
+			{Name: string(governance.EventBind), Src: []string{string(governance.GovernanceBindable)}, Dst: string(governance.GovernanceAvailable)},
 
 			// update(bind)
 			{Name: string(governance.EventUpdate), Src: []string{string(governance.GovernanceBindable)}, Dst: string(governance.GovernanceBinding)},
@@ -109,12 +127,24 @@ func (rule *Rule) setFSM(lastStatus governance.GovernanceStatus) {
 }
 
 // Register record rule
-func (rm *RuleManager) Register(chainID, ruleAddress, ruleUrl string) (bool, []byte) {
+func (rm *RuleManager) Register(chainID, ruleAddress, ruleUrl string, createTime int64) (bool, []byte) {
 	rules := make([]*Rule, 0)
 	_ = rm.GetObject(RuleKey(chainID), &rules)
 
-	rules = append(rules, &Rule{ruleAddress, ruleUrl, chainID, false, governance.GovernanceBindable, nil})
+	rules = append(rules, &Rule{
+		Address:    ruleAddress,
+		RuleUrl:    ruleUrl,
+		ChainID:    chainID,
+		Master:     false,
+		CreateTime: createTime,
+		Status:     governance.GovernanceBindable,
+	})
 	rm.SetObject(RuleKey(chainID), rules)
+
+	rm.Logger().WithFields(logrus.Fields{
+		"chainID":  chainID,
+		"ruleAddr": ruleAddress,
+	}).Info("Rule is registering")
 
 	return true, nil
 }
@@ -192,7 +222,7 @@ func (rm *RuleManager) ChangeStatus(ruleAddress, trigger, lastStatus string, cha
 	}
 
 	if !flag {
-		return false, []byte("the rule does not exist ")
+		return false, []byte(fmt.Sprintf("the rule does not exist: %s", ruleAddress))
 	}
 
 	rm.SetObject(RuleKey(string(chainID)), rules)
@@ -288,6 +318,21 @@ func (rm *RuleManager) IsAvailable(chainID, ruleAddress string) bool {
 	return rule.(*Rule).IsAvailable()
 }
 
+func (rm *RuleManager) AllRules() ([]*Rule, error) {
+	ret := make([]*Rule, 0)
+	ok, value := rm.Query(RulePrefix)
+	if ok {
+		for _, data := range value {
+			chainRules := make([]*Rule, 0)
+			if err := json.Unmarshal(data, &chainRules); err != nil {
+				return nil, err
+			}
+			ret = append(ret, chainRules...)
+		}
+	}
+	return ret, nil
+}
+
 func RuleKey(chainID string) string {
-	return fmt.Sprintf("%s-%s", RULEPREFIX, chainID)
+	return fmt.Sprintf("%s-%s", RulePrefix, chainID)
 }
