@@ -7,6 +7,7 @@ import (
 
 	"github.com/iancoleman/orderedmap"
 	"github.com/looplab/fsm"
+	"github.com/meshplus/bitxhub-core/boltvm"
 	"github.com/meshplus/bitxhub-core/governance"
 	"github.com/sirupsen/logrus"
 )
@@ -85,13 +86,13 @@ func (node *Node) setFSM(lastStatus governance.GovernanceStatus) {
 
 // GovernancePre checks if the appchain can do the event. (only check, not modify infomation)
 // return *node, extra info, error
-func (nm *NodeManager) GovernancePre(nodePid string, event governance.EventType, _ []byte) (interface{}, error) {
+func (nm *NodeManager) GovernancePre(nodePid string, event governance.EventType, _ []byte) (interface{}, *boltvm.BxhError) {
 	node := &Node{}
 	if ok := nm.GetObject(NodeKey(nodePid), node); !ok {
 		if event == governance.EventRegister {
 			return nil, nil
 		} else {
-			return nil, fmt.Errorf("the node does not exist")
+			return nil, boltvm.BError(boltvm.NodeNonexistentNodeCode, fmt.Sprintf(string(boltvm.NodeNonexistentNodeMsg), nodePid))
 		}
 	}
 
@@ -101,7 +102,7 @@ func (nm *NodeManager) GovernancePre(nodePid string, event governance.EventType,
 		}
 	}
 
-	return nil, fmt.Errorf("the node (%s) can not be %s", string(node.Status), string(event))
+	return nil, boltvm.BError(boltvm.NodeStatusErrorCode, fmt.Sprintf(string(boltvm.NodeStatusErrorMsg), node.Pid, string(node.Status), string(event)))
 }
 
 func (nm *NodeManager) ChangeStatus(nodePid string, trigger, lastStatus string, _ []byte) (bool, []byte) {

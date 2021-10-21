@@ -8,6 +8,7 @@ import (
 
 	"github.com/iancoleman/orderedmap"
 	"github.com/looplab/fsm"
+	"github.com/meshplus/bitxhub-core/boltvm"
 	"github.com/meshplus/bitxhub-core/governance"
 	"github.com/sirupsen/logrus"
 )
@@ -134,13 +135,13 @@ func (s *Service) setFSM(lastStatus governance.GovernanceStatus) {
 	)
 }
 
-func (sm *ServiceManager) GovernancePre(id string, event governance.EventType, _ []byte) (interface{}, error) {
+func (sm *ServiceManager) GovernancePre(id string, event governance.EventType, _ []byte) (interface{}, *boltvm.BxhError) {
 	service := &Service{}
 	if ok := sm.GetObject(ServiceKey(id), service); !ok {
 		if event == governance.EventRegister {
 			return service, nil
 		} else {
-			return service, fmt.Errorf("the service does not exist")
+			return nil, boltvm.BError(boltvm.ServiceNonexistentServiceCode, fmt.Sprintf(string(boltvm.ServiceNonexistentServiceMsg), id))
 		}
 	}
 
@@ -150,7 +151,7 @@ func (sm *ServiceManager) GovernancePre(id string, event governance.EventType, _
 		}
 	}
 
-	return service, fmt.Errorf("the service (%s) can not be %s", string(service.Status), string(event))
+	return nil, boltvm.BError(boltvm.ServiceStatusErrorCode, fmt.Sprintf(string(boltvm.ServiceStatusErrorMsg), id, string(service.Status), string(event)))
 }
 
 func (sm *ServiceManager) ChangeStatus(id, trigger, lastStatus string, _ []byte) (bool, []byte) {

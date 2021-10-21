@@ -7,6 +7,7 @@ import (
 
 	"github.com/looplab/fsm"
 	appchain_mgr "github.com/meshplus/bitxhub-core/appchain-mgr"
+	"github.com/meshplus/bitxhub-core/boltvm"
 	"github.com/meshplus/bitxhub-core/governance"
 	"github.com/meshplus/bitxhub-core/validator"
 	"github.com/sirupsen/logrus"
@@ -150,13 +151,13 @@ func (rm *RuleManager) Register(chainID, ruleAddress, ruleUrl string, createTime
 }
 
 // GovernancePre checks if the rule address can do event with appchain id and record rule. (only check, not modify infomation)
-func (rm *RuleManager) GovernancePre(ruleAddress string, event governance.EventType, chainID []byte) (interface{}, error) {
+func (rm *RuleManager) GovernancePre(ruleAddress string, event governance.EventType, chainID []byte) (interface{}, *boltvm.BxhError) {
 	rules := make([]*Rule, 0)
 	if ok := rm.GetObject(RuleKey(string(chainID)), &rules); !ok {
 		if event == governance.EventRegister {
 			return nil, nil
 		} else {
-			return nil, fmt.Errorf("this appchain's rules do not exist")
+			return nil, boltvm.BError(boltvm.RuleNonexistentRuleCode, fmt.Sprintf(string(boltvm.RuleNonexistentRuleMsg), ruleAddress))
 		}
 	}
 
@@ -182,19 +183,19 @@ func (rm *RuleManager) GovernancePre(ruleAddress string, event governance.EventT
 		if event == governance.EventRegister {
 			return nil, nil
 		} else {
-			return nil, fmt.Errorf("the rule (%s) does not exist ", ruleAddress)
+			return nil, boltvm.BError(boltvm.RuleNonexistentRuleCode, fmt.Sprintf(string(boltvm.RuleNonexistentRuleMsg), ruleAddress))
 		}
 	}
 
 	if !statusOk {
-		return nil, fmt.Errorf("the rule (%s) can not be %s", string(rule.Status), string(event))
+		return nil, boltvm.BError(boltvm.RuleStatusErrorCode, fmt.Sprintf(string(boltvm.RuleStatusErrorMsg), ruleAddress, string(rule.Status), string(event)))
 	}
 
 	switch event {
 	case governance.EventUpdate:
 		for _, r := range rules {
 			if true == r.Master && governance.GovernanceAvailable != r.Status {
-				return nil, fmt.Errorf("The master rule is changing(%s) now. Please wait until the proposal close before updating new rule", r.Status)
+				return nil, boltvm.BError(boltvm.RuleMasterRuleUpdatingCode, fmt.Sprintf(string(boltvm.RuleMasterRuleUpdatingMsg), r.Address))
 			}
 		}
 		fallthrough
