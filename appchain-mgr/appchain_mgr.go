@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/looplab/fsm"
+	"github.com/meshplus/bitxhub-core/boltvm"
 	g "github.com/meshplus/bitxhub-core/governance"
 	"github.com/sirupsen/logrus"
 )
@@ -14,6 +15,7 @@ import (
 const (
 	Prefix                 = "appchain"
 	ChainNumPrefix         = "chain-num"
+	ChainOccupyIdPrefix    = "chain-occupy-id"
 	ChainOccupyNamePrefix  = "chain-occupy-name"
 	ChainOccupyAdminPrefix = "chain-occupy-admin"
 	ChainAdminsPrefix      = "chain-admins"
@@ -22,8 +24,8 @@ const (
 	AppchainType   = "appchain"
 	FabricType     = "fabric"
 
-	ChainTypeFabric1_4_3     = "Fabric v1.4.3"
-	ChainTypeFabric1_4_4     = "Fabric v1.4.4"
+	ChainTypeFabric1_4_3     = "Fabric V1.4.3"
+	ChainTypeFabric1_4_4     = "Fabric V1.4.4"
 	ChainTypeHyperchain1_8_3 = "Hyperchain V1.8.3"
 	ChainTypeHyperchain1_8_6 = "Hyperchain V1.8.6"
 	ChainTypeFlato1_0_0      = "Flato V1.0.0"
@@ -132,10 +134,10 @@ func (chain *Appchain) setFSM(lastStatus g.GovernanceStatus) {
 
 // GovernancePre checks if the appchain can do the event. (only check, not modify infomation)
 // return *appchain, extra info, error
-func (am *AppchainManager) GovernancePre(chainId string, event g.EventType, _ []byte) (interface{}, error) {
+func (am *AppchainManager) GovernancePre(chainId string, event g.EventType, _ []byte) (interface{}, *boltvm.BxhError) {
 	chain := &Appchain{}
 	if ok := am.GetObject(AppchainKey(chainId), chain); !ok {
-		return nil, fmt.Errorf("the appchain does not exist")
+		return nil, boltvm.BError(boltvm.AppchainNonexistentChainCode, fmt.Sprintf(string(boltvm.AppchainNonexistentChainMsg), chainId, ""))
 	}
 
 	for _, s := range appchainStateMap[event] {
@@ -144,23 +146,18 @@ func (am *AppchainManager) GovernancePre(chainId string, event g.EventType, _ []
 		}
 	}
 
-	return nil, fmt.Errorf("the appchain (%s) can not be %s", string(chain.Status), string(event))
+	return nil, boltvm.BError(boltvm.AppchainStatusErrorCode, fmt.Sprintf(string(boltvm.AppchainStatusErrorMsg), chainId, chain.Status, string(event)))
 }
 
 // Register registers appchain info, return chain id
 func (am *AppchainManager) Register(chainInfo *Appchain) (bool, []byte) {
-	num := 0
-	_ = am.GetObject(ChainNumPrefix, &num)
-	chainInfo.ID = fmt.Sprintf("%s%d", Prefix, num+1)
-
 	am.SetObject(AppchainKey(chainInfo.ID), *chainInfo)
-	am.SetObject(ChainNumPrefix, num+1)
 
 	am.Logger().WithFields(logrus.Fields{
 		"id": chainInfo.ID,
 	}).Info("Appchain is registering")
 
-	return true, []byte(chainInfo.ID)
+	return true, nil
 }
 
 func (am *AppchainManager) Update(updateInfo *Appchain) (bool, []byte) {
