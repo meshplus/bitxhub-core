@@ -19,6 +19,7 @@ const (
 	CONTEXT_INTERFACE = "interface"
 
 	ACCOUNT   = "account"
+	LEDGER    = "ledger"
 	ALLOC_MEM = "allocate"
 )
 
@@ -121,6 +122,7 @@ func (w *Wasm) Execute(input []byte, wasmGasLimit uint64) (ret []byte, gasUsed u
 	gasLimit := &usegas.GasLimit{}
 	gasLimit.SetLimit(wasmGasLimit)
 	w.SetContext("gaslimit", gasLimit)
+	w.SetContext("result", []byte(""))
 
 	payload := &pb.InvokePayload{}
 	if err := proto.Unmarshal(input, payload); err != nil {
@@ -180,6 +182,10 @@ func (w *Wasm) Execute(input []byte, wasmGasLimit uint64) (ret []byte, gasUsed u
 		ret = nil
 	} else {
 		ret = []byte(strconv.Itoa(int(result.(int32))))
+	}
+
+	if string(w.GetContext("result").([]byte)) != "" {
+		ret = w.GetContext("result").([]byte)
 	}
 
 	return ret, wasmGasLimit - w.GetContext("gaslimit").(*usegas.GasLimit).GetLimit(), err

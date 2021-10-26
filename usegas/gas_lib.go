@@ -44,6 +44,19 @@ func usegas(env interface{}, args []wasmer.Value) ([]wasmer.Value, error) {
 	return []wasmer.Value{}, nil
 }
 
+func setResult(env interface{}, args []wasmer.Value) ([]wasmer.Value, error) {
+	value_ptr := args[0].I64()
+	value_len := args[1].I64()
+	ctx := env.(*wasmlib.WasmEnv).Ctx
+	mem, err := env.(*wasmlib.WasmEnv).Instance.Exports.GetMemory("memory")
+	if err != nil {
+		return []wasmer.Value{}, err
+	}
+	value := mem.Data()[value_ptr : value_ptr+value_len]
+	ctx["result"] = value
+	return []wasmer.Value{}, nil
+}
+
 func (im *Imports) importGasLib(store *wasmer.Store, wasmEnv *wasmlib.WasmEnv) {
 	useGasFunc := wasmer.NewFunctionWithEnvironment(
 		store,
@@ -54,10 +67,25 @@ func (im *Imports) importGasLib(store *wasmer.Store, wasmEnv *wasmlib.WasmEnv) {
 		wasmEnv,
 		usegas,
 	)
+	setResultFunc := wasmer.NewFunctionWithEnvironment(
+		store,
+		wasmer.NewFunctionType(
+			wasmer.NewValueTypes(wasmer.I64, wasmer.I64),
+			wasmer.NewValueTypes(),
+		),
+		wasmEnv,
+		setResult,
+	)
 	im.imports.Register(
 		"metering",
 		map[string]wasmer.IntoExtern{
 			"usegas": useGasFunc,
+		},
+	)
+	im.imports.Register(
+		"env",
+		map[string]wasmer.IntoExtern{
+			"set_result": setResultFunc,
 		},
 	)
 }
