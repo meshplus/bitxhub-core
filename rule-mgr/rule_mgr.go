@@ -31,6 +31,10 @@ type Rule struct {
 	FSM        *fsm.FSM                    `json:"fsm"`
 }
 
+func (r *Rule) GetChainRuleID() string {
+	return fmt.Sprintf("%s:%s", r.ChainID, r.Address)
+}
+
 var ruleStateMap = map[governance.EventType][]governance.GovernanceStatus{
 	governance.EventBind:   {governance.GovernanceBindable},
 	governance.EventLogout: {governance.GovernanceBindable},
