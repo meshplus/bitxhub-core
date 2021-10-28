@@ -261,10 +261,13 @@ const (
 	DappIllegalTransferAddrCode ErrorCode = "1070013"
 	DappIllegalTransferAddrMsg  ErrorMsg  = "illegal new owner addr(%s): %s"
 
-	DappIllegalEvaluateScoreCode ErrorCode = "1070014"
+	DappTransferToSelfCode ErrorCode = "1070014"
+	DappTransferToSelfMsg  ErrorMsg  = "can not transfer dapp to self(%s)"
+
+	DappIllegalEvaluateScoreCode ErrorCode = "1070015"
 	DappIllegalEvaluateScoreMsg  ErrorMsg  = "illegal evaluate score(%s), should be in the range [0,5]"
 
-	DappRepeatEvaluateCode ErrorCode = "1070015"
+	DappRepeatEvaluateCode ErrorCode = "1070016"
 	DappRepeatEvaluateMsg  ErrorMsg  = "the caller(%s) has evaluate the dapp(%s)"
 
 	// interchain
