@@ -1,6 +1,7 @@
 package governance
 
 import (
+	"github.com/meshplus/bitxhub-core/boltvm"
 	"github.com/sirupsen/logrus"
 )
 
@@ -22,7 +23,7 @@ type Governance interface {
 	QueryById(id string, extra []byte) (interface{}, error)
 
 	// GovernancePre check if the object can do the event
-	GovernancePre(id string, event EventType, extra []byte) (interface{}, error)
+	GovernancePre(id string, event EventType, extra []byte) (interface{}, *boltvm.BxhError)
 }
 
 type Persister interface {

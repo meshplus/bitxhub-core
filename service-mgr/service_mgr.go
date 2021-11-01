@@ -8,14 +8,16 @@ import (
 
 	"github.com/iancoleman/orderedmap"
 	"github.com/looplab/fsm"
+	"github.com/meshplus/bitxhub-core/boltvm"
 	"github.com/meshplus/bitxhub-core/governance"
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	SERVICE_PREFIX          = "service"
-	SERVICE_APPCHAIN_PREFIX = "appchain"
-	SERVICE_TYPE_PREFIX     = "type"
+	ServicePrefix           = "service"
+	ServiceAppchainPrefix   = "appchain"
+	ServiceTypePrefix       = "type"
+	ServiceOccupyNamePrefix = "occupy-service-name"
 )
 
 type ServiceManager struct {
@@ -38,6 +40,7 @@ type Service struct {
 	Intro      string              `json:"intro"`       // service introduction
 	Ordered    bool                `json:"ordered"`     // service should be in order or not
 	Permission map[string]struct{} `json:"permission"`  // counter party services which are allowed to call the service
+	PubKeyType string              `json:"pubkey_type"` // todo: the use of this field awaits further refinement
 	Details    string              `json:"details"`     // Detailed description of the service
 	CreateTime int64               `json:"create_time"` // service create time
 
@@ -132,13 +135,13 @@ func (s *Service) setFSM(lastStatus governance.GovernanceStatus) {
 	)
 }
 
-func (sm *ServiceManager) GovernancePre(id string, event governance.EventType, _ []byte) (interface{}, error) {
+func (sm *ServiceManager) GovernancePre(id string, event governance.EventType, _ []byte) (interface{}, *boltvm.BxhError) {
 	service := &Service{}
 	if ok := sm.GetObject(ServiceKey(id), service); !ok {
 		if event == governance.EventRegister {
 			return service, nil
 		} else {
-			return service, fmt.Errorf("the service does not exist")
+			return nil, boltvm.BError(boltvm.ServiceNonexistentServiceCode, fmt.Sprintf(string(boltvm.ServiceNonexistentServiceMsg), id))
 		}
 	}
 
@@ -148,7 +151,7 @@ func (sm *ServiceManager) GovernancePre(id string, event governance.EventType, _
 		}
 	}
 
-	return service, fmt.Errorf("the service (%s) can not be %s", string(service.Status), string(event))
+	return nil, boltvm.BError(boltvm.ServiceStatusErrorCode, fmt.Sprintf(string(boltvm.ServiceStatusErrorMsg), id, string(service.Status), string(event)))
 }
 
 func (sm *ServiceManager) ChangeStatus(id, trigger, lastStatus string, _ []byte) (bool, []byte) {
@@ -168,7 +171,7 @@ func (sm *ServiceManager) ChangeStatus(id, trigger, lastStatus string, _ []byte)
 }
 
 func (sm *ServiceManager) CountAvailable(_ []byte) (bool, []byte) {
-	ok, value := sm.Query(SERVICE_PREFIX)
+	ok, value := sm.Query(ServicePrefix)
 	if !ok {
 		return true, []byte("0")
 	}
@@ -189,7 +192,7 @@ func (sm *ServiceManager) CountAvailable(_ []byte) (bool, []byte) {
 }
 
 func (sm *ServiceManager) CountAll(_ []byte) (bool, []byte) {
-	ok, value := sm.Query(SERVICE_PREFIX)
+	ok, value := sm.Query(ServicePrefix)
 	if !ok {
 		return true, []byte("0")
 	}
@@ -198,7 +201,7 @@ func (sm *ServiceManager) CountAll(_ []byte) (bool, []byte) {
 
 func (sm *ServiceManager) All(_ []byte) (interface{}, error) {
 	ret := make([]*Service, 0)
-	ok, value := sm.Query(SERVICE_PREFIX)
+	ok, value := sm.Query(ServicePrefix)
 	if ok {
 		for _, data := range value {
 			service := &Service{}
@@ -291,12 +294,11 @@ func (sm *ServiceManager) Update(updateInfo *Service) (bool, []byte) {
 	service := &Service{}
 	ok := sm.GetObject(ServiceKey(chainServiceID), service)
 	if !ok {
-		return false, []byte("the service is not exist")
+		return false, []byte(fmt.Sprintf("the service is not exist: %s", chainServiceID))
 	}
 
 	service.Name = updateInfo.Name
 	service.Intro = updateInfo.Intro
-	service.Ordered = updateInfo.Ordered
 	service.Details = updateInfo.Details
 	service.Permission = updateInfo.Permission
 	sm.SetObject(ServiceKey(chainServiceID), *service)
@@ -308,13 +310,17 @@ func (sm *ServiceManager) Update(updateInfo *Service) (bool, []byte) {
 }
 
 func ServiceKey(id string) string {
-	return fmt.Sprintf("%s-%s", SERVICE_PREFIX, id)
+	return fmt.Sprintf("%s-%s", ServicePrefix, id)
 }
 
 func AppchainServicesKey(id string) string {
-	return fmt.Sprintf("%s-%s", SERVICE_APPCHAIN_PREFIX, id)
+	return fmt.Sprintf("%s-%s", ServiceAppchainPrefix, id)
 }
 
 func ServicesTypeKey(typ string) string {
-	return fmt.Sprintf("%s-%s", SERVICE_TYPE_PREFIX, typ)
+	return fmt.Sprintf("%s-%s", ServiceTypePrefix, typ)
+}
+
+func ServiceOccupyNameKey(name string) string {
+	return fmt.Sprintf("%s-%s", ServiceOccupyNamePrefix, name)
 }

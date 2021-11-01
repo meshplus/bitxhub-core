@@ -13,4 +13,6 @@ type RuleMgr interface {
 	HasMaster(chainId string) bool
 
 	IsAvailable(chainId, ruleId string) bool
+
+	AllRules() ([]*Rule, error)
 }

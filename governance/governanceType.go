@@ -19,7 +19,7 @@ const (
 	GovernanceUnbinding    GovernanceStatus = "unbinding"
 	GovernanceBindable     GovernanceStatus = "bindable"
 	GovernanceForbidden    GovernanceStatus = "forbidden"
-	GovernanceTransferring GovernanceStatus = "transfering"
+	GovernanceTransferring GovernanceStatus = "transferring"
 	GovernancePause        GovernanceStatus = "pause"
 	GovernanceTransferred  GovernanceStatus = "transferred"
 

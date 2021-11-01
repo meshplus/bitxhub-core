@@ -7,7 +7,7 @@ type NodeMgr interface {
 	governance.Governance
 
 	// Register registers node info, return node id and error
-	Register(info []byte) (bool, []byte)
+	Register(node *Node) (bool, []byte)
 
 	// GetIdByPid query node id by node pid
 	GetPidById(pid string) (string, error)
