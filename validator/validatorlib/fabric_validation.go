@@ -47,18 +47,6 @@ type payloadInfo struct {
 	Hash      [32]byte `json:"hash"`
 }
 
-func GetPolicyEnvelope(policy string) ([]byte, error) {
-	policyEnv, err := cauthdsl.FromString(policy)
-	if err != nil {
-		return nil, err
-	}
-	policyBytes, err := proto.Marshal(policyEnv)
-	if err != nil {
-		return nil, err
-	}
-	return policyBytes, nil
-}
-
 func UnmarshalValidatorInfo(validatorBytes []byte) (*ValidatorInfo, error) {
 	vInfo := &ValidatorInfo{}
 	if err := json.Unmarshal(validatorBytes, vInfo); err != nil {
