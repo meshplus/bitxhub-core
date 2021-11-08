@@ -42,10 +42,10 @@ type Wasm struct {
 // Contract represents the smart contract structure used in the wasm vm
 type Contract struct {
 	// contract byte
-	Code []byte
+	Code []byte `json:"code"`
 
 	// contract hash
-	Hash *types.Hash
+	Hash *types.Hash `json:"hash"`
 }
 
 func getInstance(contract *Contract, imports wasmlib.WasmImport, env *wasmlib.WasmEnv, instances *sync.Map) (*wasmer.Instance, error) {
