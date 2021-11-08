@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/Shopify/sarama v1.27.0 // indirect
-	github.com/ethereum/go-ethereum v1.10.4
+	github.com/ethereum/go-ethereum v1.10.9
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/mock v1.5.0
 	github.com/hashicorp/go-version v1.2.1 // indirect
@@ -21,7 +21,6 @@ require (
 	github.com/meshplus/bitxhub-kit v1.2.1-0.20210830031953-cf5f83f2e1dd
 	github.com/meshplus/bitxhub-model v1.2.1-0.20210918014850-45a1a094b597
 	github.com/miekg/pkcs11 v1.0.3 // indirect
-	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/pelletier/go-toml v1.8.1 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.5.1 // indirect
@@ -36,11 +35,9 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.16.0 // indirect
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
-	golang.org/x/text v0.3.5 // indirect
 	google.golang.org/genproto v0.0.0-20201119123407-9b1e624d6bc4 // indirect
 	google.golang.org/grpc v1.33.2 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 replace github.com/wasmerio/wasmer-go v1.0.4 => github.com/meshplus/wasmer-go v1.0.5-0.20210817103436-19ec68f8bfe2
