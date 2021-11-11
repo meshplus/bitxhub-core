@@ -35,6 +35,7 @@ const (
 	EventTransfer EventType = "transfer"
 	EventPause    EventType = "pause"
 	EventUnpause  EventType = "unpause"
+	EventCLear    EventType = "clear"
 )
 
 type RegisterResult struct {

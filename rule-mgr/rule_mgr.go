@@ -26,6 +26,7 @@ type Rule struct {
 	RuleUrl    string                      `json:"rule_url"`
 	ChainID    string                      `json:"chain_id"`
 	Master     bool                        `json:"master"`
+	Default    bool                        `json:"builtIn"`
 	CreateTime int64                       `json:"create_time"`
 	Status     governance.GovernanceStatus `json:"status"`
 	FSM        *fsm.FSM                    `json:"fsm"`
@@ -40,6 +41,7 @@ var ruleStateMap = map[governance.EventType][]governance.GovernanceStatus{
 	governance.EventLogout: {governance.GovernanceBindable},
 	governance.EventUpdate: {governance.GovernanceBindable},
 	governance.EventUnbind: {governance.GovernanceAvailable},
+	governance.EventCLear:  {governance.GovernanceBindable, governance.GovernanceAvailable, governance.GovernanceBinding, governance.GovernanceUnbinding, governance.GovernanceForbidden},
 }
 
 var ruleAvailableMap = map[governance.GovernanceStatus]struct{}{
@@ -108,6 +110,9 @@ func (rule *Rule) setFSM(lastStatus governance.GovernanceStatus) {
 
 			// logout
 			{Name: string(governance.EventLogout), Src: []string{string(governance.GovernanceBindable)}, Dst: string(governance.GovernanceForbidden)},
+
+			// claer
+			{Name: string(governance.EventCLear), Src: []string{string(governance.GovernanceBindable), string(governance.GovernanceAvailable), string(governance.GovernanceBinding), string(governance.GovernanceUnbinding), string(governance.GovernanceForbidden)}, Dst: string(governance.GovernanceUnavailable)},
 		},
 		fsm.Callbacks{
 			"enter_state": func(e *fsm.Event) {
@@ -126,13 +131,17 @@ func (rule *Rule) setFSM(lastStatus governance.GovernanceStatus) {
 				if e.Event == string(governance.EventBind) {
 					rule.Master = true
 				}
+
+				if e.Event == string(governance.EventCLear) && rule.Default {
+					rule.Status = governance.GovernanceBindable
+				}
 			},
 		},
 	)
 }
 
 // Register record rule
-func (rm *RuleManager) Register(chainID, ruleAddress, ruleUrl string, createTime int64) (bool, []byte) {
+func (rm *RuleManager) Register(chainID, ruleAddress, ruleUrl string, createTime int64, isDefault bool) (bool, []byte) {
 	rules := make([]*Rule, 0)
 	_ = rm.GetObject(RuleKey(chainID), &rules)
 
@@ -141,6 +150,7 @@ func (rm *RuleManager) Register(chainID, ruleAddress, ruleUrl string, createTime
 		RuleUrl:    ruleUrl,
 		ChainID:    chainID,
 		Master:     false,
+		Default:    isDefault,
 		CreateTime: createTime,
 		Status:     governance.GovernanceBindable,
 	})

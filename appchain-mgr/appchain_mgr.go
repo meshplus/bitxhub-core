@@ -67,7 +67,7 @@ type auditRecord struct {
 
 var appchainStateMap = map[g.EventType][]g.GovernanceStatus{
 	g.EventUpdate:   {g.GovernanceAvailable, g.GovernanceFrozen},
-	g.EventFreeze:   {g.GovernanceAvailable, g.GovernanceUpdating, g.GovernanceActivating},
+	g.EventFreeze:   {g.GovernanceAvailable},
 	g.EventActivate: {g.GovernanceFrozen},
 	g.EventLogout:   {g.GovernanceAvailable, g.GovernanceUpdating, g.GovernanceFreezing, g.GovernanceActivating, g.GovernanceFrozen},
 
@@ -101,17 +101,17 @@ func (chain *Appchain) setFSM(lastStatus g.GovernanceStatus) {
 		string(chain.Status),
 		fsm.Events{
 			// update 1
-			{Name: string(g.EventUpdate), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceFrozen), string(g.GovernanceFreezing), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceUpdating)},
+			{Name: string(g.EventUpdate), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceFrozen), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceUpdating)},
 			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceUpdating)}, Dst: string(g.GovernanceAvailable)},
 			{Name: string(g.EventReject), Src: []string{string(g.GovernanceUpdating)}, Dst: string(g.GovernanceFrozen)},
 
 			// freeze 2
-			{Name: string(g.EventFreeze), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceUpdating), string(g.GovernanceActivating), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceFreezing)},
+			{Name: string(g.EventFreeze), Src: []string{string(g.GovernanceAvailable), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceFreezing)},
 			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceFreezing)}, Dst: string(g.GovernanceFrozen)},
 			{Name: string(g.EventReject), Src: []string{string(g.GovernanceFreezing)}, Dst: string(lastStatus)},
 
 			// activate 1
-			{Name: string(g.EventActivate), Src: []string{string(g.GovernanceFrozen), string(g.GovernanceFreezing), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceActivating)},
+			{Name: string(g.EventActivate), Src: []string{string(g.GovernanceFrozen), string(g.GovernanceLogouting)}, Dst: string(g.GovernanceActivating)},
 			{Name: string(g.EventApprove), Src: []string{string(g.GovernanceActivating)}, Dst: string(g.GovernanceAvailable)},
 			{Name: string(g.EventReject), Src: []string{string(g.GovernanceActivating)}, Dst: string(lastStatus)},
 

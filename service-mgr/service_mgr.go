@@ -58,11 +58,12 @@ type Service struct {
 var serviceStateMap = map[governance.EventType][]governance.GovernanceStatus{
 	governance.EventRegister: {governance.GovernanceUnavailable},
 	governance.EventUpdate:   {governance.GovernanceAvailable, governance.GovernanceFrozen},
-	governance.EventFreeze:   {governance.GovernanceAvailable, governance.GovernanceUpdating, governance.GovernanceActivating},
+	governance.EventFreeze:   {governance.GovernanceAvailable, governance.GovernanceActivating},
 	governance.EventActivate: {governance.GovernanceFrozen},
-	governance.EventPause:    {governance.GovernanceAvailable, governance.GovernanceUpdating, governance.GovernanceFreezing, governance.GovernanceActivating},
+	governance.EventPause:    {governance.GovernanceAvailable, governance.GovernanceUpdating, governance.GovernanceFreezing, governance.GovernanceActivating, governance.GovernanceFrozen},
 	governance.EventUnpause:  {governance.GovernancePause},
 	governance.EventLogout:   {governance.GovernanceAvailable, governance.GovernanceUpdating, governance.GovernanceFreezing, governance.GovernanceActivating, governance.GovernanceFrozen, governance.GovernancePause},
+	governance.EventCLear:    {governance.GovernancePause, governance.GovernanceLogouting},
 }
 
 var serviceAvailableMap = map[governance.GovernanceStatus]struct{}{
@@ -102,22 +103,22 @@ func (s *Service) setFSM(lastStatus governance.GovernanceStatus) {
 			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceRegisting)}, Dst: string(lastStatus)},
 
 			// update 1
-			{Name: string(governance.EventUpdate), Src: []string{string(governance.GovernanceAvailable), string(governance.GovernanceFrozen), string(governance.GovernanceFreezing), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceUpdating)},
+			{Name: string(governance.EventUpdate), Src: []string{string(governance.GovernanceAvailable), string(governance.GovernanceFrozen), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceUpdating)},
 			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceUpdating)}, Dst: string(governance.GovernanceAvailable)},
 			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceUpdating)}, Dst: string(governance.GovernanceFrozen)},
 
 			// freeze 2
-			{Name: string(governance.EventFreeze), Src: []string{string(governance.GovernanceAvailable), string(governance.GovernanceUpdating), string(governance.GovernanceActivating), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceFreezing)},
+			{Name: string(governance.EventFreeze), Src: []string{string(governance.GovernanceAvailable), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceFreezing)},
 			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceFreezing)}, Dst: string(governance.GovernanceFrozen)},
 			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceFreezing)}, Dst: string(lastStatus)},
 
 			// activate 1
-			{Name: string(governance.EventActivate), Src: []string{string(governance.GovernanceFrozen), string(governance.GovernanceFreezing), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceActivating)},
+			{Name: string(governance.EventActivate), Src: []string{string(governance.GovernanceFrozen), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceActivating)},
 			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceActivating)}, Dst: string(governance.GovernanceAvailable)},
 			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceActivating)}, Dst: string(lastStatus)},
 
 			// pause
-			{Name: string(governance.EventPause), Src: []string{string(governance.GovernanceAvailable), string(governance.GovernanceUpdating), string(governance.GovernanceFreezing), string(governance.GovernanceActivating)}, Dst: string(governance.GovernancePause)},
+			{Name: string(governance.EventPause), Src: []string{string(governance.GovernanceAvailable), string(governance.GovernanceFrozen), string(governance.GovernanceUpdating), string(governance.GovernanceFreezing), string(governance.GovernanceActivating)}, Dst: string(governance.GovernancePause)},
 
 			// unpause
 			{Name: string(governance.EventUnpause), Src: []string{string(governance.GovernancePause)}, Dst: string(governance.GovernanceAvailable)},
@@ -126,6 +127,9 @@ func (s *Service) setFSM(lastStatus governance.GovernanceStatus) {
 			{Name: string(governance.EventLogout), Src: []string{string(governance.GovernanceAvailable), string(governance.GovernanceUpdating), string(governance.GovernanceFreezing), string(governance.GovernanceFrozen), string(governance.GovernanceActivating), string(governance.GovernancePause)}, Dst: string(governance.GovernanceLogouting)},
 			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceForbidden)},
 			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceLogouting)}, Dst: string(lastStatus)},
+
+			// claer
+			{Name: string(governance.EventCLear), Src: []string{string(governance.GovernancePause), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceForbidden)},
 		},
 		fsm.Callbacks{
 			"enter_state": func(e *fsm.Event) {

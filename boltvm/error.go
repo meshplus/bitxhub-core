@@ -15,8 +15,8 @@ const (
 	GovernanceNonexistentProposalCode ErrorCode = "1010002"
 	GovernanceNonexistentProposalMsg  ErrorMsg  = "the proposal(%s) does not exist: %s"
 
-	GovernanceWithdrawEndProposalCode ErrorCode = "1010003"
-	GovernanceWithdrawEndProposalMsg  ErrorMsg  = "the proposal(%s) is %s, cannot be withdrawed"
+	GovernanceEndEndedProposalCode ErrorCode = "1010003"
+	GovernanceEndEndedProposalMsg  ErrorMsg  = "the proposal(%s) is %s, cannot be ended"
 
 	GovernanceNotVoteAdminCode ErrorCode = "1010004"
 	GovernanceNotVoteAdminMsg  ErrorMsg  = "the admin of the address(%s) has not voted"
@@ -89,7 +89,7 @@ const (
 	AppchainStatusErrorMsg  ErrorMsg  = "the appchain(%s) is %s, can not do %s"
 
 	AppchainRuleUpdatingCode ErrorCode = "1020013"
-	AppchainRuleUpdatingMsg  ErrorMsg  = "chain master rule(%s) is updating, can not activate appchain(%s)"
+	AppchainRuleUpdatingMsg  ErrorMsg  = "chain master rule(%s) is updating, can not submit proposal to %s appchain(%s)"
 
 	AppchainNonexistentChainCode ErrorCode = "1020014"
 	AppchainNonexistentChainMsg  ErrorMsg  = "the appchain(%s) does not exist: %s"
@@ -115,6 +115,18 @@ const (
 
 	RuleMasterRuleUpdatingCode ErrorCode = "1030006"
 	RuleMasterRuleUpdatingMsg  ErrorMsg  = "master rule(%s) is updating, can not update master rule"
+
+	RuleRegisterDefaultCode ErrorCode = "1030007"
+	RuleRegisterDefaultMsg  ErrorMsg  = "default rule(%s) can not be registered"
+
+	RuleLogoutDefaultCode ErrorCode = "1030008"
+	RuleLogoutDefaultMsg  ErrorMsg  = "default rule(%s) can not be logouted"
+
+	RuleAppchainForbiddenCode ErrorCode = "1030009"
+	RuleAppchainForbiddenMsg  ErrorMsg  = "appchain(%s) is forbidden, can not operate rule"
+
+	RuleAppchainStatusErrorCode ErrorCode = "1030010"
+	RuleAppchainStatusErrorMsg  ErrorMsg  = "appchain(%s) is %s, can not bind new master rule"
 
 	// role
 	RoleInternalErrCode ErrorCode = "2040000"
