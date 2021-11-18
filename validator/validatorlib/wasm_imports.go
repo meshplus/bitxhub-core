@@ -15,6 +15,7 @@ func New() (*wasmer.Imports, error) {
 	imports.importECDSA()
 	imports.importFabricV14()
 	imports.importFabricV13()
+	imports.importFabricSm2()
 
 	return imports.imports, nil
 }
