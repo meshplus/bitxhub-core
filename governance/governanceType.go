@@ -18,6 +18,7 @@ const (
 	GovernanceBinding      GovernanceStatus = "binding"
 	GovernanceUnbinding    GovernanceStatus = "unbinding"
 	GovernanceBindable     GovernanceStatus = "bindable"
+	GovernanceBinded       GovernanceStatus = "binded"
 	GovernanceForbidden    GovernanceStatus = "forbidden"
 	GovernanceTransferring GovernanceStatus = "transferring"
 	GovernancePause        GovernanceStatus = "pause"

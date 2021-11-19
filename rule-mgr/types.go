@@ -8,6 +8,8 @@ import (
 type RuleMgr interface {
 	governance.Governance
 
+	Register(chainID, ruleAddress, ruleUrl string, createTime int64, isDefault bool)
+
 	GetMaster(chainId string) (*Rule, error)
 
 	HasMaster(chainId string) bool

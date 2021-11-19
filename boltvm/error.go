@@ -142,27 +142,36 @@ const (
 	RoleNonexistentNodeMsg  ErrorMsg  = "the node(%s) does not exist: %s"
 
 	RoleWrongNodeCode ErrorCode = "1040004"
-	RoleWrongNodeMsg  ErrorMsg  = "the node(%s) bind to audit role is not a nvp node"
+	RoleWrongNodeMsg  ErrorMsg  = "the node(%s) bind to audit admin is not a nvp node"
 
-	RoleIllegalRoleTypeCode ErrorCode = "1040005"
+	RoleWrongStatusNodeCode ErrorCode = "1040005"
+	RoleWrongStatusNodeMsg  ErrorMsg  = "the status of node(%s) is %s, can not bind to audit admin"
+
+	RoleIllegalRoleTypeCode ErrorCode = "1040006"
 	RoleIllegalRoleTypeMsg  ErrorMsg  = "illegal role type(%s)"
 
-	RoleNonexistentRoleCode ErrorCode = "1040006"
+	RoleNonexistentRoleCode ErrorCode = "1040007"
 	RoleNonexistentRoleMsg  ErrorMsg  = "the role(%s) does not exist"
 
-	RoleStatusErrorCode ErrorCode = "1040007"
+	RoleStatusErrorCode ErrorCode = "1040008"
 	RoleStatusErrorMsg  ErrorMsg  = "the role(%s) is %s, can not do %s"
 
-	RoleNonsupportSuperAdminCode ErrorCode = "1040008"
+	RoleNonsupportSuperAdminCode ErrorCode = "1040009"
 	RoleNonsupportSuperAdminMsg  ErrorMsg  = "the super admin role(%s) does not support %s"
 
-	RoleNonsupportAppchainAdminCode ErrorCode = "1040009"
+	RoleNonsupportAppchainAdminCode ErrorCode = "1040010"
 	RoleNonsupportAppchainAdminMsg  ErrorMsg  = "the appchain admin role(%s) does not support %s"
 
-	RoleNoAppchainAdminCode ErrorCode = "1040010"
+	RoleNonsupportAuditAdminCode ErrorCode = "1040011"
+	RoleNonsupportAuditAdminMsg  ErrorMsg  = "the audit admin role(%s) does not support %s"
+
+	RoleNonsupportGovernanceAdminCode ErrorCode = "1040012"
+	RoleNonsupportGovernanceAdminMsg  ErrorMsg  = "the governance admin role(%s) does not support %s"
+
+	RoleNoAppchainAdminCode ErrorCode = "1040013"
 	RoleNoAppchainAdminMsg  ErrorMsg  = "there is no admin for the appchain(%s)"
 
-	RoleNotGovernanceAdminCode ErrorCode = "1040011"
+	RoleNotGovernanceAdminCode ErrorCode = "1040014"
 	RoleNotGovernanceAdminMsg  ErrorMsg  = "the role(%s) is not governane admin"
 
 	// node
@@ -172,29 +181,62 @@ const (
 	NodeNoPermissionCode ErrorCode = "1050001"
 	NodeNoPermissionMsg  ErrorMsg  = "regulatorAddr(%s) does not have the permission: %s"
 
-	NodeIllegalNodeTypeCode ErrorCode = "1050002"
+	NodeVPBeingGovernedCode ErrorCode = "1050002"
+	NodeVPBeingGovernedMsg  ErrorMsg  = " a vp node is being governed"
+
+	NodeIllegalAccountCode ErrorCode = "1050003"
+	NodeIllegalAccountMsg  ErrorMsg  = "illegal node account(%s): %s"
+
+	NodeDuplicateAccountCode ErrorCode = "1050004"
+	NodeDuplicateAccountMsg  ErrorMsg  = "the node account %s has been occupied by %s"
+
+	NodeIllegalNodeTypeCode ErrorCode = "1050005"
 	NodeIllegalNodeTypeMsg  ErrorMsg  = "illegal node type(%s)"
 
-	NodeIllegalVpIdCode ErrorCode = "1050003"
-	NodeIllegalVpIdMsg  ErrorMsg  = "illegal vp node id(%d) (the ids of vp nodes should be incremented one by one, it should be %s)"
+	NodeIllegalVpIdCode ErrorCode = "1050006"
+	NodeIllegalVpIdMsg  ErrorMsg  = "illegal vp node id(%d) (the ids of vp nodes should be incremented one by one, it should be %d)"
 
-	NodeDuplicatePidCode ErrorCode = "1050004"
-	NodeDuplicatePidMsg  ErrorMsg  = "the node pid %s has been occupied"
+	NodeEmptyPidCode ErrorCode = "1050007"
+	NodeEmptyPidMsg  ErrorMsg  = "node pid can not be an empty string"
 
-	NodeNonexistentNodeCode ErrorCode = "1050005"
-	NodeNonexistentNodeMsg  ErrorMsg  = "the node(pid:%s) does not exist"
+	NodeDuplicatePidCode ErrorCode = "1050008"
+	NodeDuplicatePidMsg  ErrorMsg  = "the node pid %s has been occupied by node %s"
 
-	NodeStatusErrorCode ErrorCode = "1050006"
-	NodeStatusErrorMsg  ErrorMsg  = "the node(pid:%s) is %s, can not do %s"
+	NodeEmptyNameCode ErrorCode = "1050009"
+	NodeEmptyNameMsg  ErrorMsg  = "node name can not be an empty string"
 
-	NodeLogoutPrimaryNodeCode ErrorCode = "1050007"
-	NodeLogoutPrimaryNodeMsg  ErrorMsg  = "don't support logout primary vp node(pid:%s)"
+	NodeDuplicateNameCode ErrorCode = "1050010"
+	NodeDuplicateNameMsg  ErrorMsg  = "the node name %s has been occupied by node %s"
 
-	NodeLogoutTooFewNodeCode ErrorCode = "1050008"
+	NodeEmptyPermissionCode ErrorCode = "1050011"
+	NodeEmptyPermissionMsg  ErrorMsg  = "empty node permission"
+
+	NodeIllegalPermissionCode ErrorCode = "1050012"
+	NodeIllegalPermissionMsg  ErrorMsg  = "illegal node permission addr(%s): %s"
+
+	NodeNonexistentNodeCode ErrorCode = "1050013"
+	NodeNonexistentNodeMsg  ErrorMsg  = "the node(%s) does not exist"
+
+	NodeStatusErrorCode ErrorCode = "1050014"
+	NodeStatusErrorMsg  ErrorMsg  = "the node(account:%s) is %s, can not do %s"
+
+	NodeLogoutPrimaryNodeCode ErrorCode = "1050015"
+	NodeLogoutPrimaryNodeMsg  ErrorMsg  = "don't support logout primary vp node(account:%s)"
+
+	NodeLogoutTooFewNodeCode ErrorCode = "1050016"
 	NodeLogoutTooFewNodeMsg  ErrorMsg  = "don't support logout node when there're only %s vp nodes"
 
-	NodeLogoutWrongIdNodeCode ErrorCode = "1050009"
+	NodeLogoutWrongIdNodeCode ErrorCode = "10500017"
 	NodeLogoutWrongIdNodeMsg  ErrorMsg  = "only support logout last vp node(id:%s) currently"
+
+	NodeUpdateVPNodeCode ErrorCode = "10500018"
+	NodeUpdateVPNodeMsg  ErrorMsg  = "can not update vp node(account: %s)"
+
+	NodeBindVPNodeCode ErrorCode = "10500019"
+	NodeBindVPNodeMsg  ErrorMsg  = "can not bind vp node(account: %s)"
+
+	NodeUnbindVPNodeCode ErrorCode = "10500020"
+	NodeUnbindVPNodeMsg  ErrorMsg  = "can not unbind vp node(account: %s)"
 
 	// service
 	ServiceInternalErrCode ErrorCode = "2060000"
@@ -218,16 +260,25 @@ const (
 	ServiceDuplicateNameCode ErrorCode = "1060006"
 	ServiceDuplicateNameMsg  ErrorMsg  = "the service name %s has been occupied by service %s"
 
-	ServiceIllegalTypeCode ErrorCode = "1060007"
+	ServiceIllegalServiceIDCode ErrorCode = "1060007"
+	ServiceIllegalServiceIDMsg  ErrorMsg  = "illegal service id(%s): %s"
+
+	ServiceIllegalTypeCode ErrorCode = "1060008"
 	ServiceIllegalTypeMsg  ErrorMsg  = "illegal service type(%s)"
 
-	ServiceIllegalPermissionCode ErrorCode = "1060008"
-	ServiceIllegalPermissionMsg  ErrorMsg  = "illegal service permission addr(%s): %s"
+	ServiceIllegalPermissionFormatCode ErrorCode = "1060009"
+	ServiceIllegalPermissionFormatMsg  ErrorMsg  = "illegal permission full service id(%s) format: %s"
 
-	ServiceIllegalEvaluateScoreCode ErrorCode = "1060009"
+	ServiceNonexistentPermissionServiceCode ErrorCode = "1060010"
+	ServiceNonexistentPermissionServiceMsg  ErrorMsg  = "the permission service(%s) is not registered on this relay chain(%s): %s"
+
+	ServiceLogoutedPermissionServiceCode ErrorCode = "1060011"
+	ServiceLogoutedPermissionServiceMsg  ErrorMsg  = "the permission service(%s) is logouted"
+
+	ServiceIllegalEvaluateScoreCode ErrorCode = "1060012"
 	ServiceIllegalEvaluateScoreMsg  ErrorMsg  = "illegal evaluate score(%s), should be in the range [0,5]"
 
-	ServiceRepeatEvaluateCode ErrorCode = "1060010"
+	ServiceRepeatEvaluateCode ErrorCode = "1060013"
 	ServiceRepeatEvaluateMsg  ErrorMsg  = "the caller(%s) has evaluate the service(%s)"
 
 	// dapp

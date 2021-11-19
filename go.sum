@@ -547,10 +547,10 @@ github.com/mattn/go-runewidth v0.0.9/go.mod h1:H031xJmbD/WCDINGzjvQ9THkh0rPKHF+m
 github.com/mattn/go-sqlite3 v1.11.0/go.mod h1:FPy6KqzDD04eiIsT53CuJW3U88zkxoIYsOqkbpncsNc=
 github.com/mattn/go-tty v0.0.0-20180907095812-13ff1204f104/go.mod h1:XPvLUNfbS4fJH25nqRHfWLMa1ONC8Amw+mIA639KxkE=
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
-github.com/meshplus/bitxhub-kit v1.2.1-0.20210830031953-cf5f83f2e1dd h1:Ns9X6w2vGtAf0LYJ48PxBjDg37SWNtzKKZSZzAxtLoI=
-github.com/meshplus/bitxhub-kit v1.2.1-0.20210830031953-cf5f83f2e1dd/go.mod h1:wrEdhHp1tktzdwcWb4bOxYsVc+KkcrYL18IYWYeumPQ=
-github.com/meshplus/bitxhub-model v1.2.1-0.20210918014850-45a1a094b597 h1:BxmF3C4PnV2pQIMkrldQieODByVsPEjOReGMouDWdnA=
-github.com/meshplus/bitxhub-model v1.2.1-0.20210918014850-45a1a094b597/go.mod h1:p1rgmd8p3O9FmuvQ2oS4wgrel1dV4K4MlFOtx6Vwod8=
+github.com/meshplus/bitxhub-kit v1.2.1-0.20210902085548-07f4fa85bfc9 h1:FFXQrmOz9XMZ/RhYPC8kdMEcsdC1PK/j3W7rleh8ZQ8=
+github.com/meshplus/bitxhub-kit v1.2.1-0.20210902085548-07f4fa85bfc9/go.mod h1:wrEdhHp1tktzdwcWb4bOxYsVc+KkcrYL18IYWYeumPQ=
+github.com/meshplus/bitxhub-model v1.2.1-0.20211122062102-4e6856663e73 h1:1nAjJGIoia3KiB9dUYAz+xWvtE7Dkvp1CI9KSr/mIvg=
+github.com/meshplus/bitxhub-model v1.2.1-0.20211122062102-4e6856663e73/go.mod h1:sPko8fD+G3MYOnH/44Ju4T4jD/tlEU3IJDIJ4hjrzxg=
 github.com/meshplus/wasmer-go v1.0.5-0.20210817103436-19ec68f8bfe2 h1:tgu12zbRlfzFj+y+01WdOuTb3PEZg4XF77gFcoasyCU=
 github.com/meshplus/wasmer-go v1.0.5-0.20210817103436-19ec68f8bfe2/go.mod h1:0gzVdSfg6pysA6QVp6iVRPTagC6Wq9pOE8J86WKb2Fk=
 github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b/go.mod h1:01TrycV0kFyexm33Z7vhZRXopbI8J3TDReVlkTgMUxE=

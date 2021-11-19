@@ -13,12 +13,13 @@ import (
 )
 
 const (
-	Prefix                 = "appchain"
-	ChainNumPrefix         = "chain-num"
-	ChainOccupyIdPrefix    = "chain-occupy-id"
-	ChainOccupyNamePrefix  = "chain-occupy-name"
-	ChainOccupyAdminPrefix = "chain-occupy-admin"
-	ChainAdminsPrefix      = "chain-admins"
+	Prefix                = "appchain"
+	ChainNumPrefix        = "chain-num"
+	ChainOccupyIdPrefix   = "chain-occupy-id"
+	ChainOccupyNamePrefix = "chain-occupy-name"
+	NameChainPrefix       = "name-chain"
+	AdminChainPrefix      = "admin-chain"
+	ChainAdminsPrefix     = "chain-admins"
 
 	RelaychainType = "relaychain"
 	AppchainType   = "appchain"
@@ -150,14 +151,14 @@ func (am *AppchainManager) GovernancePre(chainId string, event g.EventType, _ []
 }
 
 // Register registers appchain info, return chain id
-func (am *AppchainManager) Register(chainInfo *Appchain) (bool, []byte) {
+func (am *AppchainManager) Register(chainInfo *Appchain) {
 	am.SetObject(AppchainKey(chainInfo.ID), *chainInfo)
+	am.SetObject(AppchainNameKey(chainInfo.ChainName), chainInfo.ID)
 
 	am.Logger().WithFields(logrus.Fields{
-		"id": chainInfo.ID,
+		"id":   chainInfo.ID,
+		"name": chainInfo.ChainName,
 	}).Info("Appchain is registering")
-
-	return true, nil
 }
 
 func (am *AppchainManager) Update(updateInfo *Appchain) (bool, []byte) {
@@ -167,14 +168,20 @@ func (am *AppchainManager) Update(updateInfo *Appchain) (bool, []byte) {
 		return false, []byte(fmt.Sprintf("this appchain(%s) does not exist", updateInfo.ID))
 	}
 
+	oldName := chain.ChainName
 	chain.ChainName = updateInfo.ChainName
 	chain.Desc = updateInfo.Desc
 	chain.TrustRoot = updateInfo.TrustRoot
 	chain.Version++
 	am.SetObject(AppchainKey(updateInfo.ID), chain)
+	if oldName != chain.ChainName {
+		am.Delete(AppchainNameKey(oldName))
+		am.SetObject(AppchainNameKey(chain.ChainName), chain.ID)
+	}
 
 	am.Logger().WithFields(logrus.Fields{
-		"id": updateInfo.ID,
+		"id":   chain.ID,
+		"name": chain.ChainName,
 	}).Info("Appchain is updating")
 
 	return true, nil
@@ -245,7 +252,7 @@ func (am *AppchainManager) FetchAuditRecords(id string) (bool, []byte) {
 	return true, body
 }
 
-// CountAvailableAppchains counts all available appchains
+// CountAvailable counts all available appchains
 func (am *AppchainManager) CountAvailable(_ []byte) (bool, []byte) {
 	ok, value := am.Query(Prefix)
 	if !ok {
@@ -265,7 +272,7 @@ func (am *AppchainManager) CountAvailable(_ []byte) (bool, []byte) {
 	return true, []byte(strconv.Itoa(count))
 }
 
-// CountAppchains counts all appchains including approved, rejected or registered
+// CountAll counts all appchains including approved, rejected or registered
 func (am *AppchainManager) CountAll(_ []byte) (bool, []byte) {
 	ok, value := am.Query(Prefix)
 	if !ok {
@@ -274,7 +281,7 @@ func (am *AppchainManager) CountAll(_ []byte) (bool, []byte) {
 	return true, []byte(strconv.Itoa(len(value)))
 }
 
-// Appchains returns all appchains
+// All returns all appchains
 func (am *AppchainManager) All(_ []byte) (interface{}, error) {
 	ret := make([]*Appchain, 0)
 	ok, value := am.Query(Prefix)
@@ -301,6 +308,15 @@ func (am *AppchainManager) QueryById(id string, _ []byte) (interface{}, error) {
 	return &appchain, nil
 }
 
+func (am *AppchainManager) GetChainIdByName(name string) (string, error) {
+	id := ""
+	ok := am.GetObject(AppchainNameKey(name), &id)
+	if !ok {
+		return "", fmt.Errorf("not found chain %s", name)
+	}
+	return id, nil
+}
+
 func AppchainKey(id string) string {
 	return fmt.Sprintf("%s-%s", Prefix, id)
 }
@@ -309,11 +325,15 @@ func AppchainOccupyNameKey(name string) string {
 	return fmt.Sprintf("%s-%s", ChainOccupyNamePrefix, name)
 }
 
-func AppchainOccupyAdminKey(addr string) string {
-	return fmt.Sprintf("%s-%s", ChainOccupyAdminPrefix, addr)
+func AppchainNameKey(name string) string {
+	return fmt.Sprintf("%s-%s", NameChainPrefix, name)
 }
 
-func AppchainAdminKey(id string) string {
+func AppchainAdminKey(addr string) string {
+	return fmt.Sprintf("%s-%s", AdminChainPrefix, addr)
+}
+
+func AppAdminsChainKey(id string) string {
 	return fmt.Sprintf("%s-%s", ChainAdminsPrefix, id)
 }
 

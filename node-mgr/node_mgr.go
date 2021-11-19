@@ -15,9 +15,13 @@ import (
 type NodeType string
 
 const (
-	NODEPREFIX        = "node"
-	NODETYPE_PREFIX   = "type"
-	VP_NODE_ID_PREFIX = "vp-id"
+	NODEPREFIX              = "node"
+	NODETYPE_PREFIX         = "type"
+	VP_NODE_ID_PREFIX       = "vp-id"
+	VP_NODE_PID_PREFIX      = "vp-pid"
+	NVP_NODE_NAME_PREFIX    = "nvp-name"
+	NODE_OCCUPY_PID_PREFIX  = "occupy-node-pid"
+	NODE_OCCUPY_NAME_PREFIX = "occupy-node-name"
 
 	VPNode  NodeType = "vpNode"
 	NVPNode NodeType = "nvpNode"
@@ -28,13 +32,18 @@ type NodeManager struct {
 }
 
 type Node struct {
-	Pid      string   `toml:"pid" json:"pid"`
 	Account  string   `toml:"account" json:"account"`
 	NodeType NodeType `toml:"node_type" json:"node_type"`
 
 	// VP Node Info
+	Pid      string `toml:"pid" json:"pid"`
 	VPNodeId uint64 `toml:"id" json:"id"`
 	Primary  bool   `toml:"primary" json:"primary"`
+
+	// NVP Node
+	Name           string              `toml:"name" json:"name"`
+	Permissions    map[string]struct{} `toml:"permissions" json:"permissions"`
+	AuditAdminAddr string              `toml:"audit_admin_addr" json:"audit_admin_addr"`
 
 	Status governance.GovernanceStatus `toml:"status" json:"status"`
 	FSM    *fsm.FSM                    `json:"fsm"`
@@ -43,11 +52,17 @@ type Node struct {
 var nodeAvailableMap = map[governance.GovernanceStatus]struct{}{
 	governance.GovernanceAvailable: {},
 	governance.GovernanceLogouting: {},
+	governance.GovernanceBinding:   {},
+	governance.GovernanceBinded:    {},
+	governance.GovernanceUpdating:  {},
 }
 
 var nodeStateMap = map[governance.EventType][]governance.GovernanceStatus{
 	governance.EventRegister: {governance.GovernanceUnavailable},
-	governance.EventLogout:   {governance.GovernanceAvailable},
+	governance.EventUpdate:   {governance.GovernanceAvailable, governance.GovernanceBinded},
+	governance.EventBind:     {governance.GovernanceAvailable},
+	governance.EventUnbind:   {governance.GovernanceBinded},
+	governance.EventLogout:   {governance.GovernanceAvailable, governance.GovernanceBinding, governance.GovernanceBinded, governance.GovernanceUpdating},
 }
 
 func New(persister governance.Persister) NodeMgr {
@@ -71,6 +86,19 @@ func (node *Node) setFSM(lastStatus governance.GovernanceStatus) {
 			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceRegisting)}, Dst: string(governance.GovernanceAvailable)},
 			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceRegisting)}, Dst: string(lastStatus)},
 
+			// update 2
+			{Name: string(governance.EventUpdate), Src: []string{string(governance.GovernanceAvailable), string(governance.GovernanceBinded)}, Dst: string(governance.GovernanceUpdating)},
+			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceUpdating)}, Dst: string(lastStatus)},
+			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceUpdating)}, Dst: string(lastStatus)},
+
+			// bind 1
+			{Name: string(governance.EventBind), Src: []string{string(governance.GovernanceAvailable)}, Dst: string(governance.GovernanceBinding)},
+			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceBinding)}, Dst: string(governance.GovernanceBinded)},
+			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceBinding)}, Dst: string(governance.GovernanceAvailable)},
+
+			// unbind 1
+			{Name: string(governance.EventUnbind), Src: []string{string(governance.GovernanceBinded)}, Dst: string(governance.GovernanceAvailable)},
+
 			// logout 3
 			{Name: string(governance.EventLogout), Src: []string{string(governance.GovernanceAvailable)}, Dst: string(governance.GovernanceLogouting)},
 			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceForbidden)},
@@ -86,13 +114,13 @@ func (node *Node) setFSM(lastStatus governance.GovernanceStatus) {
 
 // GovernancePre checks if the appchain can do the event. (only check, not modify infomation)
 // return *node, extra info, error
-func (nm *NodeManager) GovernancePre(nodePid string, event governance.EventType, _ []byte) (interface{}, *boltvm.BxhError) {
+func (nm *NodeManager) GovernancePre(nodeAccount string, event governance.EventType, _ []byte) (interface{}, *boltvm.BxhError) {
 	node := &Node{}
-	if ok := nm.GetObject(NodeKey(nodePid), node); !ok {
+	if ok := nm.GetObject(NodeKey(nodeAccount), node); !ok {
 		if event == governance.EventRegister {
 			return nil, nil
 		} else {
-			return nil, boltvm.BError(boltvm.NodeNonexistentNodeCode, fmt.Sprintf(string(boltvm.NodeNonexistentNodeMsg), nodePid))
+			return nil, boltvm.BError(boltvm.NodeNonexistentNodeCode, fmt.Sprintf(string(boltvm.NodeNonexistentNodeMsg), nodeAccount))
 		}
 	}
 
@@ -102,12 +130,12 @@ func (nm *NodeManager) GovernancePre(nodePid string, event governance.EventType,
 		}
 	}
 
-	return nil, boltvm.BError(boltvm.NodeStatusErrorCode, fmt.Sprintf(string(boltvm.NodeStatusErrorMsg), node.Pid, string(node.Status), string(event)))
+	return nil, boltvm.BError(boltvm.NodeStatusErrorCode, fmt.Sprintf(string(boltvm.NodeStatusErrorMsg), nodeAccount, string(node.Status), string(event)))
 }
 
-func (nm *NodeManager) ChangeStatus(nodePid string, trigger, lastStatus string, _ []byte) (bool, []byte) {
+func (nm *NodeManager) ChangeStatus(nodeAccount string, trigger, lastStatus string, _ []byte) (bool, []byte) {
 	node := &Node{}
-	if ok := nm.GetObject(NodeKey(nodePid), node); !ok {
+	if ok := nm.GetObject(NodeKey(nodeAccount), node); !ok {
 		return false, []byte("this node does not exist")
 	}
 
@@ -117,51 +145,105 @@ func (nm *NodeManager) ChangeStatus(nodePid string, trigger, lastStatus string, 
 		return false, []byte(fmt.Sprintf("change status error: %v", err))
 	}
 
-	nm.SetObject(NodeKey(nodePid), *node)
+	nm.SetObject(NodeKey(nodeAccount), *node)
 	return true, nil
 }
 
+func (nm *NodeManager) RegisterPre(node *Node) {
+	nm.SetObject(NodeKey(node.Account), node)
+}
+
 // Register record node info
-func (nm *NodeManager) Register(node *Node) (bool, []byte) {
-	nm.SetObject(NodeKey(node.Pid), node)
-	nodePidMap := orderedmap.New()
-	_ = nm.GetObject(NodeTypeKey(string(node.NodeType)), nodePidMap)
-	nodePidMap.Set(node.Pid, struct{}{})
-	nm.SetObject(NodeTypeKey(string(node.NodeType)), *nodePidMap)
-	if node.NodeType == VPNode {
-		nm.SetObject(VpNodeIdKey(strconv.Itoa(int(node.VPNodeId))), node.Pid)
+func (nm *NodeManager) Register(node *Node) {
+	// 1. store node info
+	nm.SetObject(NodeKey(node.Account), node)
+
+	// 2. store node type
+	nodeAccountMap := orderedmap.New()
+	_ = nm.GetObject(NodeTypeKey(string(node.NodeType)), nodeAccountMap)
+	nodeAccountMap.Set(node.Account, struct{}{})
+	nm.SetObject(NodeTypeKey(string(node.NodeType)), *nodeAccountMap)
+
+	// 3. store vpid, pid, name
+	switch node.NodeType {
+	case VPNode:
+		nm.SetObject(VpNodeIdKey(strconv.Itoa(int(node.VPNodeId))), node.Account)
+		nm.SetObject(VpNodePidKey(node.Pid), node.Account)
+	case NVPNode:
+		nm.SetObject(NvpNodeNameKey(node.Name), node.Account)
 	}
+
 	nm.Logger().WithFields(logrus.Fields{
-		"pid":      node.Pid,
+		"account":  node.Account,
 		"nodeType": node.NodeType,
 	}).Info("Node is registering")
+}
+
+func (nm *NodeManager) Update(nodeInfo *Node) (bool, []byte) {
+	node := &Node{}
+	ok := nm.GetObject(NodeKey(nodeInfo.Account), node)
+	if !ok {
+		return false, []byte(fmt.Sprintf("the node is not exist: %s", nodeInfo.Account))
+	}
+
+	oldName := node.Name
+	node.Name = nodeInfo.Name
+	node.Permissions = nodeInfo.Permissions
+	nm.SetObject(NodeKey(nodeInfo.Account), *node)
+	switch node.NodeType {
+	case VPNode:
+	case NVPNode:
+		if oldName != node.Name {
+			nm.Delete(NvpNodeNameKey(oldName))
+			nm.SetObject(NvpNodeNameKey(node.Name), node.Account)
+		}
+	}
+
+	nm.Logger().WithFields(logrus.Fields{
+		"account": node.Account,
+	}).Info("node is updating")
+
+	return true, nil
+}
+
+func (nm *NodeManager) Bind(nodeAccount, auditAdminAddr string) (bool, []byte) {
+	node := &Node{}
+	ok := nm.GetObject(NodeKey(nodeAccount), node)
+	if !ok {
+		return false, []byte(fmt.Sprintf("the node is not exist: %s", nodeAccount))
+	}
+
+	node.AuditAdminAddr = auditAdminAddr
+	nm.SetObject(NodeKey(nodeAccount), *node)
+	nm.Logger().WithFields(logrus.Fields{
+		"account":    node.Account,
+		"auditAdmin": auditAdminAddr,
+	}).Info("node is binding")
 
 	return true, nil
 }
 
 // CountAvailable counts all available nodes (available、logouting)
 func (nm *NodeManager) CountAvailable(nodeType []byte) (bool, []byte) {
-	nodes, err := nm.GetNodesByType(string(nodeType))
-	if err != nil {
-		return true, []byte("0")
-	}
-
 	count := 0
-	for _, node := range nodes {
-		if node.IsAvailable() {
+	accountMap := nm.GetAccountMapByType(string(nodeType))
+
+	for _, account := range accountMap.Keys() {
+		node, err := nm.QueryById(account, nil)
+		if err != nil {
+			return false, []byte(fmt.Sprintf("the node %s is not exist", account))
+		}
+		if node.(*Node).IsAvailable() {
 			count++
 		}
 	}
+
 	return true, []byte(strconv.Itoa(count))
 }
 
 func (nm *NodeManager) CountAll(nodeType []byte) (bool, []byte) {
-	nodes, err := nm.GetNodesByType(string(nodeType))
-	if err != nil {
-		return true, []byte("0")
-	}
-
-	return true, []byte(strconv.Itoa(len(nodes)))
+	accountMap := nm.GetAccountMapByType(string(nodeType))
+	return true, []byte(strconv.Itoa(len(accountMap.Keys())))
 }
 
 // All returns all nodes
@@ -181,9 +263,9 @@ func (nm *NodeManager) All(_ []byte) (interface{}, error) {
 	return ret, nil
 }
 
-func (nm *NodeManager) QueryById(nodePid string, _ []byte) (interface{}, error) {
+func (nm *NodeManager) QueryById(nodeAccount string, _ []byte) (interface{}, error) {
 	var node Node
-	ok := nm.GetObject(NodeKey(nodePid), &node)
+	ok := nm.GetObject(NodeKey(nodeAccount), &node)
 	if !ok {
 		return nil, fmt.Errorf("this node does not exist")
 	}
@@ -191,26 +273,14 @@ func (nm *NodeManager) QueryById(nodePid string, _ []byte) (interface{}, error) 
 	return &node, nil
 }
 
-func (nm *NodeManager) GetNodesByType(typ string) ([]*Node, error) {
-	ret := make([]*Node, 0)
-
-	nodePidMap := orderedmap.New()
-	ok := nm.GetObject(NodeTypeKey(typ), nodePidMap)
-	if ok {
-		for _, pid := range nodePidMap.Keys() {
-			node := &Node{}
-			if okk := nm.GetObject(NodeKey(pid), node); !okk {
-				return nil, fmt.Errorf("the node %s is not exist", pid)
-			}
-			ret = append(ret, node)
-		}
-	}
-
-	return ret, nil
+func (nm *NodeManager) GetAccountMapByType(typ string) *orderedmap.OrderedMap {
+	nodeAccountMap := orderedmap.New()
+	_ = nm.GetObject(NodeTypeKey(typ), nodeAccountMap)
+	return nodeAccountMap
 }
 
-func (nm *NodeManager) GetPidById(nodeId string) (string, error) {
-	ok, data := nm.Get(VpNodeIdKey(nodeId))
+func (nm *NodeManager) GetAccountByVpId(vpNodeId string) (string, error) {
+	ok, data := nm.Get(VpNodeIdKey(vpNodeId))
 	if !ok {
 		return "", fmt.Errorf("this node does not exist")
 	}
@@ -218,8 +288,26 @@ func (nm *NodeManager) GetPidById(nodeId string) (string, error) {
 	return string(data), nil
 }
 
-func NodeKey(pid string) string {
-	return fmt.Sprintf("%s-%s", NODEPREFIX, pid)
+func (nm *NodeManager) GetAccountByPid(pid string) (string, error) {
+	ok, data := nm.Get(VpNodePidKey(pid))
+	if !ok {
+		return "", fmt.Errorf("this node does not exist")
+	}
+
+	return string(data), nil
+}
+
+func (nm *NodeManager) GetAccountByName(name string) (string, error) {
+	ok, data := nm.Get(NvpNodeNameKey(name))
+	if !ok {
+		return "", fmt.Errorf("this node does not exist")
+	}
+
+	return string(data), nil
+}
+
+func NodeKey(account string) string {
+	return fmt.Sprintf("%s-%s", NODEPREFIX, account)
 }
 
 func NodeTypeKey(typ string) string {
@@ -228,4 +316,20 @@ func NodeTypeKey(typ string) string {
 
 func VpNodeIdKey(id string) string {
 	return fmt.Sprintf("%s-%s", VP_NODE_ID_PREFIX, id)
+}
+
+func VpNodePidKey(pid string) string {
+	return fmt.Sprintf("%s-%s", VP_NODE_PID_PREFIX, pid)
+}
+
+func NvpNodeNameKey(name string) string {
+	return fmt.Sprintf("%s-%s", NVP_NODE_NAME_PREFIX, name)
+}
+
+func NodeOccupyPidKey(pid string) string {
+	return fmt.Sprintf("%s-%s", NODE_OCCUPY_PID_PREFIX, pid)
+}
+
+func NodeOccupyNameKey(name string) string {
+	return fmt.Sprintf("%s-%s", NODE_OCCUPY_NAME_PREFIX, name)
 }

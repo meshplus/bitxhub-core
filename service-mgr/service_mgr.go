@@ -15,8 +15,9 @@ import (
 
 const (
 	ServicePrefix           = "service"
-	ServiceAppchainPrefix   = "appchain"
-	ServiceTypePrefix       = "type"
+	ServiceAppchainPrefix   = "appchain-service"
+	ServiceTypePrefix       = "type-service"
+	ServiceNamePrefix       = "name-service"
 	ServiceOccupyNamePrefix = "occupy-service-name"
 )
 
@@ -243,6 +244,14 @@ func (sm *ServiceManager) GetIDListByType(typ string) ([]string, error) {
 	return serviceMap.Keys(), nil
 }
 
+func (sm *ServiceManager) GetServiceIDByName(name string) (string, error) {
+	ok, data := sm.Get(ServicesNameKey(name))
+	if !ok {
+		return "", fmt.Errorf("this service does not exist: %s", name)
+	}
+	return string(data), nil
+}
+
 func (sm *ServiceManager) PackageServiceInfo(chainID, serviceID, name, typ, intro string, ordered bool, permits, details string, createTime int64, status governance.GovernanceStatus) (*Service, error) {
 	permission := make(map[string]struct{}, 0)
 	if permits != "" {
@@ -272,9 +281,15 @@ func (sm *ServiceManager) PackageServiceInfo(chainID, serviceID, name, typ, intr
 	return service, nil
 }
 
-func (sm *ServiceManager) Register(info *Service) (bool, []byte) {
+func (sm *ServiceManager) RegisterPre(info *Service) {
 	chainServiceID := fmt.Sprintf("%s:%s", info.ChainID, info.ServiceID)
 	sm.SetObject(ServiceKey(chainServiceID), *info)
+}
+
+func (sm *ServiceManager) Register(info *Service) {
+	chainServiceID := fmt.Sprintf("%s:%s", info.ChainID, info.ServiceID)
+	sm.SetObject(ServiceKey(chainServiceID), *info)
+	sm.SetObject(ServicesNameKey(info.Name), chainServiceID)
 
 	serviceMap := orderedmap.New()
 	_ = sm.GetObject(AppchainServicesKey(info.ChainID), serviceMap)
@@ -289,8 +304,6 @@ func (sm *ServiceManager) Register(info *Service) (bool, []byte) {
 	sm.Logger().WithFields(logrus.Fields{
 		"chainServiceID": chainServiceID,
 	}).Info("service is registering")
-
-	return true, nil
 }
 
 func (sm *ServiceManager) Update(updateInfo *Service) (bool, []byte) {
@@ -323,6 +336,10 @@ func AppchainServicesKey(id string) string {
 
 func ServicesTypeKey(typ string) string {
 	return fmt.Sprintf("%s-%s", ServiceTypePrefix, typ)
+}
+
+func ServicesNameKey(name string) string {
+	return fmt.Sprintf("%s-%s", ServiceNamePrefix, name)
 }
 
 func ServiceOccupyNameKey(name string) string {
