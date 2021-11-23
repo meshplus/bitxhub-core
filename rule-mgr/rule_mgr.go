@@ -141,7 +141,7 @@ func (rule *Rule) setFSM(lastStatus governance.GovernanceStatus) {
 }
 
 // Register record rule
-func (rm *RuleManager) Register(chainID, ruleAddress, ruleUrl string, createTime int64, isDefault bool) (bool, []byte) {
+func (rm *RuleManager) Register(chainID, ruleAddress, ruleUrl string, createTime int64, isDefault bool) {
 	rules := make([]*Rule, 0)
 	_ = rm.GetObject(RuleKey(chainID), &rules)
 
@@ -160,8 +160,6 @@ func (rm *RuleManager) Register(chainID, ruleAddress, ruleUrl string, createTime
 		"chainID":  chainID,
 		"ruleAddr": ruleAddress,
 	}).Info("Rule is registering")
-
-	return true, nil
 }
 
 // GovernancePre checks if the rule address can do event with appchain id and record rule. (only check, not modify infomation)

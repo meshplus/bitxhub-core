@@ -7,7 +7,7 @@ type AppchainMgr interface {
 	governance.Governance
 
 	// Register registers object info, return object id and error
-	Register(chainInfo *Appchain) (bool, []byte)
+	Register(chainInfo *Appchain)
 
 	// Update updates available or frozen object
 	Update(updateInfo *Appchain) (bool, []byte)
@@ -22,4 +22,6 @@ type AppchainMgr interface {
 
 	// DeleteAppchain deletes appchain
 	DeleteAppchain(id string) (bool, []byte)
+
+	GetChainIdByName(name string) (string, error)
 }
