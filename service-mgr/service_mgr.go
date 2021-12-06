@@ -59,7 +59,7 @@ type Service struct {
 var serviceStateMap = map[governance.EventType][]governance.GovernanceStatus{
 	governance.EventRegister: {governance.GovernanceUnavailable},
 	governance.EventUpdate:   {governance.GovernanceAvailable, governance.GovernanceFrozen},
-	governance.EventFreeze:   {governance.GovernanceAvailable, governance.GovernanceActivating},
+	governance.EventFreeze:   {governance.GovernanceAvailable},
 	governance.EventActivate: {governance.GovernanceFrozen},
 	governance.EventPause:    {governance.GovernanceAvailable, governance.GovernanceUpdating, governance.GovernanceFreezing, governance.GovernanceActivating, governance.GovernanceFrozen},
 	governance.EventUnpause:  {governance.GovernancePause},
