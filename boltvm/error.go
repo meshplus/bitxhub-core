@@ -194,7 +194,7 @@ const (
 	NodeIllegalNodeTypeMsg  ErrorMsg  = "illegal node type(%s)"
 
 	NodeIllegalVpIdCode ErrorCode = "1050006"
-	NodeIllegalVpIdMsg  ErrorMsg  = "illegal vp node id(%d) (the ids of vp nodes should be incremented one by one, it should be %d)"
+	NodeIllegalVpIdMsg  ErrorMsg  = "illegal vp node id(%d) (%s)"
 
 	NodeEmptyPidCode ErrorCode = "1050007"
 	NodeEmptyPidMsg  ErrorMsg  = "node pid can not be an empty string"
