@@ -150,13 +150,13 @@ func (nm *NodeManager) ChangeStatus(nodeAccount string, trigger, lastStatus stri
 }
 
 func (nm *NodeManager) RegisterPre(node *Node) {
-	nm.SetObject(NodeKey(node.Account), node)
+	nm.SetObject(NodeKey(node.Account), *node)
 }
 
 // Register record node info
 func (nm *NodeManager) Register(node *Node) {
 	// 1. store node info
-	nm.SetObject(NodeKey(node.Account), node)
+	nm.SetObject(NodeKey(node.Account), *node)
 
 	// 2. store node type
 	nodeAccountMap := orderedmap.New()
