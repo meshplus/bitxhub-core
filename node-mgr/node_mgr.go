@@ -87,12 +87,12 @@ func (node *Node) setFSM(lastStatus governance.GovernanceStatus) {
 			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceRegisting)}, Dst: string(lastStatus)},
 
 			// update 2
-			{Name: string(governance.EventUpdate), Src: []string{string(governance.GovernanceAvailable), string(governance.GovernanceBinded)}, Dst: string(governance.GovernanceUpdating)},
+			{Name: string(governance.EventUpdate), Src: []string{string(governance.GovernanceAvailable), string(governance.GovernanceBinded), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceUpdating)},
 			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceUpdating)}, Dst: string(lastStatus)},
 			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceUpdating)}, Dst: string(lastStatus)},
 
 			// bind 1
-			{Name: string(governance.EventBind), Src: []string{string(governance.GovernanceAvailable)}, Dst: string(governance.GovernanceBinding)},
+			{Name: string(governance.EventBind), Src: []string{string(governance.GovernanceAvailable), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceBinding)},
 			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceBinding)}, Dst: string(governance.GovernanceBinded)},
 			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceBinding)}, Dst: string(governance.GovernanceAvailable)},
 
@@ -100,7 +100,7 @@ func (node *Node) setFSM(lastStatus governance.GovernanceStatus) {
 			{Name: string(governance.EventUnbind), Src: []string{string(governance.GovernanceBinded)}, Dst: string(governance.GovernanceAvailable)},
 
 			// logout 3
-			{Name: string(governance.EventLogout), Src: []string{string(governance.GovernanceAvailable)}, Dst: string(governance.GovernanceLogouting)},
+			{Name: string(governance.EventLogout), Src: []string{string(governance.GovernanceAvailable), string(governance.GovernanceBinding), string(governance.GovernanceBinded), string(governance.GovernanceUpdating)}, Dst: string(governance.GovernanceLogouting)},
 			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceForbidden)},
 			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceLogouting)}, Dst: string(lastStatus)},
 		},
@@ -150,13 +150,13 @@ func (nm *NodeManager) ChangeStatus(nodeAccount string, trigger, lastStatus stri
 }
 
 func (nm *NodeManager) RegisterPre(node *Node) {
-	nm.SetObject(NodeKey(node.Account), node)
+	nm.SetObject(NodeKey(node.Account), *node)
 }
 
 // Register record node info
 func (nm *NodeManager) Register(node *Node) {
 	// 1. store node info
-	nm.SetObject(NodeKey(node.Account), node)
+	nm.SetObject(NodeKey(node.Account), *node)
 
 	// 2. store node type
 	nodeAccountMap := orderedmap.New()
