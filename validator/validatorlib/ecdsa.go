@@ -45,7 +45,7 @@ func ecdsa_verify(context unsafe.Pointer, sig_ptr int64, digest_ptr int64, pubke
 	ctx := wasmer.IntoInstanceContext(context)
 	// data := ctx.Data().(map[int]int)
 	memory := ctx.Memory()
-	signature := memory.Data()[sig_ptr : sig_ptr+70]
+	signature := memory.Data()[sig_ptr : sig_ptr+71]
 	digest := memory.Data()[digest_ptr : digest_ptr+32]
 	pubkey := memory.Data()[pubkey_ptr : pubkey_ptr+pubkey_len]
 	pemCert, _ := pem.Decode(pubkey)
