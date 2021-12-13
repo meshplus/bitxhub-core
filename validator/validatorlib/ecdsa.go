@@ -2,7 +2,7 @@ package validatorlib
 
 // #include <stdlib.h>
 //
-// extern int32_t ecdsa_verify(void *context, long long sig_ptr, long long digest_ptr, long long pubkey_ptr, int32_t opt);
+// extern int32_t ecdsa_verify(void *context, long long sig_ptr, long long digest_ptr, long long pubkey_ptr, long long pubkey_len);
 import "C"
 import (
 	"bytes"
@@ -41,13 +41,13 @@ type ECDSASignature struct {
 }
 
 //export ecdsa_verify
-func ecdsa_verify(context unsafe.Pointer, sig_ptr int64, digest_ptr int64, pubkey_ptr int64, opt int32) int32 {
+func ecdsa_verify(context unsafe.Pointer, sig_ptr int64, digest_ptr int64, pubkey_ptr int64, pubkey_len int64) int32 {
 	ctx := wasmer.IntoInstanceContext(context)
-	data := ctx.Data().(map[int]int)
+	// data := ctx.Data().(map[int]int)
 	memory := ctx.Memory()
 	signature := memory.Data()[sig_ptr : sig_ptr+70]
 	digest := memory.Data()[digest_ptr : digest_ptr+32]
-	pubkey := memory.Data()[pubkey_ptr : pubkey_ptr+int64(data[int(pubkey_ptr)])]
+	pubkey := memory.Data()[pubkey_ptr : pubkey_ptr+pubkey_len]
 	pemCert, _ := pem.Decode(pubkey)
 	var cert *x509.Certificate
 	cert, err := x509.ParseCertificate(pemCert.Bytes)
