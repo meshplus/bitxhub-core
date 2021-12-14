@@ -457,4 +457,16 @@ const (
 
 	AssetNoPermissionCode ErrorCode = "1120008"
 	AssetNoPermissionMsg  ErrorMsg  = "caller is not an admin account"
+
+	ProposalStrategyInternalErrCode ErrorCode = "2130000"
+	ProposalStrategyInternalErrMsg  ErrorMsg  = "%s"
+
+	ProposalStrategyNoPermissionCode ErrorCode = "1110001"
+	ProposalStrategyNoPermissionMsg  ErrorMsg  = "regulatorAddr(%s) does not have the permission: %s"
+
+	ProposalStrategyIllegalProposalStrategyInfoCode ErrorCode = "1110002"
+	ProposalStrategyIllegalProposalStrategyInfoMsg  ErrorMsg  = "illegal proposal strategy info: %s"
+
+	ProposalStrategyNonexistentProposalStrategyCode ErrorCode = "1110003"
+	ProposalStrategyNonexistentProposalStrategyMsg  ErrorMsg  = "the proposal strategy for the type(%s) does not exist"
 )
