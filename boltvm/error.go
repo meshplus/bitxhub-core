@@ -80,7 +80,7 @@ const (
 	AppchainIllegalAdminAddrMsg  ErrorMsg  = "illegal admin addr(%s): %s"
 
 	AppchainDuplicateAdminCode ErrorCode = "1020010"
-	AppchainDuplicateAdminMsg  ErrorMsg  = "the appchain admin %s has been occupied by %s"
+	AppchainDuplicateAdminMsg  ErrorMsg  = "the appchain admin %s has been occupied: %s"
 
 	AppchainEmptyRuleUrlCode ErrorCode = "1020011"
 	AppchainEmptyRuleUrlMsg  ErrorMsg  = "urls for custom rule cannot be empty string"
@@ -174,6 +174,9 @@ const (
 	RoleNotGovernanceAdminCode ErrorCode = "1040014"
 	RoleNotGovernanceAdminMsg  ErrorMsg  = "the role(%s) is not governane admin"
 
+	RoleDuplicateAccountCode ErrorCode = "1040015"
+	RoleDuplicateAccountMsg  ErrorMsg  = "the account %s has been occupied by %s"
+
 	// node
 	NodeInternalErrCode ErrorCode = "2050000"
 	NodeInternalErrMsg  ErrorMsg  = "%s"
@@ -200,7 +203,7 @@ const (
 	NodeEmptyPidMsg  ErrorMsg  = "node pid can not be an empty string"
 
 	NodeDuplicatePidCode ErrorCode = "1050008"
-	NodeDuplicatePidMsg  ErrorMsg  = "the node pid %s has been occupied by node %s"
+	NodeDuplicatePidMsg  ErrorMsg  = "the node pid %s has been occupied: %s"
 
 	NodeEmptyNameCode ErrorCode = "1050009"
 	NodeEmptyNameMsg  ErrorMsg  = "node name can not be an empty string"
@@ -461,12 +464,18 @@ const (
 	ProposalStrategyInternalErrCode ErrorCode = "2130000"
 	ProposalStrategyInternalErrMsg  ErrorMsg  = "%s"
 
-	ProposalStrategyNoPermissionCode ErrorCode = "1110001"
+	ProposalStrategyNoPermissionCode ErrorCode = "1130001"
 	ProposalStrategyNoPermissionMsg  ErrorMsg  = "regulatorAddr(%s) does not have the permission: %s"
 
-	ProposalStrategyIllegalProposalStrategyInfoCode ErrorCode = "1110002"
+	ProposalStrategyIllegalProposalStrategyInfoCode ErrorCode = "1130002"
 	ProposalStrategyIllegalProposalStrategyInfoMsg  ErrorMsg  = "illegal proposal strategy info: %s"
 
-	ProposalStrategyNonexistentProposalStrategyCode ErrorCode = "1110003"
+	ProposalStrategyNonexistentProposalStrategyCode ErrorCode = "1130003"
 	ProposalStrategyNonexistentProposalStrategyMsg  ErrorMsg  = "the proposal strategy for the type(%s) does not exist"
+
+	ProposalStrategyStatusErrorCode ErrorCode = "1130004"
+	ProposalStrategyStatusErrorMsg  ErrorMsg  = "the proposalstrategy(%s) is %s, can not do %s"
+
+	ProposalStrategyIllegalProposalTypeCode ErrorCode = "1130005"
+	ProposalStrategyIllegalProposalTypeMsg  ErrorMsg  = "illegal proposal type(%s)"
 )
