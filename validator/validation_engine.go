@@ -9,32 +9,35 @@ import (
 )
 
 const (
-	FabricRuleAddr    = "0x00000000000000000000000000000000000000a0"
-	SimFabricRuleAddr = "0x00000000000000000000000000000000000000a1"
-	HappyRuleAddr     = "0x00000000000000000000000000000000000000a2"
+	FabricRuleAddr           = "0x00000000000000000000000000000000000000a0"
+	SimFabricRuleAddr        = "0x00000000000000000000000000000000000000a1"
+	HappyRuleAddr            = "0x00000000000000000000000000000000000000a2"
+	SimDynamicFabricRuleAddr = "0x00000000000000000000000000000000000000a3"
 )
 
 // Validator is the instance that can use wasm to verify transaction validity
 type ValidationEngine struct {
-	instances       *sync.Map
-	fabValidator    Validator
-	simFabValidator Validator
-	happyValidator  Validator
-	wasmGasLimit    uint64
-	ledger          Ledger
-	logger          logrus.FieldLogger
+	instances              *sync.Map
+	fabValidator           Validator
+	simFabValidator        Validator
+	simDynamicFabValidator Validator
+	happyValidator         Validator
+	wasmGasLimit           uint64
+	ledger                 Ledger
+	logger                 logrus.FieldLogger
 }
 
 // New a validator instance
 func NewValidationEngine(ledger Ledger, instances *sync.Map, logger logrus.FieldLogger, gasLimit uint64) *ValidationEngine {
 	return &ValidationEngine{
-		ledger:          ledger,
-		logger:          logger,
-		fabValidator:    NewFabV14Validator(logger),
-		simFabValidator: NewFabSimValidator(logger),
-		happyValidator:  &HappyValidator{},
-		instances:       instances,
-		wasmGasLimit:    gasLimit,
+		ledger:                 ledger,
+		logger:                 logger,
+		fabValidator:           NewFabV14Validator(logger),
+		simFabValidator:        NewFabSimValidator(logger),
+		simDynamicFabValidator: NewFabSimDynamicValidator(logger),
+		happyValidator:         &HappyValidator{},
+		instances:              instances,
+		wasmGasLimit:           gasLimit,
 	}
 }
 
@@ -55,6 +58,10 @@ func (ve *ValidationEngine) getValidator(address string) (Validator, error) {
 
 	if address == SimFabricRuleAddr {
 		return ve.simFabValidator, nil
+	}
+
+	if address == SimDynamicFabricRuleAddr {
+		return ve.simDynamicFabValidator, nil
 	}
 
 	if address == HappyRuleAddr {
