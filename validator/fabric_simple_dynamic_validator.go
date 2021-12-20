@@ -1,23 +1,17 @@
 package validator
 
 import (
-	"crypto/ecdsa"
-	"crypto/sha256"
-	"crypto/x509"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"sort"
-	"sync"
 
-	"github.com/meshplus/bitxhub-core/validator/validatorlib"
 	"github.com/sirupsen/logrus"
 )
 
 // Validator is the instance that can use wasm to verify transaction validity
 type FabSimDynamicValidator struct {
-	logger logrus.FieldLogger
-	pkMap  *sync.Map
+	logger          logrus.FieldLogger
+	simFabValidator Validator
 }
 
 type DynamicProof struct {
@@ -33,8 +27,8 @@ type DynamicValidator struct {
 // New a validator instance
 func NewFabSimDynamicValidator(logger logrus.FieldLogger) *FabSimDynamicValidator {
 	return &FabSimDynamicValidator{
-		logger: logger,
-		pkMap:  &sync.Map{},
+		logger:          logger,
+		simFabValidator: NewFabSimValidator(logger),
 	}
 }
 
@@ -67,45 +61,5 @@ func (vlt *FabSimDynamicValidator) Verify(from string, proof, payload []byte, va
 		validators = dynamicValidator.Pem[index]
 	}
 	// ----------------parse proof and validators end----------------------------
-
-	artifact, err := validatorlib.PreCheck(dynamicProof.Proof, payload, "broker")
-	if err != nil {
-		return false, 0, err
-	}
-
-	signatureSet := validatorlib.GetSignatureSet(artifact)
-
-	var pk *ecdsa.PublicKey
-	raw, ok := vlt.pkMap.Load(from)
-	if !ok {
-		pemCert, _ := pem.Decode([]byte(validators))
-		if pemCert == nil {
-			return false, 0, fmt.Errorf("invalid validators information: %s", validators)
-		}
-		cert, err := x509.ParseCertificate(pemCert.Bytes)
-		if err != nil {
-			return false, 0, err
-		}
-		pk = cert.PublicKey.(*ecdsa.PublicKey)
-		vlt.pkMap.Store(from, pk)
-	} else {
-		pk = raw.(*ecdsa.PublicKey)
-	}
-
-	r, s, err := unmarshalECDSASignature(signatureSet[0].Signature)
-	if err != nil {
-		return false, 0, err
-	}
-
-	h := sha256.New()
-	_, err = h.Write(signatureSet[0].Data)
-	if err != nil {
-		return false, 0, err
-	}
-	ret := h.Sum(nil)
-	isValid := ecdsa.Verify(pk, ret, r, s)
-	if !isValid {
-		return false, 0, fmt.Errorf("signature not right")
-	}
-	return true, 0, nil
+	return vlt.simFabValidator.Verify(from, dynamicProof.Proof, payload, validators)
 }

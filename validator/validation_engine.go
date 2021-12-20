@@ -13,12 +13,14 @@ const (
 	SimFabricRuleAddr        = "0x00000000000000000000000000000000000000a1"
 	HappyRuleAddr            = "0x00000000000000000000000000000000000000a2"
 	SimDynamicFabricRuleAddr = "0x00000000000000000000000000000000000000a3"
+	DynamicFabricRuleAddr    = "0x00000000000000000000000000000000000000a4"
 )
 
 // Validator is the instance that can use wasm to verify transaction validity
 type ValidationEngine struct {
 	instances              *sync.Map
 	fabValidator           Validator
+	fabDynamicValidator    Validator
 	simFabValidator        Validator
 	simDynamicFabValidator Validator
 	happyValidator         Validator
@@ -33,6 +35,7 @@ func NewValidationEngine(ledger Ledger, instances *sync.Map, logger logrus.Field
 		ledger:                 ledger,
 		logger:                 logger,
 		fabValidator:           NewFabV14Validator(logger),
+		fabDynamicValidator:    NewFabV14DynamicValidator(logger),
 		simFabValidator:        NewFabSimValidator(logger),
 		simDynamicFabValidator: NewFabSimDynamicValidator(logger),
 		happyValidator:         &HappyValidator{},
@@ -54,6 +57,10 @@ func (ve *ValidationEngine) Validate(address, from string, proof, payload []byte
 func (ve *ValidationEngine) getValidator(address string) (Validator, error) {
 	if address == FabricRuleAddr {
 		return ve.fabValidator, nil
+	}
+
+	if address == DynamicFabricRuleAddr {
+		return ve.fabDynamicValidator, nil
 	}
 
 	if address == SimFabricRuleAddr {

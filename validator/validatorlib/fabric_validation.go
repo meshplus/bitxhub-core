@@ -55,6 +55,14 @@ func UnmarshalValidatorInfo(validatorBytes []byte) (*ValidatorInfo, error) {
 	return vInfo, nil
 }
 
+func MarshalValidatorInfo(validatorInfo *ValidatorInfo) ([]byte, error) {
+	result, err := json.Marshal(validatorInfo)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func ExtractValidationArtifacts(proof []byte) (*valiadationArtifacts, error) {
 	return extractValidationArtifacts(proof)
 }
