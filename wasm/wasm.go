@@ -68,7 +68,7 @@ func getInstance(contract *Contract, imports wasmlib.WasmImport, env *wasmlib.Wa
 	pool = v.(*sync.Pool)
 	rawInstance := pool.Get()
 	if rawInstance == nil {
-		logger.Debug("getInstance 1")
+		//logger.Debug("getInstance 1")
 		engine := wasmer.NewEngine()
 		store := wasmer.NewStore(engine)
 		module, err := wasmer.NewModule(store, contract.Code)
@@ -84,7 +84,7 @@ func getInstance(contract *Contract, imports wasmlib.WasmImport, env *wasmlib.Wa
 		}
 		env.Instance = instance
 	} else {
-		logger.Debug("getInstance 2")
+		//logger.Debug("getInstance 2")
 		instance = rawInstance.(*wasmer.Instance)
 	}
 
