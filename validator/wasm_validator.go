@@ -23,15 +23,17 @@ type WasmValidator struct {
 	logger       logrus.FieldLogger
 	instances    *sync.Map
 	gasLimit     uint64
+	test         bool
 }
 
 // New a validator instance
-func NewWasmValidator(contractByte []byte, logger logrus.FieldLogger, instances *sync.Map, gasLimit uint64) *WasmValidator {
+func NewWasmValidator(contractByte []byte, logger logrus.FieldLogger, instances *sync.Map, gasLimit uint64, test bool) *WasmValidator {
 	return &WasmValidator{
 		contractByte: contractByte,
 		logger:       logger,
 		instances:    instances,
 		gasLimit:     gasLimit,
+		test:         test,
 	}
 }
 
@@ -45,12 +47,13 @@ func (vlt *WasmValidator) Verify(from string, proof, payload []byte, validators 
 	}
 	time2 := time.Now().UnixNano()
 
-	vlt.logger.WithFields(logrus.Fields{
-		"height": height,
-		"index":  index,
-		"time":   time2 - time1,
-	}).Debug("------------------ init rule")
-	vlt.logger.WithFields(logrus.Fields{}).Debugf("------------ v1 %d", time2-time1)
+	if vlt.test {
+		vlt.logger.WithFields(logrus.Fields{
+			"height": height,
+			"index":  index,
+			"time":   time2 - time1,
+		}).Debug("------------------ init rule")
+	}
 
 	ret, gasUsed, err := vlt.wasm.Execute(vlt.input, vlt.gasLimit)
 	if err != nil {
@@ -58,12 +61,13 @@ func (vlt *WasmValidator) Verify(from string, proof, payload []byte, validators 
 	}
 	time3 := time.Now().UnixNano()
 
-	vlt.logger.WithFields(logrus.Fields{
-		"height": height,
-		"index":  index,
-		"time":   time3 - time2,
-	}).Debug("------------------ rule execute")
-	vlt.logger.WithFields(logrus.Fields{}).Debugf("------------ v2 %d", time3-time2)
+	if vlt.test {
+		vlt.logger.WithFields(logrus.Fields{
+			"height": height,
+			"index":  index,
+			"time":   time3 - time2,
+		}).Debug("------------------ rule execute")
+	}
 
 	// put wasm instance into pool
 	//v, ok := vlt.instances.Load(ruleHash)
@@ -73,12 +77,13 @@ func (vlt *WasmValidator) Verify(from string, proof, payload []byte, validators 
 	//v.(*sync.Pool).Put(vlt.wasm.Instance)
 	vlt.wasm.Close()
 	time4 := time.Now().UnixNano()
-	vlt.logger.WithFields(logrus.Fields{
-		"height": height,
-		"index":  index,
-		"time":   time4 - time3,
-	}).Debug("------------------ instances load")
-	vlt.logger.WithFields(logrus.Fields{}).Debugf("------------ v3 %d", time4-time3)
+	if vlt.test {
+		vlt.logger.WithFields(logrus.Fields{
+			"height": height,
+			"index":  index,
+			"time":   time4 - time3,
+		}).Debug("------------------ instances load")
+	}
 
 	// check execution status
 	result, err := strconv.Atoi(string(ret))
@@ -90,12 +95,13 @@ func (vlt *WasmValidator) Verify(from string, proof, payload []byte, validators 
 		return false, 0, nil
 	}
 	time5 := time.Now().UnixNano()
-	vlt.logger.WithFields(logrus.Fields{
-		"height": height,
-		"index":  index,
-		"time":   time5 - time4,
-	}).Debug("------------------ check status end")
-	vlt.logger.WithFields(logrus.Fields{}).Debugf("------------ v4 %d", time5-time4)
+	if vlt.test {
+		vlt.logger.WithFields(logrus.Fields{
+			"height": height,
+			"index":  index,
+			"time":   time5 - time4,
+		}).Debug("------------------ check status end")
+	}
 
 	return true, gasUsed, nil
 }

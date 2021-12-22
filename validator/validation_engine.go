@@ -47,10 +47,11 @@ type ValidationEngine struct {
 	wasmGasLimit     uint64
 	ledger           Ledger
 	logger           logrus.FieldLogger
+	test             bool
 }
 
 // New a validator instance
-func NewValidationEngine(ledger Ledger, instances *sync.Map, logger logrus.FieldLogger, gasLimit uint64) *ValidationEngine {
+func NewValidationEngine(ledger Ledger, instances *sync.Map, logger logrus.FieldLogger, gasLimit uint64, test bool) *ValidationEngine {
 	return &ValidationEngine{
 		ledger:           ledger,
 		logger:           logger,
@@ -71,6 +72,7 @@ func NewValidationEngine(ledger Ledger, instances *sync.Map, logger logrus.Field
 
 		instances:    instances,
 		wasmGasLimit: gasLimit,
+		test:         test,
 	}
 }
 
@@ -83,21 +85,23 @@ func (ve *ValidationEngine) Validate(address, from string, proof, payload []byte
 		return false, 0, err
 	}
 	time2 := time.Now().UnixNano()
-	ve.logger.WithFields(logrus.Fields{
-		"height": height,
-		"index":  index,
-		"time":   time2 - time1,
-	}).Debug("------------------ get validator end")
-	ve.logger.WithFields(logrus.Fields{}).Debugf("----- get %d", time2-time1)
+	if ve.test {
+		ve.logger.WithFields(logrus.Fields{
+			"height": height,
+			"index":  index,
+			"time":   time2 - time1,
+		}).Debug("------------------ get validator end")
+	}
 
 	ok, gasUsed, err := vlt.Verify(from, proof, payload, validators, index, height)
 	time3 := time.Now().UnixNano()
-	ve.logger.WithFields(logrus.Fields{
-		"height": height,
-		"index":  index,
-		"time":   time3 - time2,
-	}).Debug("------------------ verify end")
-	ve.logger.WithFields(logrus.Fields{}).Debugf("----- ver %d", time3-time2)
+	if ve.test {
+		ve.logger.WithFields(logrus.Fields{
+			"height": height,
+			"index":  index,
+			"time":   time3 - time2,
+		}).Debug("------------------ verify end")
+	}
 	ve.instances = nil
 	runtime.GC()
 	return ok, gasUsed, err
@@ -143,6 +147,6 @@ func (ve *ValidationEngine) getValidator(address string) (Validator, error) {
 			return nil, fmt.Errorf("this rule address %s does not exist", address)
 		}
 
-		return NewWasmValidator(contractByte, ve.logger, ve.instances, ve.wasmGasLimit), nil
+		return NewWasmValidator(contractByte, ve.logger, ve.instances, ve.wasmGasLimit, ve.test), nil
 	}
 }
