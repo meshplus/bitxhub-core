@@ -2,7 +2,6 @@ package validator
 
 import (
 	"fmt"
-	"runtime"
 	"sync"
 	"time"
 
@@ -102,8 +101,6 @@ func (ve *ValidationEngine) Validate(address, from string, proof, payload []byte
 			"time":   time3 - time2,
 		}).Debug("------------------ verify end")
 	}
-	ve.instances = nil
-	runtime.GC()
 	return ok, gasUsed, err
 }
 
