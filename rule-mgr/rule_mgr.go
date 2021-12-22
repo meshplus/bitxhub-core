@@ -53,6 +53,17 @@ var defaultRuleMap = map[string]map[string]struct{}{
 	appchain_mgr.ChainTypeFabric1_4_3: {
 		validator.FabricRuleAddr:    {},
 		validator.SimFabricRuleAddr: {},
+		validator.Fab10RuleAddr:     {},
+		validator.Fab20RuleAddr:     {},
+		validator.Fab50RuleAddr:     {},
+		validator.Fab100RuleAddr:    {},
+		validator.Fab200RuleAddr:    {},
+		validator.Fab400RuleAddr:    {},
+		validator.Fab600RuleAddr:    {},
+		validator.Fab800RuleAddr:    {},
+		validator.Fab1000RuleAddr:   {},
+		validator.Fab1500RuleAddr:   {},
+		validator.Fab2000RuleAddr:   {},
 	},
 	appchain_mgr.ChainTypeFabric1_4_4: {
 		validator.FabricRuleAddr:    {},

@@ -3,6 +3,7 @@ package wasm
 import (
 	"encoding/json"
 	"fmt"
+	"runtime"
 	"strconv"
 	"sync"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/meshplus/bitxhub-core/wasm/wasmlib"
 	"github.com/meshplus/bitxhub-kit/types"
 	"github.com/meshplus/bitxhub-model/pb"
+	"github.com/sirupsen/logrus"
 	"github.com/wasmerio/wasmer-go/wasmer"
 )
 
@@ -48,7 +50,7 @@ type Contract struct {
 	Hash *types.Hash `json:"hash"`
 }
 
-func getInstance(contract *Contract, imports wasmlib.WasmImport, env *wasmlib.WasmEnv, instances *sync.Map) (*wasmer.Instance, error) {
+func getInstance(contract *Contract, imports wasmlib.WasmImport, env *wasmlib.WasmEnv, instances *sync.Map, logger logrus.FieldLogger) (*wasmer.Instance, error) {
 	var (
 		instance *wasmer.Instance
 		pool     *sync.Pool
@@ -66,6 +68,7 @@ func getInstance(contract *Contract, imports wasmlib.WasmImport, env *wasmlib.Wa
 	pool = v.(*sync.Pool)
 	rawInstance := pool.Get()
 	if rawInstance == nil {
+		logger.Debug("getInstance 1")
 		engine := wasmer.NewEngine()
 		store := wasmer.NewStore(engine)
 		module, err := wasmer.NewModule(store, contract.Code)
@@ -73,6 +76,7 @@ func getInstance(contract *Contract, imports wasmlib.WasmImport, env *wasmlib.Wa
 			return &wasmer.Instance{}, err
 		}
 		env.Store = store
+		env.Module = module
 		imports.ImportLib(env)
 		instance, err = wasmer.NewInstance(module, imports.GetImportObject())
 		if err != nil {
@@ -80,6 +84,7 @@ func getInstance(contract *Contract, imports wasmlib.WasmImport, env *wasmlib.Wa
 		}
 		env.Instance = instance
 	} else {
+		logger.Debug("getInstance 2")
 		instance = rawInstance.(*wasmer.Instance)
 	}
 
@@ -87,7 +92,7 @@ func getInstance(contract *Contract, imports wasmlib.WasmImport, env *wasmlib.Wa
 }
 
 // New creates a wasm vm instance
-func New(contractByte []byte, imports wasmlib.WasmImport, instances *sync.Map) (*Wasm, error) {
+func New(contractByte []byte, imports wasmlib.WasmImport, instances *sync.Map, logger logrus.FieldLogger) (*Wasm, error) {
 	wasm := &Wasm{}
 
 	contract := &Contract{}
@@ -100,7 +105,7 @@ func New(contractByte []byte, imports wasmlib.WasmImport, instances *sync.Map) (
 	}
 
 	env := &wasmlib.WasmEnv{}
-	instance, err := getInstance(contract, imports, env, instances)
+	instance, err := getInstance(contract, imports, env, instances, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -188,6 +193,20 @@ func (w *Wasm) Execute(input []byte, wasmGasLimit uint64) (ret []byte, gasUsed u
 		ret = w.GetContext("result").([]byte)
 	}
 
+	for i := range slice {
+		arg := payload.Args[i]
+		switch arg.Type {
+		case pb.Arg_String:
+			if err := w.FreeString(slice[i], string(arg.Value)); err != nil {
+				return nil, wasmGasLimit - w.GetContext("gaslimit").(*usegas.GasLimit).GetLimit(), err
+			}
+		case pb.Arg_Bytes:
+			if err := w.FreeBytes(slice[i], arg.Value); err != nil {
+				return nil, wasmGasLimit - w.GetContext("gaslimit").(*usegas.GasLimit).GetLimit(), err
+			}
+		}
+	}
+
 	return ret, wasmGasLimit - w.GetContext("gaslimit").(*usegas.GasLimit).GetLimit(), err
 }
 
@@ -203,4 +222,17 @@ func (w *Wasm) GetContext(key string) interface{} {
 	defer w.Unlock()
 
 	return w.env.Ctx[key]
+}
+
+func (w *Wasm) Close() {
+	w.env.Store.Close()
+	w.env.Module.Close()
+	w.env.Instance = nil
+	w.env.Store = nil
+	w.env.Module = nil
+	w.env.Ctx = nil
+	w.env = nil
+	w.Instance.Close()
+	w.Instance = nil
+	runtime.GC()
 }

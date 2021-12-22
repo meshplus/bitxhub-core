@@ -5,7 +5,9 @@ import "github.com/wasmerio/wasmer-go/wasmer"
 type WasmEnv struct {
 	Instance *wasmer.Instance
 	Store    *wasmer.Store
-	Ctx      map[string]interface{}
+	Module   *wasmer.Module
+
+	Ctx map[string]interface{}
 }
 
 type WasmImport interface {

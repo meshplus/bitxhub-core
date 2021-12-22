@@ -29,7 +29,7 @@ func NewFabSimValidator(logger logrus.FieldLogger) *FabSimValidator {
 }
 
 // Verify will check whether the transaction info is valid
-func (vlt *FabSimValidator) Verify(from string, proof, payload []byte, validators string) (bool, uint64, error) {
+func (vlt *FabSimValidator) Verify(from string, proof, payload []byte, validators string, index, height uint64) (bool, uint64, error) {
 	artifact, err := validatorlib.PreCheck(proof, payload, "broker")
 	if err != nil {
 		return false, 0, err
