@@ -77,7 +77,7 @@ func NewValidationEngine(ledger Ledger, instances *sync.Map, logger logrus.Field
 // Verify will check whether the transaction info is valid
 func (ve *ValidationEngine) Validate(address, from string, proof, payload []byte, validators string, index, height uint64) (bool, uint64, error) {
 	time1 := time.Now().UnixNano()
-	vlt := ve.happyValidator
+
 	vlt, err := ve.getValidator(address)
 	if err != nil {
 		return false, 0, err

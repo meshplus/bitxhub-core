@@ -39,7 +39,7 @@ func NewWasmValidator(contractByte []byte, logger logrus.FieldLogger, instances 
 func (vlt *WasmValidator) Verify(from string, proof, payload []byte, validators string, index, height uint64) (bool, uint64, error) {
 	time1 := time.Now().UnixNano()
 
-	ruleHash, err := vlt.initRule(from, proof, payload, validators)
+	_, err := vlt.initRule(from, proof, payload, validators)
 	if err != nil {
 		return false, 0, err
 	}
@@ -66,11 +66,11 @@ func (vlt *WasmValidator) Verify(from string, proof, payload []byte, validators 
 	vlt.logger.WithFields(logrus.Fields{}).Debugf("------------ v2 %d", time3-time2)
 
 	// put wasm instance into pool
-	v, ok := vlt.instances.Load(ruleHash)
-	if !ok {
-		return false, 0, fmt.Errorf("load wasm instance failed")
-	}
-	v.(*sync.Pool).Put(vlt.wasm.Instance)
+	//v, ok := vlt.instances.Load(ruleHash)
+	//if !ok {
+	//	return false, 0, fmt.Errorf("load wasm instance failed")
+	//}
+	//v.(*sync.Pool).Put(vlt.wasm.Instance)
 	vlt.wasm.Close()
 	time4 := time.Now().UnixNano()
 	vlt.logger.WithFields(logrus.Fields{
