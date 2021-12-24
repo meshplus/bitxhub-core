@@ -1,7 +1,6 @@
 package validatorlib
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 
@@ -42,9 +41,15 @@ type payloadInfo struct {
 	Index     uint64   `json:"index"`
 	DstFullID string   `json:"dst_full_id"`
 	SrcFullID string   `json:"src_full_id"`
-	Func      string   `json:"func"`
-	Args      []string `json:"args"`
-	Hash      [32]byte `json:"hash"`
+	Encrypt   bool     `json:"encrypt"`
+	CallFunc  CallFunc `json:"call_func"`
+	CallBack  CallFunc `json:"callback"`
+	RollBack  CallFunc `json:"rollback"`
+}
+
+type CallFunc struct {
+	Func string   `json:"func"`
+	Args [][]byte `json:"args"`
 }
 
 func UnmarshalValidatorInfo(validatorBytes []byte) (*ValidatorInfo, error) {
@@ -168,14 +173,19 @@ func ValidateChainCodeID(prp []byte, name string) error {
 	return nil
 }
 
-func ValidatePayload(info payloadInfo, payloadByte []byte) error {
-	payload := &pb.Payload{}
-	if err := payload.Unmarshal(payloadByte); err != nil {
+func ValidatePayload(info payloadInfo, ibtpBytes []byte) error {
+	ibtp := &pb.IBTP{}
+	if err := ibtp.Unmarshal(ibtpBytes); err != nil {
 		return err
 	}
 
-	if !bytes.Equal(info.Hash[:], payload.Hash) {
-		return fmt.Errorf("interchain function payload hash not correct")
+	if info.Index != ibtp.Index {
+		return fmt.Errorf("ibtp index does not match proof index")
+	}
+
+	payload := &pb.Payload{}
+	if err := payload.Unmarshal(ibtp.Payload); err != nil {
+		return err
 	}
 
 	if payload.Encrypted {
@@ -187,22 +197,22 @@ func ValidatePayload(info payloadInfo, payloadByte []byte) error {
 		return fmt.Errorf("unmarshal ibtp payload content: %w", err)
 	}
 
-	if info.Func != content.Func {
+	if info.CallFunc.Func != content.Func {
 		return fmt.Errorf("interchain function name not correct")
 	}
 
-	if !checkArgs(info.Args, content.Args) {
+	if !checkArgs(info.CallFunc.Args, content.Args) {
 		return fmt.Errorf("args for interchain not correct")
 	}
 	return nil
 }
 
-func checkArgs(args []string, argArr [][]byte) bool {
+func checkArgs(args [][]byte, argArr [][]byte) bool {
 	if len(args) != len(argArr) {
 		return false
 	}
 	for index, arg := range args {
-		if arg != string(argArr[index]) {
+		if string(arg) != string(argArr[index]) {
 			return false
 		}
 	}

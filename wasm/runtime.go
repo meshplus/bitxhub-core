@@ -15,7 +15,7 @@ func (w *Wasm) SetString(str string) (int32, error) {
 	}
 	lengthOfStr := len(str)
 
-	allocResult, err := alloc(lengthOfStr)
+	allocResult, err := alloc(lengthOfStr + 1)
 	if err != nil {
 		return 0, err
 	}
@@ -46,7 +46,7 @@ func (w *Wasm) SetBytes(b []byte) (int32, error) {
 	}
 	lengthOfBytes := len(b)
 
-	allocResult, err := alloc(lengthOfBytes)
+	allocResult, err := alloc(lengthOfBytes + 1)
 	if err != nil {
 		return 0, err
 	}
@@ -77,7 +77,7 @@ func (w *Wasm) FreeString(inputPointer interface{}, str string) error {
 	}
 	lengthOfStr := len(str)
 
-	_, err = dealloc(inputPointer, lengthOfStr)
+	_, err = dealloc(inputPointer, lengthOfStr+1)
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func (w *Wasm) FreeBytes(inputPointer interface{}, b []byte) error {
 	}
 	lengthOfBytes := len(b)
 
-	_, err = dealloc(inputPointer, lengthOfBytes)
+	_, err = dealloc(inputPointer, lengthOfBytes+1)
 	if err != nil {
 		return err
 	}
