@@ -478,4 +478,7 @@ const (
 
 	ProposalStrategyIllegalProposalTypeCode ErrorCode = "1130005"
 	ProposalStrategyIllegalProposalTypeMsg  ErrorMsg  = "illegal proposal type(%s)"
+
+	ProposalStrategyNotUpdateCode ErrorCode = "1130006"
+	ProposalStrategyNotUpdateMsg  ErrorMsg  = "no strategy information is updated"
 )
