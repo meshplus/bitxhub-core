@@ -179,9 +179,9 @@ func ValidatePayload(info payloadInfo, ibtpBytes []byte) error {
 		return err
 	}
 
-	if info.Index != ibtp.Index {
-		return fmt.Errorf("ibtp index does not match proof index")
-	}
+	// if info.Index != ibtp.Index {
+	// 	return fmt.Errorf("ibtp index does not match proof index")
+	// }
 
 	payload := &pb.Payload{}
 	if err := payload.Unmarshal(ibtp.Payload); err != nil {
@@ -197,13 +197,13 @@ func ValidatePayload(info payloadInfo, ibtpBytes []byte) error {
 		return fmt.Errorf("unmarshal ibtp payload content: %w", err)
 	}
 
-	if info.CallFunc.Func != content.Func {
-		return fmt.Errorf("interchain function name not correct")
-	}
+	// if info.CallFunc.Func != content.Func {
+	// 	return fmt.Errorf("interchain function name not correct")
+	// }
 
-	if !checkArgs(info.CallFunc.Args, content.Args) {
-		return fmt.Errorf("args for interchain not correct")
-	}
+	// if !checkArgs(info.CallFunc.Args, content.Args) {
+	// 	return fmt.Errorf("args for interchain not correct")
+	// }
 	return nil
 }
 

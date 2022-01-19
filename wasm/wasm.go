@@ -1,7 +1,6 @@
 package wasm
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"sync"
@@ -86,25 +85,30 @@ func getInstance(contract *Contract, imports wasmlib.WasmImport, env *wasmlib.Wa
 	return instance, nil
 }
 
+// init a wasmer store for module creation
+func NewStore() *wasmer.Store {
+	engine := wasmer.NewEngine()
+	store := wasmer.NewStore(engine)
+	return store
+}
+
+func NewModule(code []byte, store *wasmer.Store) (*wasmer.Module, error) {
+	return wasmer.NewModule(store, code)
+}
+
 // New creates a wasm vm instance
-func New(contractByte []byte, imports wasmlib.WasmImport, instances *sync.Map) (*Wasm, error) {
+func New(imports wasmlib.WasmImport, module *wasmer.Module, store *wasmer.Store) (*Wasm, error) {
 	wasm := &Wasm{}
 
-	contract := &Contract{}
-	if err := json.Unmarshal(contractByte, contract); err != nil {
-		return wasm, fmt.Errorf("contract byte not correct")
-	}
-
-	if len(contract.Code) == 0 {
-		return wasm, fmt.Errorf("contract byte is empty")
-	}
-
 	env := &wasmlib.WasmEnv{}
-	instance, err := getInstance(contract, imports, env, instances)
+	env.Store = store
+	imports.ImportLib(env)
+	instance, err := wasmer.NewInstance(module, imports.GetImportObject())
 	if err != nil {
 		return nil, err
 	}
 
+	env.Instance = instance
 	wasm.Instance = instance
 	wasm.argMap = make(map[int]int)
 	wasm.context = make(map[string]interface{})
@@ -186,6 +190,20 @@ func (w *Wasm) Execute(input []byte, wasmGasLimit uint64) (ret []byte, gasUsed u
 
 	if string(w.GetContext("result").([]byte)) != "" {
 		ret = w.GetContext("result").([]byte)
+	}
+
+	for i := range slice {
+		arg := payload.Args[i]
+		switch arg.Type {
+		case pb.Arg_String:
+			if err1 := w.FreeString(slice[i], string(arg.Value)); err != nil {
+				err = err1
+			}
+		case pb.Arg_Bytes:
+			if err1 := w.FreeBytes(slice[i], arg.Value); err != nil {
+				err = err1
+			}
+		}
 	}
 
 	return ret, wasmGasLimit - w.GetContext("gaslimit").(*usegas.GasLimit).GetLimit(), err
