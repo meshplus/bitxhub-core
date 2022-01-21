@@ -13,7 +13,7 @@ func TestFabV14ValidatorWasm_Verify(t *testing.T) {
 	logger := log.NewWithModule("validator")
 	v := NewValidationEngine(nil, nil, logger)
 
-	proof, err := ioutil.ReadFile("./testdata/proof")
+	proof, err := ioutil.ReadFile("./testdata/fabric_receipt_proof")
 	require.Nil(t, err)
 
 	validators, err := ioutil.ReadFile("./testdata/validators")

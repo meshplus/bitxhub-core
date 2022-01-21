@@ -3,6 +3,7 @@ package validatorlib
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
@@ -125,6 +126,11 @@ func PreCheck(proof, payload []byte, cid string) (*valiadationArtifacts, error) 
 		return nil, err
 	}
 
+	ibtp := &pb.IBTP{}
+	if err := ibtp.Unmarshal(payload); err != nil {
+		return nil, err
+	}
+
 	err = ValidateChainCodeID(artifact.prp, cid)
 	if err != nil {
 		return nil, err
@@ -143,13 +149,22 @@ func PreCheck(proof, payload []byte, cid string) (*valiadationArtifacts, error) 
 	respContent := &responsePayload{}
 	if err := json.Unmarshal(respPayload.Response.Payload, respContent); err == nil {
 		if respContent.Data == "" {
+			cpp, err := protoutil.UnmarshalChaincodeProposalPayload(artifact.cap.ChaincodeProposalPayload)
+			if err != nil {
+				err = fmt.Errorf("UnmarshalChaincodeProposalPayload error %s", err)
+				return nil, err
+			}
+			input, err := protoutil.UnmarshalChaincodeInvocationSpec(cpp.Input)
+			if err != nil {
+				err = fmt.Errorf("UnmarshalChaincodeInvocationSpec error %s", err)
+				return nil, err
+			}
+			if string(input.ChaincodeSpec.Input.Args[1]) != strconv.FormatUint(ibtp.Index, 10) {
+				err = fmt.Errorf("receipt index err: %s", err)
+				return nil, err
+			}
 			return artifact, nil
 		}
-	}
-
-	ibtp := &pb.IBTP{}
-	if err := ibtp.Unmarshal(payload); err != nil {
-		return nil, err
 	}
 
 	err = ValidatePayload(artifact.payload, ibtp.Payload, ibtp.Index)
