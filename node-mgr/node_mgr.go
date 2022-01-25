@@ -61,8 +61,10 @@ var nodeStateMap = map[governance.EventType][]governance.GovernanceStatus{
 	governance.EventRegister: {governance.GovernanceUnavailable},
 	governance.EventUpdate:   {governance.GovernanceAvailable, governance.GovernanceBinded},
 	governance.EventBind:     {governance.GovernanceAvailable},
-	governance.EventUnbind:   {governance.GovernanceBinded},
-	governance.EventLogout:   {governance.GovernanceAvailable, governance.GovernanceBinding, governance.GovernanceBinded, governance.GovernanceUpdating},
+	// unbind binding node:
+	// If the audit admin is logouted during the binding between the audit node and the audit admin, the audit node can be restored to the available state through the unbind event
+	governance.EventUnbind: {governance.GovernanceBinded, governance.GovernanceBinding},
+	governance.EventLogout: {governance.GovernanceAvailable, governance.GovernanceBinding, governance.GovernanceBinded, governance.GovernanceUpdating},
 }
 
 func New(persister governance.Persister) NodeMgr {
@@ -97,7 +99,7 @@ func (node *Node) setFSM(lastStatus governance.GovernanceStatus) {
 			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceBinding)}, Dst: string(governance.GovernanceAvailable)},
 
 			// unbind 1
-			{Name: string(governance.EventUnbind), Src: []string{string(governance.GovernanceBinded)}, Dst: string(governance.GovernanceAvailable)},
+			{Name: string(governance.EventUnbind), Src: []string{string(governance.GovernanceBinded), string(governance.GovernanceBinding)}, Dst: string(governance.GovernanceAvailable)},
 
 			// logout 3
 			{Name: string(governance.EventLogout), Src: []string{string(governance.GovernanceAvailable), string(governance.GovernanceBinding), string(governance.GovernanceBinded), string(governance.GovernanceUpdating)}, Dst: string(governance.GovernanceLogouting)},
@@ -107,6 +109,9 @@ func (node *Node) setFSM(lastStatus governance.GovernanceStatus) {
 		fsm.Callbacks{
 			"enter_state": func(e *fsm.Event) {
 				node.Status = governance.GovernanceStatus(node.FSM.Current())
+				if node.Status == governance.GovernanceAvailable && node.NodeType == NVPNode {
+					node.AuditAdminAddr = ""
+				}
 			},
 		},
 	)
