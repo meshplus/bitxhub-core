@@ -524,4 +524,23 @@ const (
 
 	DidDeleteAdminErrCode ErrorCode = "1140014"
 	DidDeleteAdminErrMsg  ErrorMsg  = "can not delete admin, rm admin first"
+
+	// supervise
+	SuperviseInternalErrCode ErrorCode = "2140000"
+	SuperviseInternalErrMsg  ErrorMsg  = "%s"
+
+	SuperviseNoPermissionCode ErrorCode = "1140001"
+	SuperviseNoPermissionMsg  ErrorMsg  = "current caller %s is not allowed"
+
+	SuperviseIllegalIndexFormatCode ErrorCode = "1140002"
+	SuperviseIllegalIndexFormatMsg  ErrorMsg  = "index(%s) is not correct format: %s"
+
+	SuperviseGetSuperviseInfoErrCode ErrorCode = "1140003"
+	SuperviseGetSuperviseInfoErrMsg  ErrorMsg  = "get supervise info from ledger failed"
+
+	SuperviseGetChainIdErrCode ErrorCode = "1140004"
+	SuperviseGetChainIdErrMsg  ErrorMsg  = "get chainId from (%s) failed: %s"
+
+	SuperviseNonexistentSuperviseInfoCode ErrorCode = "1140005"
+	SuperviseNonexistentSuperviseInfoMsg  ErrorMsg  = "supervise info not exist with index(%s)"
 )
