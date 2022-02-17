@@ -182,7 +182,7 @@ func (am *AppchainManager) Update(updateInfo *Appchain) (bool, []byte) {
 	am.Logger().WithFields(logrus.Fields{
 		"id":   chain.ID,
 		"name": chain.ChainName,
-	}).Info("Appchain is updating")
+	}).Debug("Appchain is updating")
 
 	return true, nil
 }
