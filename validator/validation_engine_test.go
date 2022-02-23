@@ -1,8 +1,11 @@
 package validator
 
 import (
+	"fmt"
 	"io/ioutil"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/meshplus/bitxhub-kit/log"
 	"github.com/meshplus/bitxhub-model/pb"
@@ -75,14 +78,14 @@ func TestFabSimValidator_Verify(t *testing.T) {
 	logger := log.NewWithModule("validator")
 	v := NewValidationEngine(nil, nil, logger, wasmGasLimit)
 
-	proof, err := ioutil.ReadFile("./testdata/proof_1.0.0_rc")
+	proof, err := ioutil.ReadFile("./testdata/proof")
 	require.Nil(t, err)
 
 	validators, err := ioutil.ReadFile("./testdata/single_validator")
 	require.Nil(t, err)
 
 	content := &pb.Content{
-		Func: "interchainCharge",
+		Func: "get",
 		Args: [][]byte{[]byte("Alice"), []byte("Alice"), []byte("1")},
 	}
 
@@ -97,9 +100,40 @@ func TestFabSimValidator_Verify(t *testing.T) {
 	body, err := payload.Marshal()
 	require.Nil(t, err)
 
-	ok, _, err := v.Validate(SimFabricRuleAddr, "0xe02d8fdacd59020d7f292ab3278d13674f5c404d", proof, body, string(validators))
+	wg1 := sync.WaitGroup{}
+	wg1.Add(10)
+	for j := 0; j < 10; j += 1 {
+		go func() {
+			defer wg1.Done()
+
+			for i := 0; i < 1000; i += 1 {
+				ok, _, err := v.Validate(SimFabricRuleAddr, "0xe02d8fdacd59020d7f292ab3278d13674f5c404d", proof, body, string(validators))
+				require.Nil(t, err)
+				require.True(t, ok)
+			}
+		}()
+	}
+	wg1.Wait()
+
+	wg := sync.WaitGroup{}
+	wg.Add(8)
+	time1 := time.Now()
+	for j := 0; j < 8; j += 1 {
+		go func() {
+			defer wg.Done()
+
+			for i := 0; i < 1875; i += 1 {
+				ok, _, err := v.Validate(SimFabricRuleAddr, "0xe02d8fdacd59020d7f292ab3278d13674f5c404d", proof, body, string(validators))
+				require.Nil(t, err)
+				require.True(t, ok)
+			}
+		}()
+	}
+	wg.Wait()
+	time2 := time.Now()
+	fmt.Println(time2.Sub(time1).Milliseconds())
 	require.Nil(t, err)
-	require.True(t, ok)
+	// require.True(t, ok)
 }
 
 func BenchmarkFabV14Validator_Verify(b *testing.B) {
@@ -141,7 +175,7 @@ func BenchmarkFabV14Validator_Verify(b *testing.B) {
 func BenchmarkFabSimValidator_Verify(b *testing.B) {
 	logger := log.NewWithModule("validator")
 
-	proof, err := ioutil.ReadFile("./testdata/proof_1.0.0_rc")
+	proof, err := ioutil.ReadFile("./testdata/proof")
 	require.Nil(b, err)
 
 	validators, err := ioutil.ReadFile("./testdata/single_validator")
@@ -166,9 +200,9 @@ func BenchmarkFabSimValidator_Verify(b *testing.B) {
 	v := NewValidationEngine(nil, nil, logger, wasmGasLimit)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ok, _, err := v.Validate(SimFabricRuleAddr, "0xe02d8fdacd59020d7f292ab3278d13674f5c404d", proof, body, string(validators))
-		require.Nil(b, err)
-		require.True(b, ok)
+		v.Validate(SimFabricRuleAddr, "0xe02d8fdacd59020d7f292ab3278d13674f5c404d", proof, body, string(validators))
+		// require.Nil(b, err)
+		// require.True(b, ok)
 	}
 }
 

@@ -1,7 +1,6 @@
 package validator
 
 import (
-	"fmt"
 	"sync"
 )
 
@@ -48,16 +47,15 @@ func NewValidationPool(size int) *ValidatorPool {
 	}
 }
 
-func (pool *ValidatorPool) Add(validator Validator) error {
+func (pool *ValidatorPool) Add(validator Validator) {
 	pool.Lock()
 	defer pool.Unlock()
 
 	pool.length += 1
 	if pool.length > pool.size {
-		return fmt.Errorf("exceed max chan size")
+		return
 	}
 	pool.validators <- validator
-	return nil
 }
 
 func (pool *ValidatorPool) GetValidator() Validator {

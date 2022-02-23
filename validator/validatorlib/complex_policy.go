@@ -27,11 +27,11 @@ func fabric_validate_v14(env interface{}, args []wasmer.Value) ([]wasmer.Value, 
 		return []wasmer.Value{wasmer.NewI32(0)}, nil
 	}
 
-	if err := ValidateChainCodeID(artifact.prp, vInfo.Cid); err != nil {
+	if err := ValidateChainCodeID(artifact.Prp, vInfo.Cid); err != nil {
 		return []wasmer.Value{wasmer.NewI32(0)}, nil
 	}
 
-	if err := ValidatePayload(artifact.payload, payload); err != nil {
+	if err := ValidatePayload(artifact.Payload, payload); err != nil {
 		return []wasmer.Value{wasmer.NewI32(0)}, nil
 	}
 

@@ -34,8 +34,15 @@ func (vlt *FabSimValidator) Verify(from string, proof, payload []byte, validator
 	if err != nil {
 		return false, 0, err
 	}
+	// aBytes, _ := json.Marshal(artifact)
+	// ioutil.WriteFile("./testdata/artifact", aBytes, 777)
 
-	signatureSet := validatorlib.GetSignatureSet(artifact)
+	// var artifact *validatorlib.ValiadationArtifacts
+	// json.Unmarshal(proof, &artifact)
+	// signatureSet := validatorlib.GetSignatureSet(artifact)
+	data := make([]byte, len(artifact.Prp)+len(artifact.Endorsements[0].Endorser))
+	copy(data, artifact.Prp)
+	copy(data[len(artifact.Prp):], artifact.Endorsements[0].Endorser)
 
 	var pk *ecdsa.PublicKey
 	raw, ok := vlt.pkMap.Load(from)
@@ -54,18 +61,21 @@ func (vlt *FabSimValidator) Verify(from string, proof, payload []byte, validator
 		pk = raw.(*ecdsa.PublicKey)
 	}
 
-	r, s, err := unmarshalECDSASignature(signatureSet[0].Signature)
+	// time1 := time.Now()
+	r, s, err := unmarshalECDSASignature(artifact.Endorsements[0].Signature)
 	if err != nil {
 		return false, 0, err
 	}
 
 	h := sha256.New()
-	_, err = h.Write(signatureSet[0].Data)
+	_, err = h.Write(data)
 	if err != nil {
 		return false, 0, err
 	}
 	ret := h.Sum(nil)
 	isValid := ecdsa.Verify(pk, ret, r, s)
+	// time2 := time.Now()
+	// fmt.Println(time2.Sub(time1).Nanoseconds())
 	if !isValid {
 		return false, 0, fmt.Errorf("signature not right")
 	}

@@ -61,28 +61,22 @@ func (ve *ValidationEngine) Validate(address, from string, proof, payload []byte
 	if !ok {
 		ve.Lock()
 		defer ve.Unlock()
-		ve.pools.SetPool(address, NewValidationPool(100))
+		ve.pools.SetPool(address, NewValidationPool(10))
 		vlt, err := ve.getValidator(address)
 		if err != nil {
 			return false, 0, err
 		}
-		err = ve.pools.pools[address].Add(vlt)
-		if err != nil {
-			return false, 0, err
-		}
+		ve.pools.pools[address].Add(vlt)
 		pool, _ = ve.pools.GetPool(address)
 	} else {
-		ve.Lock()
-		defer ve.Unlock()
+		// ve.Lock()
+		// defer ve.Unlock()
 		if pool.length < pool.size {
 			vlt, err := ve.getValidator(address)
 			if err != nil {
 				return false, 0, err
 			}
-			err = pool.Add(vlt)
-			if err != nil {
-				return false, 0, err
-			}
+			pool.Add(vlt)
 		}
 	}
 
@@ -128,7 +122,6 @@ func (ve *ValidationEngine) getValidator(address string) (Validator, error) {
 		}
 	}
 
-	fmt.Println("new wasm validator")
 	return NewWasmValidator(module, ve.wasmStore, ve.logger, ve.wasmGasLimit), nil
 }
 
