@@ -1,14 +1,20 @@
 package wasmlib
 
-import "github.com/wasmerio/wasmer-go/wasmer"
+import (
+	"github.com/bytecodealliance/wasmtime-go"
+)
 
-type WasmEnv struct {
-	Instance *wasmer.Instance
-	Store    *wasmer.Store
-	Ctx      map[string]interface{}
+const (
+	CONTEXT_ARGMAP = "argmap"
+	RESULT         = "result"
+)
+
+type ImportLib struct {
+	Module string
+	Name   string
+	Func   interface{}
 }
 
-type WasmImport interface {
-	ImportLib(wasmEnv *WasmEnv)
-	GetImportObject() *wasmer.ImportObject
+func NewWasmLibs(context map[string]interface{}, store *wasmtime.Store) []*ImportLib {
+	return ImportWasmLib(context, store)
 }

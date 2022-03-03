@@ -17,12 +17,9 @@ func TestExecute(t *testing.T) {
 	data, err := ioutil.ReadFile("./testdata/wasm_test.wasm")
 	assert.Nil(t, err)
 
-	assert.Nil(t, err)
-	imports := NewEmptyImports()
-	store := NewStore()
-	module, err := NewModule(data, store)
-	assert.Nil(t, err)
-	wasm, err := New(imports, module, store)
+	libs := []*wasmlib.ImportLib{}
+	context := make(map[string]interface{})
+	wasm, err := New(data, context, libs)
 	assert.Nil(t, err)
 	input := &pb.InvokePayload{
 		Method: "a",
@@ -45,13 +42,9 @@ func TestImportExecute(t *testing.T) {
 	assert.Nil(t, err)
 	hello := "hello world"
 
-	assert.Nil(t, err)
-	imports := wasmlib.New()
-	assert.Nil(t, err)
-	store := NewStore()
-	module, err := NewModule(data, store)
-	assert.Nil(t, err)
-	wasm, err := New(imports, module, store)
+	libs := []*wasmlib.ImportLib{}
+	context := make(map[string]interface{})
+	wasm, err := New(data, context, libs)
 	assert.Nil(t, err)
 	input := &pb.InvokePayload{
 		Method: "start_verify",
@@ -86,13 +79,9 @@ func BenchmarkImportExecute(b *testing.B) {
 	assert.Nil(b, err)
 	hello := "hello world"
 
-	assert.Nil(b, err)
-	imports := wasmlib.New()
-	assert.Nil(b, err)
-	store := NewStore()
-	module, err := NewModule(data, store)
-	assert.Nil(b, err)
-	wasm, err := New(imports, module, store)
+	libs := []*wasmlib.ImportLib{}
+	context := make(map[string]interface{})
+	wasm, err := New(data, context, libs)
 	assert.Nil(b, err)
 	input := &pb.InvokePayload{
 		Method: "start_verify",

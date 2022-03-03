@@ -34,16 +34,7 @@ func (vlt *FabSimValidator) Verify(from string, proof, payload []byte, validator
 	if err != nil {
 		return false, 0, err
 	}
-	// aBytes, _ := json.Marshal(artifact)
-	// ioutil.WriteFile("./testdata/artifact", aBytes, 777)
-
-	// var artifact *validatorlib.ValiadationArtifacts
-	// json.Unmarshal(proof, &artifact)
-	// signatureSet := validatorlib.GetSignatureSet(artifact)
-	data := make([]byte, len(artifact.Prp)+len(artifact.Endorsements[0].Endorser))
-	copy(data, artifact.Prp)
-	copy(data[len(artifact.Prp):], artifact.Endorsements[0].Endorser)
-
+	signatureSet := validatorlib.GetSignatureSet(artifact)
 	var pk *ecdsa.PublicKey
 	raw, ok := vlt.pkMap.Load(from)
 	if !ok {
@@ -62,13 +53,13 @@ func (vlt *FabSimValidator) Verify(from string, proof, payload []byte, validator
 	}
 
 	// time1 := time.Now()
-	r, s, err := unmarshalECDSASignature(artifact.Endorsements[0].Signature)
+	r, s, err := unmarshalECDSASignature(signatureSet[0].Signature)
 	if err != nil {
 		return false, 0, err
 	}
 
 	h := sha256.New()
-	_, err = h.Write(data)
+	_, err = h.Write(signatureSet[0].Data)
 	if err != nil {
 		return false, 0, err
 	}

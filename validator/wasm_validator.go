@@ -8,7 +8,6 @@ import (
 	"github.com/meshplus/bitxhub-core/wasm"
 	"github.com/meshplus/bitxhub-model/pb"
 	"github.com/sirupsen/logrus"
-	"github.com/wasmerio/wasmer-go/wasmer"
 )
 
 // Validator is the instance that can use wasm to verify transaction validity
@@ -21,9 +20,10 @@ type WasmValidator struct {
 }
 
 // New a validator instance
-func NewWasmValidator(module *wasmer.Module, store *wasmer.Store, logger logrus.FieldLogger, gasLimit uint64) *WasmValidator {
-	imports := validatorlib.New()
-	wasmInstance, err := wasm.New(imports, module, store)
+func NewWasmValidator(code []byte, logger logrus.FieldLogger, gasLimit uint64) *WasmValidator {
+	context := make(map[string]interface{})
+	libs := validatorlib.NewValidatorLibs(context)
+	wasmInstance, err := wasm.New(code, context, libs)
 	if err != nil {
 		return nil
 	}

@@ -23,11 +23,11 @@ var (
 )
 
 type ValiadationArtifacts struct {
-	// Rwset        []byte                       `json:"rwset"`
-	Prp          []byte              `json:"prp"`
-	Endorsements []*peer.Endorsement `json:"endorsements"`
-	// Cap          *peer.ChaincodeActionPayload `json:"cap"`
-	Payload payloadInfo `json:"payload"`
+	rwset        []byte
+	prp          []byte
+	endorsements []*peer.Endorsement
+	cap          *peer.ChaincodeActionPayload
+	payload      payloadInfo
 }
 
 type ValidatorInfo struct {
@@ -70,42 +70,42 @@ func extractValidationArtifacts(proof []byte) (*ValiadationArtifacts, error) {
 		return nil, err
 	}
 
-	// pRespPayload, err := protoutil.UnmarshalProposalResponsePayload(cap.Action.ProposalResponsePayload)
-	// if err != nil {
-	// 	err = fmt.Errorf("GetProposalResponsePayload error %s", err)
-	// 	return nil, err
-	// }
-	// if pRespPayload.Extension == nil {
-	// 	err = fmt.Errorf("nil pRespPayload.Extension")
-	// 	return nil, err
-	// }
-	// respPayload, err := protoutil.UnmarshalChaincodeAction(pRespPayload.Extension)
-	// if err != nil {
-	// 	err = fmt.Errorf("GetChaincodeAction error %s", err)
-	// 	return nil, err
-	// }
+	pRespPayload, err := protoutil.UnmarshalProposalResponsePayload(cap.Action.ProposalResponsePayload)
+	if err != nil {
+		err = fmt.Errorf("GetProposalResponsePayload error %s", err)
+		return nil, err
+	}
+	if pRespPayload.Extension == nil {
+		err = fmt.Errorf("nil pRespPayload.Extension")
+		return nil, err
+	}
+	respPayload, err := protoutil.UnmarshalChaincodeAction(pRespPayload.Extension)
+	if err != nil {
+		err = fmt.Errorf("GetChaincodeAction error %s", err)
+		return nil, err
+	}
 
-	// var (
-	// 	payload      payloadInfo
-	// 	payloadArray []payloadInfo
-	// )
-	// fmt.Println(string(respPayload.Response.Payload))
-	// err = json.Unmarshal(respPayload.Response.Payload, &payloadArray)
-	// if err != nil {
-	// 	// try if it is from getOutMessage
-	// 	if err = json.Unmarshal(respPayload.Response.Payload, &payload); err != nil {
-	// 		return nil, err
-	// 	}
-	// } else {
-	// 	payload = payloadArray[len(payloadArray)-1]
-	// }
+	var (
+		payload      payloadInfo
+		payloadArray []payloadInfo
+	)
+	fmt.Println(string(respPayload.Response.Payload))
+	err = json.Unmarshal(respPayload.Response.Payload, &payloadArray)
+	if err != nil {
+		// try if it is from getOutMessage
+		if err = json.Unmarshal(respPayload.Response.Payload, &payload); err != nil {
+			return nil, err
+		}
+	} else {
+		payload = payloadArray[len(payloadArray)-1]
+	}
 
 	return &ValiadationArtifacts{
-		// Rwset:        respPayload.Results,
-		Prp:          cap.Action.ProposalResponsePayload,
-		Endorsements: cap.Action.Endorsements,
-		// Cap:          cap,
-		// payload:      payload,
+		rwset:        respPayload.Results,
+		prp:          cap.Action.ProposalResponsePayload,
+		endorsements: cap.Action.Endorsements,
+		cap:          cap,
+		payload:      payload,
 	}, nil
 }
 
@@ -116,15 +116,15 @@ func PreCheck(proof, payload []byte, cid string) (*ValiadationArtifacts, error) 
 		return nil, err
 	}
 
-	// err = ValidateChainCodeID(artifact.Prp, cid)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	err = ValidateChainCodeID(artifact.prp, cid)
+	if err != nil {
+		return nil, err
+	}
 
-	// err = ValidatePayload(artifact.payload, payload)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	err = ValidatePayload(artifact.payload, payload)
+	if err != nil {
+		return nil, err
+	}
 
 	return artifact, nil
 }
@@ -136,12 +136,12 @@ func ValidateV14(proof, payload, policyBytes []byte, confByte []string, cid, fro
 		return err
 	}
 
-	err = ValidateChainCodeID(artifact.Prp, cid)
+	err = ValidateChainCodeID(artifact.prp, cid)
 	if err != nil {
 		return err
 	}
 
-	err = ValidatePayload(artifact.Payload, payload)
+	err = ValidatePayload(artifact.payload, payload)
 	if err != nil {
 		return err
 	}
@@ -180,9 +180,9 @@ func ValidatePayload(info payloadInfo, ibtpBytes []byte) error {
 		return err
 	}
 
-	// if info.Index != ibtp.Index {
-	// 	return fmt.Errorf("ibtp index does not match proof index")
-	// }
+	if info.Index != ibtp.Index {
+		return fmt.Errorf("ibtp index does not match proof index")
+	}
 
 	payload := &pb.Payload{}
 	if err := payload.Unmarshal(ibtp.Payload); err != nil {
@@ -198,13 +198,13 @@ func ValidatePayload(info payloadInfo, ibtpBytes []byte) error {
 		return fmt.Errorf("unmarshal ibtp payload content: %w", err)
 	}
 
-	// if info.CallFunc.Func != content.Func {
-	// 	return fmt.Errorf("interchain function name not correct")
-	// }
+	if info.CallFunc.Func != content.Func {
+		return fmt.Errorf("interchain function name not correct")
+	}
 
-	// if !checkArgs(info.CallFunc.Args, content.Args) {
-	// 	return fmt.Errorf("args for interchain not correct")
-	// }
+	if !checkArgs(info.CallFunc.Args, content.Args) {
+		return fmt.Errorf("args for interchain not correct")
+	}
 	return nil
 }
 
@@ -267,10 +267,10 @@ func (id *PolicyEvaluator) Evaluate(policyBytes []byte, signatureSet []*protouti
 
 func GetSignatureSet(artifact *ValiadationArtifacts) []*protoutil.SignedData {
 	signatureSet := []*protoutil.SignedData{}
-	for _, endorsement := range artifact.Endorsements {
-		data := make([]byte, len(artifact.Prp)+len(endorsement.Endorser))
-		copy(data, artifact.Prp)
-		copy(data[len(artifact.Prp):], endorsement.Endorser)
+	for _, endorsement := range artifact.endorsements {
+		data := make([]byte, len(artifact.prp)+len(endorsement.Endorser))
+		copy(data, artifact.prp)
+		copy(data[len(artifact.prp):], endorsement.Endorser)
 
 		signatureSet = append(signatureSet, &protoutil.SignedData{
 			// set the data that is signed; concatenation of proposal response bytes and endorser ID

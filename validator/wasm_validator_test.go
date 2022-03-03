@@ -39,12 +39,9 @@ func TestWasmValidator(t *testing.T) {
 	require.Nil(t, err)
 
 	validator := &WasmValidator{}
-	imports := validatorlib.New()
-	require.Nil(t, err)
-	store := wasm.NewStore()
-	module, err := wasm.NewModule(wasmBytes, store)
-	require.Nil(t, err)
-	wasm, err := wasm.New(imports, module, store)
+	context := make(map[string]interface{})
+	libs := validatorlib.NewValidatorLibs(context)
+	wasm, err := wasm.New(wasmBytes, context, libs)
 	require.Nil(t, err)
 	validator.wasm = wasm
 	err = validator.setTransaction("0xe02d8fdacd59020d7f292ab3278d13674f5c404d", proof, string(validators), body)
@@ -83,13 +80,9 @@ func BenchmarkHpcWasm_Verify(b *testing.B) {
 	require.Nil(b, err)
 
 	validator := &WasmValidator{}
-
-	imports := validatorlib.New()
-	require.Nil(b, err)
-	store := wasm.NewStore()
-	module, err := wasm.NewModule(wasmBytes, store)
-	require.Nil(b, err)
-	wasm, err := wasm.New(imports, module, store)
+	context := make(map[string]interface{})
+	libs := validatorlib.NewValidatorLibs(context)
+	wasm, err := wasm.New(wasmBytes, context, libs)
 	require.Nil(b, err)
 	validator.wasm = wasm
 	err = validator.setTransaction("0xe02d8fdacd59020d7f292ab3278d13674f5c404d", []byte("111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"), "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111", body)
