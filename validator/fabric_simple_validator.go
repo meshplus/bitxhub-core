@@ -34,9 +34,7 @@ func (vlt *FabSimValidator) Verify(from string, proof, payload []byte, validator
 	if err != nil {
 		return false, 0, err
 	}
-
 	signatureSet := validatorlib.GetSignatureSet(artifact)
-
 	var pk *ecdsa.PublicKey
 	raw, ok := vlt.pkMap.Load(from)
 	if !ok {
@@ -54,6 +52,7 @@ func (vlt *FabSimValidator) Verify(from string, proof, payload []byte, validator
 		pk = raw.(*ecdsa.PublicKey)
 	}
 
+	// time1 := time.Now()
 	r, s, err := unmarshalECDSASignature(signatureSet[0].Signature)
 	if err != nil {
 		return false, 0, err
@@ -66,6 +65,8 @@ func (vlt *FabSimValidator) Verify(from string, proof, payload []byte, validator
 	}
 	ret := h.Sum(nil)
 	isValid := ecdsa.Verify(pk, ret, r, s)
+	// time2 := time.Now()
+	// fmt.Println(time2.Sub(time1).Nanoseconds())
 	if !isValid {
 		return false, 0, fmt.Errorf("signature not right")
 	}

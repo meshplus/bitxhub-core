@@ -1,40 +1,35 @@
 package wasm
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"sync"
 
+	"github.com/bytecodealliance/wasmtime-go"
 	"github.com/gogo/protobuf/proto"
-	"github.com/meshplus/bitxhub-core/usegas"
 	"github.com/meshplus/bitxhub-core/wasm/wasmlib"
 	"github.com/meshplus/bitxhub-kit/types"
 	"github.com/meshplus/bitxhub-model/pb"
-	"github.com/wasmerio/wasmer-go/wasmer"
 )
 
 const (
 	CONTEXT_ARGMAP    = "argmap"
 	CONTEXT_INTERFACE = "interface"
-
-	ACCOUNT   = "account"
-	LEDGER    = "ledger"
-	ALLOC_MEM = "allocate"
+	ERROR             = "error"
 )
 
 var (
 	errorLackOfMethod = fmt.Errorf("wasm execute: lack of method name")
+	errorNoSuchMethod = fmt.Errorf("wasm execute: no such method")
 )
 
 // Wasm represents the wasm vm in BitXHub
 type Wasm struct {
 	// wasm instance
-	Instance *wasmer.Instance
+	Instance *wasmtime.Instance
+	Store    *wasmtime.Store
 
-	env     *wasmlib.WasmEnv
 	context map[string]interface{}
-	argMap  map[int]int
 
 	sync.RWMutex
 }
@@ -48,81 +43,93 @@ type Contract struct {
 	Hash *types.Hash `json:"hash"`
 }
 
-func getInstance(contract *Contract, imports wasmlib.WasmImport, env *wasmlib.WasmEnv, instances *sync.Map) (*wasmer.Instance, error) {
-	var (
-		instance *wasmer.Instance
-		pool     *sync.Pool
-	)
-	v, ok := instances.Load(contract.Hash.String())
-	if !ok {
-		v = &sync.Pool{
-			New: func() interface{} {
-				return nil
-			},
-		}
-		instances.Store(contract.Hash.String(), v)
-	}
-
-	pool = v.(*sync.Pool)
-	rawInstance := pool.Get()
-	if rawInstance == nil {
-		engine := wasmer.NewEngine()
-		store := wasmer.NewStore(engine)
-		module, err := wasmer.NewModule(store, contract.Code)
-		if err != nil {
-			return &wasmer.Instance{}, err
-		}
-		env.Store = store
-		imports.ImportLib(env)
-		instance, err = wasmer.NewInstance(module, imports.GetImportObject())
-		if err != nil {
-			return &wasmer.Instance{}, err
-		}
-		env.Instance = instance
-	} else {
-		instance = rawInstance.(*wasmer.Instance)
-	}
-
-	return instance, nil
-}
-
-// New creates a wasm vm instance
-func New(contractByte []byte, imports wasmlib.WasmImport, instances *sync.Map) (*Wasm, error) {
+func NewWithStore(code []byte, context map[string]interface{}, libs []*wasmlib.ImportLib, store *wasmtime.Store) (*Wasm, error) {
 	wasm := &Wasm{}
-
-	contract := &Contract{}
-	if err := json.Unmarshal(contractByte, contract); err != nil {
-		return wasm, fmt.Errorf("contract byte not correct")
+	linker := wasmtime.NewLinker(store.Engine)
+	for _, lib := range libs {
+		err := linker.DefineFunc(store, lib.Module, lib.Name, lib.Func)
+		if err != nil {
+			return nil, err
+		}
 	}
-
-	if len(contract.Code) == 0 {
-		return wasm, fmt.Errorf("contract byte is empty")
+	for _, lib := range wasmlib.NewWasmLibs(context, store) {
+		err := linker.DefineFunc(store, lib.Module, lib.Name, lib.Func)
+		if err != nil {
+			return nil, err
+		}
 	}
-
-	env := &wasmlib.WasmEnv{}
-	instance, err := getInstance(contract, imports, env, instances)
+	module, err := wasmtime.NewModule(store.Engine, code)
 	if err != nil {
 		return nil, err
 	}
-
+	instance, err := linker.Instantiate(store, module)
+	if err != nil {
+		return nil, err
+	}
 	wasm.Instance = instance
-	wasm.argMap = make(map[int]int)
-	wasm.context = make(map[string]interface{})
-	env.Ctx = make(map[string]interface{})
-	wasm.env = env
+	wasm.Store = store
+	wasm.context = context
 
 	return wasm, nil
 }
 
-func EmptyImports() (*wasmer.ImportObject, error) {
-	return wasmer.NewImportObject(), nil
+func NewStore() *wasmtime.Store {
+	cfg := wasmtime.NewConfig()
+	cfg.SetWasmReferenceTypes(true)
+	cfg.SetConsumeFuel(true)
+	return wasmtime.NewStore(wasmtime.NewEngineWithConfig(cfg))
+}
+
+// New creates a wasm vm instance
+func New(code []byte, context map[string]interface{}, libs []*wasmlib.ImportLib) (*Wasm, error) {
+	wasm := &Wasm{}
+
+	cfg := wasmtime.NewConfig()
+	cfg.SetWasmReferenceTypes(true)
+	cfg.SetConsumeFuel(true)
+	store := wasmtime.NewStore(wasmtime.NewEngineWithConfig(cfg))
+	linker := wasmtime.NewLinker(store.Engine)
+	for _, lib := range libs {
+		err := linker.DefineFunc(store, lib.Module, lib.Name, lib.Func)
+		if err != nil {
+			return nil, err
+		}
+	}
+	err := linker.DefineFunc(
+		store,
+		"env",
+		"set_data",
+		func(caller *wasmtime.Caller, key_ptr int64, key_len int64, value_ptr int64, value_len int64) {
+			mem := caller.GetExport("memory").Memory()
+			buf := mem.UnsafeData(store)
+			key := buf[key_ptr : key_ptr+key_len]
+			value := buf[value_ptr : value_ptr+value_len]
+			context[string(key)] = value
+		})
+	if err != nil {
+		return nil, err
+	}
+	module, err := wasmtime.NewModule(store.Engine, code)
+	if err != nil {
+		return nil, err
+	}
+	instance, err := linker.Instantiate(store, module)
+	if err != nil {
+		return nil, err
+	}
+	wasm.Instance = instance
+	wasm.Store = store
+	wasm.context = context
+
+	return wasm, nil
 }
 
 func (w *Wasm) Execute(input []byte, wasmGasLimit uint64) (ret []byte, gasUsed uint64, err error) {
-	gasLimit := &usegas.GasLimit{}
-	gasLimit.SetLimit(wasmGasLimit)
-	w.SetContext("gaslimit", gasLimit)
 	w.SetContext("result", []byte(""))
+	w.SetContext(CONTEXT_ARGMAP, make(map[int32]int32))
+	if err := w.Store.AddFuel(wasmGasLimit); err != nil {
+		return nil, 0, err
+	}
 
 	payload := &pb.InvokePayload{}
 	if err := proto.Unmarshal(input, payload); err != nil {
@@ -133,17 +140,9 @@ func (w *Wasm) Execute(input []byte, wasmGasLimit uint64) (ret []byte, gasUsed u
 		return nil, 0, errorLackOfMethod
 	}
 
-	// alloc, err := w.Instance.Exports.GetFunction(ALLOC_MEM)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if alloc == nil {
-	// 	return nil, fmt.Errorf("not found allocate method")
-	// }
-	// w.context[ALLOC_MEM] = alloc
-	methodName, err := w.Instance.Exports.GetFunction(payload.Method)
-	if err != nil {
-		return nil, 0, err
+	methodName := w.Instance.GetFunc(w.Store, payload.Method)
+	if methodName == nil {
+		return nil, 0, errorNoSuchMethod
 	}
 	slice := make([]interface{}, len(payload.Args))
 	for i := range slice {
@@ -169,38 +168,53 @@ func (w *Wasm) Execute(input []byte, wasmGasLimit uint64) (ret []byte, gasUsed u
 			err = fmt.Errorf("input type not support")
 		}
 		if err != nil {
-			return nil, wasmGasLimit - w.GetContext("gaslimit").(*usegas.GasLimit).GetLimit(), err
+			gasUsed, _ := w.Store.FuelConsumed()
+			return nil, gasUsed, err
 		}
 		slice[i] = temp
 	}
 
-	w.env.Ctx[CONTEXT_ARGMAP] = w.argMap
 	// w.Instance.SetContextData(w.context)
 
-	result, err := methodName(slice...)
+	result, err := methodName.Call(w.Store, slice...)
 	if err != nil {
 		ret = nil
 	} else {
 		ret = []byte(strconv.Itoa(int(result.(int32))))
 	}
-
 	if string(w.GetContext("result").([]byte)) != "" {
 		ret = w.GetContext("result").([]byte)
 	}
 
-	return ret, wasmGasLimit - w.GetContext("gaslimit").(*usegas.GasLimit).GetLimit(), err
+	for i := range slice {
+		arg := payload.Args[i]
+		switch arg.Type {
+		case pb.Arg_String:
+			if err1 := w.FreeString(slice[i], string(arg.Value)); err1 != nil {
+				err = err1
+			}
+		case pb.Arg_Bytes:
+			if err1 := w.FreeBytes(slice[i], arg.Value); err1 != nil {
+				err = err1
+			}
+		}
+	}
+	w.context = make(map[string]interface{})
+
+	gasUsed, _ = w.Store.FuelConsumed()
+	return ret, gasUsed, err
 }
 
 func (w *Wasm) SetContext(key string, value interface{}) {
 	w.Lock()
 	defer w.Unlock()
 
-	w.env.Ctx[key] = value
+	w.context[key] = value
 }
 
 func (w *Wasm) GetContext(key string) interface{} {
 	w.Lock()
 	defer w.Unlock()
 
-	return w.env.Ctx[key]
+	return w.context[key]
 }

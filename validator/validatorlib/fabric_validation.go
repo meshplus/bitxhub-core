@@ -22,7 +22,7 @@ var (
 	evaluatorMap map[string]*PolicyEvaluator
 )
 
-type valiadationArtifacts struct {
+type ValiadationArtifacts struct {
 	rwset        []byte
 	prp          []byte
 	endorsements []*peer.Endorsement
@@ -60,11 +60,11 @@ func UnmarshalValidatorInfo(validatorBytes []byte) (*ValidatorInfo, error) {
 	return vInfo, nil
 }
 
-func ExtractValidationArtifacts(proof []byte) (*valiadationArtifacts, error) {
+func ExtractValidationArtifacts(proof []byte) (*ValiadationArtifacts, error) {
 	return extractValidationArtifacts(proof)
 }
 
-func extractValidationArtifacts(proof []byte) (*valiadationArtifacts, error) {
+func extractValidationArtifacts(proof []byte) (*ValiadationArtifacts, error) {
 	cap, err := protoutil.UnmarshalChaincodeActionPayload(proof)
 	if err != nil {
 		return nil, err
@@ -89,6 +89,7 @@ func extractValidationArtifacts(proof []byte) (*valiadationArtifacts, error) {
 		payload      payloadInfo
 		payloadArray []payloadInfo
 	)
+	fmt.Println(string(respPayload.Response.Payload))
 	err = json.Unmarshal(respPayload.Response.Payload, &payloadArray)
 	if err != nil {
 		// try if it is from getOutMessage
@@ -99,7 +100,7 @@ func extractValidationArtifacts(proof []byte) (*valiadationArtifacts, error) {
 		payload = payloadArray[len(payloadArray)-1]
 	}
 
-	return &valiadationArtifacts{
+	return &ValiadationArtifacts{
 		rwset:        respPayload.Results,
 		prp:          cap.Action.ProposalResponsePayload,
 		endorsements: cap.Action.Endorsements,
@@ -108,7 +109,7 @@ func extractValidationArtifacts(proof []byte) (*valiadationArtifacts, error) {
 	}, nil
 }
 
-func PreCheck(proof, payload []byte, cid string) (*valiadationArtifacts, error) {
+func PreCheck(proof, payload []byte, cid string) (*ValiadationArtifacts, error) {
 	// Get the validation artifacts that help validate the chaincodeID and policy
 	artifact, err := extractValidationArtifacts(proof)
 	if err != nil {
@@ -264,7 +265,7 @@ func (id *PolicyEvaluator) Evaluate(policyBytes []byte, signatureSet []*protouti
 	return policy.EvaluateSignedData(signatureSet)
 }
 
-func GetSignatureSet(artifact *valiadationArtifacts) []*protoutil.SignedData {
+func GetSignatureSet(artifact *ValiadationArtifacts) []*protoutil.SignedData {
 	signatureSet := []*protoutil.SignedData{}
 	for _, endorsement := range artifact.endorsements {
 		data := make([]byte, len(artifact.prp)+len(endorsement.Endorser))
@@ -275,7 +276,7 @@ func GetSignatureSet(artifact *valiadationArtifacts) []*protoutil.SignedData {
 			// set the data that is signed; concatenation of proposal response bytes and endorser ID
 			Data: data,
 			// set the identity that signs the message: it's the endorser
-			Identity: endorsement.Endorser,
+			// Identity: endorsement.Endorser,
 			// set the signature
 			Signature: endorsement.Signature})
 	}
