@@ -16,6 +16,8 @@ const (
 	CONTEXT_ARGMAP    = "argmap"
 	CONTEXT_INTERFACE = "interface"
 	ERROR             = "error"
+
+	ASSEMBLYSCRIPT_ENTRY = "_start"
 )
 
 var (
@@ -45,6 +47,8 @@ type Contract struct {
 
 func NewWithStore(code []byte, context map[string]interface{}, libs []*wasmlib.ImportLib, store *wasmtime.Store) (*Wasm, error) {
 	wasm := &Wasm{}
+	wasiConfig := wasmtime.NewWasiConfig()
+	store.SetWasi(wasiConfig)
 	linker := wasmtime.NewLinker(store.Engine)
 	for _, lib := range libs {
 		err := linker.DefineFunc(store, lib.Module, lib.Name, lib.Func)
@@ -57,6 +61,10 @@ func NewWithStore(code []byte, context map[string]interface{}, libs []*wasmlib.I
 		if err != nil {
 			return nil, err
 		}
+	}
+	err := linker.DefineWasi()
+	if err != nil {
+		return nil, err
 	}
 	module, err := wasmtime.NewModule(store.Engine, code)
 	if err != nil {
@@ -88,6 +96,8 @@ func New(code []byte, context map[string]interface{}, libs []*wasmlib.ImportLib)
 	cfg.SetWasmReferenceTypes(true)
 	cfg.SetConsumeFuel(true)
 	store := wasmtime.NewStore(wasmtime.NewEngineWithConfig(cfg))
+	wasiConfig := wasmtime.NewWasiConfig()
+	store.SetWasi(wasiConfig)
 	linker := wasmtime.NewLinker(store.Engine)
 	for _, lib := range libs {
 		err := linker.DefineFunc(store, lib.Module, lib.Name, lib.Func)
@@ -95,17 +105,7 @@ func New(code []byte, context map[string]interface{}, libs []*wasmlib.ImportLib)
 			return nil, err
 		}
 	}
-	err := linker.DefineFunc(
-		store,
-		"env",
-		"set_data",
-		func(caller *wasmtime.Caller, key_ptr int64, key_len int64, value_ptr int64, value_len int64) {
-			mem := caller.GetExport("memory").Memory()
-			buf := mem.UnsafeData(store)
-			key := buf[key_ptr : key_ptr+key_len]
-			value := buf[value_ptr : value_ptr+value_len]
-			context[string(key)] = value
-		})
+	err := linker.DefineWasi()
 	if err != nil {
 		return nil, err
 	}
@@ -134,6 +134,13 @@ func (w *Wasm) Execute(input []byte, wasmGasLimit uint64) (ret []byte, gasUsed u
 	payload := &pb.InvokePayload{}
 	if err := proto.Unmarshal(input, payload); err != nil {
 		return nil, 0, err
+	}
+
+	if w.Instance.GetFunc(w.Store, ASSEMBLYSCRIPT_ENTRY) != nil {
+		_, err := w.Instance.GetFunc(w.Store, ASSEMBLYSCRIPT_ENTRY).Call(w.Store)
+		if err != nil {
+			return nil, 0, err
+		}
 	}
 
 	if payload.Method == "" {
