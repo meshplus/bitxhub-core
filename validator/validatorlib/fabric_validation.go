@@ -89,7 +89,6 @@ func extractValidationArtifacts(proof []byte) (*ValiadationArtifacts, error) {
 		payload      payloadInfo
 		payloadArray []payloadInfo
 	)
-	fmt.Println(string(respPayload.Response.Payload))
 	err = json.Unmarshal(respPayload.Response.Payload, &payloadArray)
 	if err != nil {
 		// try if it is from getOutMessage
