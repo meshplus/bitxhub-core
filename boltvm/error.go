@@ -174,6 +174,9 @@ const (
 	RoleNotGovernanceAdminCode ErrorCode = "1040014"
 	RoleNotGovernanceAdminMsg  ErrorMsg  = "the role(%s) is not governane admin"
 
+	RoleDuplicateAccountCode ErrorCode = "1040015"
+	RoleDuplicateAccountMsg  ErrorMsg  = "the account %s has been occupied by %s"
+
 	// node
 	NodeInternalErrCode ErrorCode = "2050000"
 	NodeInternalErrMsg  ErrorMsg  = "%s"
@@ -523,52 +526,6 @@ const (
 	DidNotFrozenMsg  ErrorMsg  = "%s was not frozen"
 
 	DidDeleteAdminErrCode ErrorCode = "1140014"
-	DidDeleteAdminErrMsg  ErrorMsg  = "can not delete admin, rm admin first"
-
-	// did
-	DidInternalErrCode ErrorCode = "2130000"
-	DidInternalErrMsg  ErrorMsg  = "%s"
-
-	DidCallerNotMatchCode ErrorCode = "1130001"
-	DidCallerNotMatchMsg  ErrorMsg  = "tx.From(%s) and callerDID:(%s) not the comply"
-
-	DidRegistryAlreadyInitCode ErrorCode = "1130002"
-	DidRegistryAlreadyInitMsg  ErrorMsg  = "init err, already init"
-
-	DidCallerNoPermissionCode ErrorCode = "1130003"
-	DidCallerNoPermissionMsg  ErrorMsg  = "caller(%s) has no permission"
-
-	DidRegistryNotInitCode ErrorCode = "1130004"
-	DidRegistryNotInitMsg  ErrorMsg  = "Registry not initialized"
-
-	DidMethodNotValidCode ErrorCode = "1130005"
-	DidMethodNotValidMsg  ErrorMsg  = "(%s) not valid method format"
-
-	DidMethodNotBelongCode ErrorCode = "1130006"
-	DidMethodNotBelongMsg  ErrorMsg  = "method(%s) not belongs to caller(%s)"
-
-	DidMethodFrozenCode ErrorCode = "1130007"
-	DidMethodFrozenMsg  ErrorMsg  = "method(%s) was already frozen"
-
-	DidMethodNotFrozenCode ErrorCode = "1130008"
-	DidMethodNotFrozenMsg  ErrorMsg  = "method(%s) was not frozen"
-
-	DidCallerNoEnoughPermissionCode ErrorCode = "1130009"
-	DidCallerNoEnoughPermissionMsg  ErrorMsg  = "caller(%s) doesn't have enough permission"
-
-	DidRemoveSuperAdminErrCode ErrorCode = "1130010"
-	DidRemoveSuperAdminErrMsg  ErrorMsg  = "cannot rm super admin"
-
-	DidNotOnTheChainCode ErrorCode = "1130011"
-	DidNotOnTheChainMsg  ErrorMsg  = "DID(%s) not on the chain(%s)"
-
-	DidAlreadyFrozenCode ErrorCode = "1130012"
-	DidAlreadyFrozenMsg  ErrorMsg  = "%s was already frozen"
-
-	DidNotFrozenCode ErrorCode = "1130013"
-	DidNotFrozenMsg  ErrorMsg  = "%s was not frozen"
-
-	DidDeleteAdminErrCode ErrorCode = "1130014"
 	DidDeleteAdminErrMsg  ErrorMsg  = "can not delete admin, rm admin first"
 
 	// supervise
