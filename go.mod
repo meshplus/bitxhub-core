@@ -4,7 +4,10 @@ go 1.13
 
 require (
 	github.com/Shopify/sarama v1.27.0 // indirect
+	github.com/binance-chain/tss-lib v0.0.0-20201118045712-70b2cb4bf916
+	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/bytecodealliance/wasmtime-go v0.34.0
+	github.com/deckarep/golang-set v0.0.0-20180603214616-504e848d77ea
 	github.com/ethereum/go-ethereum v1.10.4
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/mock v1.5.0
@@ -19,8 +22,8 @@ require (
 	github.com/libp2p/go-libp2p-core v0.3.0
 	github.com/looplab/fsm v0.2.0
 	github.com/magiconair/properties v1.8.4 // indirect
-	github.com/meshplus/bitxhub-kit v1.2.1-0.20210902085548-07f4fa85bfc9
-	github.com/meshplus/bitxhub-model v1.2.1-0.20211122062102-4e6856663e73
+	github.com/meshplus/bitxhub-kit v1.2.1-0.20220325052414-bc17176c509d
+	github.com/meshplus/bitxhub-model v1.2.1-0.20220407083019-e55040281b3f
 	github.com/miekg/pkcs11 v1.0.3 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/pelletier/go-toml v1.8.1 // indirect
@@ -33,12 +36,18 @@ require (
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/sykesm/zap-logfmt v0.0.4 // indirect
+	go.uber.org/atomic v1.7.0
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.16.0 // indirect
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
 	golang.org/x/text v0.3.5 // indirect
 	google.golang.org/genproto v0.0.0-20201119123407-9b1e624d6bc4 // indirect
 	google.golang.org/grpc v1.33.2 // indirect
+	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
+
+replace github.com/binance-chain/tss-lib => github.com/dawn-to-dusk/tss-lib v1.3.3-0.20220330081758-f404e10a1268
+
+replace github.com/agl/ed25519 => github.com/binance-chain/edwards25519 v0.0.0-20200305024217-f36fc4b53d43
