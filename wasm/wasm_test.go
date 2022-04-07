@@ -1,10 +1,8 @@
 package wasm
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"sync"
 	"testing"
 
 	"github.com/meshplus/bitxhub-core/wasm/wasmlib"
@@ -19,16 +17,9 @@ func TestExecute(t *testing.T) {
 	data, err := ioutil.ReadFile("./testdata/wasm_test.wasm")
 	assert.Nil(t, err)
 
-	contract := &Contract{
-		Code: data,
-		Hash: &types.Hash{},
-	}
-
-	bytes, err := json.Marshal(contract)
-	assert.Nil(t, err)
-	imports := NewEmptyImports()
-	instances := &sync.Map{}
-	wasm, err := New(bytes, imports, instances)
+	libs := []*wasmlib.ImportLib{}
+	context := make(map[string]interface{})
+	wasm, err := New(data, context, libs)
 	assert.Nil(t, err)
 	input := &pb.InvokePayload{
 		Method: "a",
@@ -51,17 +42,9 @@ func TestImportExecute(t *testing.T) {
 	assert.Nil(t, err)
 	hello := "hello world"
 
-	contract := &Contract{
-		Code: data,
-		Hash: &types.Hash{},
-	}
-
-	bytes, err := json.Marshal(contract)
-	assert.Nil(t, err)
-	imports := wasmlib.New()
-	assert.Nil(t, err)
-	instances := &sync.Map{}
-	wasm, err := New(bytes, imports, instances)
+	libs := []*wasmlib.ImportLib{}
+	context := make(map[string]interface{})
+	wasm, err := New(data, context, libs)
 	assert.Nil(t, err)
 	input := &pb.InvokePayload{
 		Method: "start_verify",
@@ -96,17 +79,9 @@ func BenchmarkImportExecute(b *testing.B) {
 	assert.Nil(b, err)
 	hello := "hello world"
 
-	contract := &Contract{
-		Code: data,
-		Hash: &types.Hash{},
-	}
-
-	bytes, err := json.Marshal(contract)
-	assert.Nil(b, err)
-	imports := wasmlib.New()
-	assert.Nil(b, err)
-	instances := &sync.Map{}
-	wasm, err := New(bytes, imports, instances)
+	libs := []*wasmlib.ImportLib{}
+	context := make(map[string]interface{})
+	wasm, err := New(data, context, libs)
 	assert.Nil(b, err)
 	input := &pb.InvokePayload{
 		Method: "start_verify",

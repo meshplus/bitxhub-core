@@ -1,28 +1,25 @@
 package validator
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"strconv"
-	"sync"
 	"testing"
 
 	"github.com/meshplus/bitxhub-core/validator/validatorlib"
 	"github.com/meshplus/bitxhub-core/wasm"
-	"github.com/meshplus/bitxhub-kit/types"
 	"github.com/meshplus/bitxhub-model/pb"
 	"github.com/stretchr/testify/require"
 )
 
 func TestWasmValidator(t *testing.T) {
-	wasmBytes, err := ioutil.ReadFile("./testdata/hpc_demo.wasm")
+	wasmBytes, err := ioutil.ReadFile("./testdata/validating.wasm")
 	require.Nil(t, err)
 
-	proof, err := ioutil.ReadFile("./testdata/proof_1.0.0_rc")
+	proof, err := ioutil.ReadFile("./testdata/proof_1.0.0_rc_complex")
 	require.Nil(t, err)
 
-	validators, err := ioutil.ReadFile("./testdata/validator_1.0.0_rc")
+	validators, err := ioutil.ReadFile("./testdata/validator_1.0.0_rc_complex")
 	require.Nil(t, err)
 
 	content := &pb.Content{
@@ -41,19 +38,10 @@ func TestWasmValidator(t *testing.T) {
 	body, err := payload.Marshal()
 	require.Nil(t, err)
 
-	validator := &WasmValidator{
-		instances: &sync.Map{},
-	}
-
-	wasmCode := &wasm.Contract{
-		Code: wasmBytes,
-		Hash: types.NewHashByStr("0x9f41DD84524bF8A42F8ab58eCFCA6E1752D6Fd93fE8dc00Af4c71963c97dB59f"),
-	}
-	contractBytes, err := json.Marshal(wasmCode)
-	require.Nil(t, err)
-	imports := validatorlib.New()
-	require.Nil(t, err)
-	wasm, err := wasm.New(contractBytes, imports, validator.instances)
+	validator := &WasmValidator{}
+	context := make(map[string]interface{})
+	libs := validatorlib.NewValidatorLibs(context)
+	wasm, err := wasm.New(wasmBytes, context, libs)
 	require.Nil(t, err)
 	validator.wasm = wasm
 	err = validator.setTransaction("0xe02d8fdacd59020d7f292ab3278d13674f5c404d", proof, string(validators), body)
@@ -91,19 +79,10 @@ func BenchmarkHpcWasm_Verify(b *testing.B) {
 	body, err := payload.Marshal()
 	require.Nil(b, err)
 
-	validator := &WasmValidator{
-		instances: &sync.Map{},
-	}
-
-	wasmCode := &wasm.Contract{
-		Code: wasmBytes,
-		Hash: types.NewHashByStr("0x9f41DD84524bF8A42F8ab58eCFCA6E1752D6Fd93fE8dc00Af4c71963c97dB59f"),
-	}
-	contractBytes, err := json.Marshal(wasmCode)
-	require.Nil(b, err)
-	imports := validatorlib.New()
-	require.Nil(b, err)
-	wasm, err := wasm.New(contractBytes, imports, validator.instances)
+	validator := &WasmValidator{}
+	context := make(map[string]interface{})
+	libs := validatorlib.NewValidatorLibs(context)
+	wasm, err := wasm.New(wasmBytes, context, libs)
 	require.Nil(b, err)
 	validator.wasm = wasm
 	err = validator.setTransaction("0xe02d8fdacd59020d7f292ab3278d13674f5c404d", []byte("111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"), "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111", body)
