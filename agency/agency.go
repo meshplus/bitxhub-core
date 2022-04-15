@@ -35,13 +35,16 @@ type PierHAConstructor func(client HAClient, pierID string) PierHA
 
 type OrderConstructor func(opt ...order.Option) (order.Order, error)
 
+type OffchainTransmissionConstructor func(appchainID string, peerMgr PeerManager, client Client) OffChainTransmission
+
 var (
-	TxsExecutorConstructorM = make(map[string]TxsExecutorConstructor)
-	ContractConstructorM    = make(map[string]*ContractInfo)
-	RegisterConstructorM    = make(map[string]RegistryConstructor)
-	LicenseConstructorM     = make(map[string]LicenseConstructor)
-	PierHAConstructorM      = make(map[string]PierHAConstructor)
-	OrderConstructorM       = make(map[string]OrderConstructor)
+	TxsExecutorConstructorM         = make(map[string]TxsExecutorConstructor)
+	ContractConstructorM            = make(map[string]*ContractInfo)
+	RegisterConstructorM            = make(map[string]RegistryConstructor)
+	LicenseConstructorM             = make(map[string]LicenseConstructor)
+	PierHAConstructorM              = make(map[string]PierHAConstructor)
+	OrderConstructorM               = make(map[string]OrderConstructor)
+	OffchainTransmissionContructorM = make(map[string]OffchainTransmissionConstructor)
 )
 
 func RegisterOrderConstructor(typ string, f OrderConstructor) {
@@ -121,6 +124,18 @@ func RegisterPierHAConstructor(typ string, f PierHAConstructor) {
 
 func GetPierHAConstructor(typ string) (PierHAConstructor, error) {
 	con, ok := PierHAConstructorM[typ]
+	if !ok {
+		return nil, fmt.Errorf("type %s is unsupported", typ)
+	}
+	return con, nil
+}
+
+func RegisterOffchainTransmissionConstructor(typ string, f OffchainTransmissionConstructor) {
+	OffchainTransmissionContructorM[typ] = f
+}
+
+func GetOffchainTransmissionConstructor(typ string) (OffchainTransmissionConstructor, error) {
+	con, ok := OffchainTransmissionContructorM[typ]
 	if !ok {
 		return nil, fmt.Errorf("type %s is unsupported", typ)
 	}
