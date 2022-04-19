@@ -54,3 +54,11 @@ type OrderPeerManager interface {
 	// OrderPeers return all OrderPeers include account and id.
 	OrderPeers() map[uint64]*pb.VpInfo
 }
+
+type TssPeerManager interface {
+	// SubscribeTssMessage subscribes to the message of the tss module
+	SubscribeTssMessage(ch chan<- *pb.Message) event.Subscription
+
+	// SubscribeTssSignRes subscribes to the sign result
+	SubscribeTssSignRes(ch chan<- *pb.Message) event.Subscription
+}
