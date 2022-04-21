@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/Shopify/sarama v1.27.0 // indirect
-	github.com/binance-chain/tss-lib v0.0.0-20201118045712-70b2cb4bf916
+	github.com/binance-chain/tss-lib v1.3.3-0.20210411025750-fffb56b30511
 	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/bytecodealliance/wasmtime-go v0.34.0
 	github.com/deckarep/golang-set v0.0.0-20180603214616-504e848d77ea
@@ -18,7 +18,7 @@ require (
 	github.com/iancoleman/orderedmap v0.2.0
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible // indirect
 	github.com/lestrrat-go/strftime v1.0.3 // indirect
-	github.com/libp2p/go-libp2p-core v0.6.1
+	github.com/libp2p/go-libp2p-core v0.5.6
 	github.com/looplab/fsm v0.2.0
 	github.com/magiconair/properties v1.8.4 // indirect
 	github.com/meshplus/bitxhub-kit v1.2.1-0.20220325052414-bc17176c509d
