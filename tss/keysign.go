@@ -144,7 +144,7 @@ func (t *TssManager) generateSignature(msgsToSign [][]byte, req keysign.Request,
 	), nil
 }
 
-func (t *TssManager) SignMessage(msgsToSign [][]byte, localStateItem *storage.KeygenLocalState, signers []crypto.PubKey) ([]*bcommon.ECSignature, error) {
+func (t *TssManager) SignMessage(msgsToSign [][]byte, localStateItem *storage.KeygenLocalState, signers []crypto.PubKey) ([]*bcommon.SignatureData, error) {
 	// 1. get parties info
 	partiesID, localPartyID, err := conversion.GetParties(signers, t.localPubK, t.p2pComm.Peers())
 	if err != nil {
@@ -153,7 +153,7 @@ func (t *TssManager) SignMessage(msgsToSign [][]byte, localStateItem *storage.Ke
 
 	// 2. make channel
 	outCh := make(chan btss.Message, 2*len(partiesID)*len(msgsToSign))
-	endCh := make(chan *signing.SignatureData, len(partiesID)*len(msgsToSign))
+	endCh := make(chan bcommon.SignatureData, len(partiesID)*len(msgsToSign))
 	errCh := make(chan struct{})
 
 	// sign multiple messages and construct a map mapping from messages to localParty
@@ -271,11 +271,11 @@ func (t *TssManager) startBatchSigning(keySignPartyMap *sync.Map, msgNum int) bo
 func (t *TssManager) processKeySign(reqNum int,
 	errChan chan struct{},
 	outCh <-chan btss.Message,
-	endCh <-chan *signing.SignatureData) ([]*bcommon.ECSignature, error) {
+	endCh <-chan bcommon.SignatureData) ([]*bcommon.SignatureData, error) {
 	defer t.logger.Debug("finished keysign processd")
 	t.logger.Debug("start to read messages from local party")
 
-	var signatures []*bcommon.ECSignature
+	var signatures []*bcommon.SignatureData
 
 	for {
 		select {
@@ -349,7 +349,7 @@ func (t *TssManager) processKeySign(reqNum int,
 			}
 
 		case msg := <-endCh:
-			signatures = append(signatures, msg.GetSignature())
+			signatures = append(signatures, &msg)
 			if len(signatures) == reqNum {
 				t.logger.Debug("we have done the key sign")
 				err := t.NotifyTaskDone()
