@@ -181,7 +181,7 @@ func (t *TssManager) processTSSMsg(wireMsg *message.WireMessage, msgType pb.Mess
 	// 3 process msg
 	// 3.1 for the unicast message, we only update it local party to advance rounds
 	if !wireMsg.Routing.IsBroadcast {
-		t.logger.Debugf("msg from %s to %+v", wireMsg.Routing.From, wireMsg.Routing.To)
+		t.logger.Debugf("msg from %s to %+v", wireMsg.Routing.From.Id, wireMsg.Routing.To[0].Id)
 		return t.updateLocal(wireMsg)
 	}
 

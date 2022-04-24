@@ -155,6 +155,7 @@ func (t *TssManager) setTssMsgInfo(
 	t.TssMsgChan = make(chan *pb.Message, msgNum)
 	t.inMsgHandleStopChan = make(chan struct{})
 	t.taskDoneChan = make(chan struct{})
+	t.blameMgr = blame.NewBlameManager(t.logger)
 }
 
 func (t *TssManager) setPartyInfo(partyInfo *conversion.PartyInfo) {

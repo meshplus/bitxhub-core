@@ -93,16 +93,9 @@ func (t *TssManager) Keysign(req keysign.Request) (*keysign.Response, error) {
 
 	var generatedSig *keysign.Response
 	var errGen error
-	wg := sync.WaitGroup{}
-	wg.Add(1)
 
-	// todo fbz: 不需要协程
 	// 2 The first coroutine: generate the signature ourselves
-	go func() {
-		defer wg.Done()
-		generatedSig, errGen = t.generateSignature(msgsToSign, req, localStateItem)
-	}()
-	wg.Wait()
+	generatedSig, errGen = t.generateSignature(msgsToSign, req, localStateItem)
 
 	return generatedSig, errGen
 }
