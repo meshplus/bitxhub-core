@@ -23,7 +23,7 @@ type Tss interface {
 
 	GetTssPubkey() (string, *ecdsa.PublicKey, error)
 
-	GetTssKeyGenPartiesPkMap() (map[string][]byte, error)
+	GetTssInfo() (*pb.TssInfo, error)
 
 	DeleteCulpritsFromLocalState(culprits []string) error
 }

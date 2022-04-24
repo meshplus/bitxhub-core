@@ -241,7 +241,7 @@ func (t *TssManager) GetTssPubkey() (string, *ecdsa.PublicKey, error) {
 	return state.PubKeyAddr, pk, nil
 }
 
-func (t *TssManager) GetTssKeyGenPartiesPkMap() (map[string][]byte, error) {
+func (t *TssManager) GetTssInfo() (*pb.TssInfo, error) {
 	// 1. get pool addr from file
 	filePath := filepath.Join(t.repoPath, t.conf.TssConfPath, storage.PoolPkAddrFileName)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -260,7 +260,10 @@ func (t *TssManager) GetTssKeyGenPartiesPkMap() (map[string][]byte, error) {
 	}
 
 	// 3. get parties pks from local state
-	return state.ParticipantPksMap, nil
+	return &pb.TssInfo{
+		PartiesPkMap: state.ParticipantPksMap,
+		Pubkey:       state.PubKeyData,
+	}, nil
 }
 
 func (t *TssManager) DeleteCulpritsFromLocalState(culprits []string) error {
