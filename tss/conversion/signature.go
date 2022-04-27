@@ -27,7 +27,7 @@ func NewSignature(msg, r, s, recoveryID string, data []byte) Signature {
 }
 
 // BatchSignatures package the signature list and message list as message signature list
-func BatchSignatures(sigs []*bcommon.ECSignature, msgsToSign [][]byte) []Signature {
+func BatchSignatures(sigs []*bcommon.SignatureData, msgsToSign [][]byte) []Signature {
 	signatures := []Signature{}
 	for i, sig := range sigs {
 		msg := base64.StdEncoding.EncodeToString(msgsToSign[i])
