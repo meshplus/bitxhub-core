@@ -21,6 +21,7 @@ type Tss interface {
 
 	PutTssMsg(msg *pb.Message)
 
+	// todo fbz: 从内存读
 	GetTssPubkey() (string, *ecdsa.PublicKey, error)
 
 	GetTssInfo() (*pb.TssInfo, error)

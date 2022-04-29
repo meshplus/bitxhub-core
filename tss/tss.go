@@ -201,7 +201,7 @@ func (t *TssManager) Start(threshold uint64) {
 }
 
 func (t *TssManager) Stop() {
-	close(t.stopChan)
+	//close(t.stopChan)
 	err := t.p2pComm.Stop()
 	if err != nil {
 		t.logger.Error("error in shutdown the p2p server")
@@ -211,6 +211,7 @@ func (t *TssManager) Stop() {
 
 func (t *TssManager) PutTssMsg(msg *pb.Message) {
 	t.TssMsgChan <- msg
+	t.logger.Debugf("PutTssMsg")
 	return
 }
 

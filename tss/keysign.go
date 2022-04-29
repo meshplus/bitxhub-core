@@ -42,7 +42,7 @@ var (
 )
 
 func (t *TssManager) Keysign(req keysign.Request) (*keysign.Response, error) {
-	t.logger.Info("Received keysign request")
+	t.logger.Infof("Received keysign request, signers len: %d", len(req.SignerPubKeys))
 
 	// 1. analysis req
 	// 1.0 get msgID
@@ -96,6 +96,7 @@ func (t *TssManager) Keysign(req keysign.Request) (*keysign.Response, error) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
+	// todo fbz: 不需要协程
 	// 2 The first coroutine: generate the signature ourselves
 	go func() {
 		defer wg.Done()
@@ -150,6 +151,7 @@ func (t *TssManager) SignMessage(msgsToSign [][]byte, localStateItem *storage.Ke
 	if err != nil {
 		return nil, fmt.Errorf("fail to form key sign party: %w", err)
 	}
+	t.logger.Debugf("----parties len: %d", len(partiesID))
 
 	// 2. make channel
 	outCh := make(chan btss.Message, 2*len(partiesID)*len(msgsToSign))

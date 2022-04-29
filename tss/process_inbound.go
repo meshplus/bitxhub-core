@@ -170,7 +170,8 @@ func (t *TssManager) processTSSMsg(wireMsg *message.WireMessage, msgType pb.Mess
 	}
 	ok, err = conversion.VerifySignature(pubkey, wireMsg.Message, wireMsg.Sig, t.msgID)
 	if err != nil {
-		return fmt.Errorf("verify signature error: %v", err)
+		pid, _ := conversion.GetPIDFromPartyID(dataOwner)
+		return fmt.Errorf("verify signature error: %v, dataOwnerId: %s, dataOwnerPid: %s", err, dataOwner.Id, pid.String())
 	}
 	if !ok {
 		t.logger.Errorf("fail to verify the signature")
