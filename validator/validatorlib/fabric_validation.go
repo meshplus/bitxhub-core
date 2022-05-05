@@ -275,7 +275,7 @@ func GetSignatureSet(artifact *ValiadationArtifacts) []*protoutil.SignedData {
 			// set the data that is signed; concatenation of proposal response bytes and endorser ID
 			Data: data,
 			// set the identity that signs the message: it's the endorser
-			// Identity: endorsement.Endorser,
+			Identity: endorsement.Endorser,
 			// set the signature
 			Signature: endorsement.Signature})
 	}
