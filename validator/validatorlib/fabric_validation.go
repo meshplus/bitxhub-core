@@ -179,9 +179,9 @@ func ValidatePayload(info payloadInfo, ibtpBytes []byte) error {
 		return err
 	}
 
-	if info.Index != ibtp.Index {
-		return fmt.Errorf("ibtp index does not match proof index")
-	}
+	// if info.Index != ibtp.Index {
+	// 	return fmt.Errorf("ibtp index does not match proof index")
+	// }
 
 	payload := &pb.Payload{}
 	if err := payload.Unmarshal(ibtp.Payload); err != nil {
