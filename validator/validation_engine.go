@@ -48,7 +48,7 @@ func (ve *ValidationEngine) Validate(address, from string, proof, payload []byte
 	if !ok {
 		ve.Lock()
 		defer ve.Unlock()
-		ve.pools.SetPool(address, NewValidationPool(10))
+		ve.pools.SetPool(address, NewValidationPool(16))
 		vlt, err := ve.getValidator(address)
 		if err != nil {
 			return false, 0, err
