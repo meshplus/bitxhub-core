@@ -155,6 +155,7 @@ func (t *TssManager) setTssMsgInfo(
 	t.TssMsgChan = make(chan *pb.Message, msgNum)
 	t.inMsgHandleStopChan = make(chan struct{})
 	t.taskDoneChan = make(chan struct{})
+	t.blameMgr = blame.NewBlameManager(t.logger)
 }
 
 func (t *TssManager) setPartyInfo(partyInfo *conversion.PartyInfo) {
@@ -201,7 +202,7 @@ func (t *TssManager) Start(threshold uint64) {
 }
 
 func (t *TssManager) Stop() {
-	close(t.stopChan)
+	//close(t.stopChan)
 	err := t.p2pComm.Stop()
 	if err != nil {
 		t.logger.Error("error in shutdown the p2p server")
@@ -211,6 +212,7 @@ func (t *TssManager) Stop() {
 
 func (t *TssManager) PutTssMsg(msg *pb.Message) {
 	t.TssMsgChan <- msg
+	t.logger.Debugf("PutTssMsg")
 	return
 }
 
@@ -241,7 +243,7 @@ func (t *TssManager) GetTssPubkey() (string, *ecdsa.PublicKey, error) {
 	return state.PubKeyAddr, pk, nil
 }
 
-func (t *TssManager) GetTssKeyGenPartiesPkMap() (map[string][]byte, error) {
+func (t *TssManager) GetTssInfo() (*pb.TssInfo, error) {
 	// 1. get pool addr from file
 	filePath := filepath.Join(t.repoPath, t.conf.TssConfPath, storage.PoolPkAddrFileName)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -260,7 +262,10 @@ func (t *TssManager) GetTssKeyGenPartiesPkMap() (map[string][]byte, error) {
 	}
 
 	// 3. get parties pks from local state
-	return state.ParticipantPksMap, nil
+	return &pb.TssInfo{
+		PartiesPkMap: state.ParticipantPksMap,
+		Pubkey:       state.PubKeyData,
+	}, nil
 }
 
 func (t *TssManager) DeleteCulpritsFromLocalState(culprits []string) error {
