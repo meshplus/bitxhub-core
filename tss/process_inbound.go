@@ -170,7 +170,8 @@ func (t *TssManager) processTSSMsg(wireMsg *message.WireMessage, msgType pb.Mess
 	}
 	ok, err = conversion.VerifySignature(pubkey, wireMsg.Message, wireMsg.Sig, t.msgID)
 	if err != nil {
-		return fmt.Errorf("verify signature error: %v", err)
+		pid, _ := conversion.GetPIDFromPartyID(dataOwner)
+		return fmt.Errorf("verify signature error: %v, dataOwnerId: %s, dataOwnerPid: %s", err, dataOwner.Id, pid.String())
 	}
 	if !ok {
 		t.logger.Errorf("fail to verify the signature")
@@ -180,7 +181,7 @@ func (t *TssManager) processTSSMsg(wireMsg *message.WireMessage, msgType pb.Mess
 	// 3 process msg
 	// 3.1 for the unicast message, we only update it local party to advance rounds
 	if !wireMsg.Routing.IsBroadcast {
-		t.logger.Debugf("msg from %s to %+v", wireMsg.Routing.From, wireMsg.Routing.To)
+		t.logger.Debugf("msg from %s to %+v", wireMsg.Routing.From.Id, wireMsg.Routing.To[0].Id)
 		return t.updateLocal(wireMsg)
 	}
 
