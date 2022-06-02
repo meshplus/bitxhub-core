@@ -119,7 +119,7 @@ func (t *TssManager) generateSignature(msgsToSign [][]byte, req keysign.Request,
 	}
 
 	if !isSignMember {
-		t.logger.Infof("we(%s) are not the active signer", t.localPartyID)
+		t.logger.Infof("we(%s) are not the active signer", pid)
 		return nil, ErrNotActiveSigner
 	}
 

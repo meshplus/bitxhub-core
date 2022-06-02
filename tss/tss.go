@@ -25,8 +25,12 @@ import (
 
 var _ Tss = (*TssManager)(nil)
 
-// TssManager is the structure that can provide all keysign and key gen features
+// TssManager is the structure that can provide all Keygen and Keysign features
 type TssManager struct {
+	// ========= The following is the information that the TSS module records after the Keygen process for external query
+	keygenLocalState *storage.KeygenLocalState
+
+	// ========= The following is the structure needed for Keygen or Keysign inside the TSS module
 	msgID string
 	// the number of msgs contained in the current request (1 for Keygen request is and n for Keysign request)
 	msgNum          int
@@ -200,6 +204,9 @@ func (t *TssManager) renderToP2P(sendMsg *message.SendMsgChan) {
 
 func (t *TssManager) Start(threshold uint64) {
 	t.threshold = int(threshold)
+	if err := t.LoadTssLoaclState(); err != nil {
+		t.logger.Warn("load tss pubkey error: %v", err)
+	}
 	t.logger.Infof("Starting the TSS Manager: n-%d, t-%d", len(t.partyInfo.PartyIDMap), threshold)
 }
 
@@ -218,55 +225,80 @@ func (t *TssManager) PutTssMsg(msg *pb.Message) {
 	return
 }
 
-func (t *TssManager) GetTssPubkey() (string, *ecdsa.PublicKey, error) {
+func (t *TssManager) LoadTssLoaclState() error {
 	// 1. get pool addr from file
 	filePath := filepath.Join(t.repoPath, t.conf.TssConfPath, storage.PoolPkAddrFileName)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return "", nil, err
+		return err
 	}
 
 	buf, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		return "", nil, fmt.Errorf("file to read from file(%s): %w", filePath, err)
+		return fmt.Errorf("file to read from file(%s): %w", filePath, err)
 	}
 
 	// 2. get local state by pool addr
 	state, err := t.stateMgr.GetLocalState(string(buf))
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to get local state: %s,  %v", string(buf), err)
+		return fmt.Errorf("failed to get local state: %s,  %v", string(buf), err)
 	}
 
-	// 3. get tss pk from local state
-	pk, err := conversion.GetECDSAPubKeyFromPubKeyData(state.PubKeyData)
+	t.keygenLocalState = state
+	//// 3. get tss pk from local state
+	//pk, err := conversion.GetECDSAPubKeyFromPubKeyData(state.PubKeyData)
+	//if err != nil {
+	//	return "", nil, fmt.Errorf("failed to get ECDSA pubKey from pubkey data: %v", err)
+	//}
+	//
+	//return state.PubKeyAddr, pk, nil
+	return nil
+}
+
+func (t *TssManager) GetTssPubkey() (string, *ecdsa.PublicKey, error) {
+	if t.keygenLocalState == nil {
+		return "", nil, fmt.Errorf("tss local state is nil")
+	}
+	pk, err := conversion.GetECDSAPubKeyFromPubKeyData(t.keygenLocalState.PubKeyData)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get ECDSA pubKey from pubkey data: %v", err)
 	}
 
-	return state.PubKeyAddr, pk, nil
+	return t.keygenLocalState.PubKeyAddr, pk, nil
 }
 
+//func (t *TssManager) LoadTssInfo() (*pb.TssInfo, error) {
+//	// 1. get pool addr from file
+//	filePath := filepath.Join(t.repoPath, t.conf.TssConfPath, storage.PoolPkAddrFileName)
+//	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+//		return nil, err
+//	}
+//
+//	buf, err := ioutil.ReadFile(filePath)
+//	if err != nil {
+//		return nil, fmt.Errorf("file to read from file(%s): %w", filePath, err)
+//	}
+//
+//	// 2. get local state by pool addr
+//	state, err := t.stateMgr.GetLocalState(string(buf))
+//	if err != nil {
+//		return nil, fmt.Errorf("failed to get local state: %s,  %v", string(buf), err)
+//	}
+//
+//	// 3. get parties pks from local state
+//	return &pb.TssInfo{
+//		PartiesPkMap: state.ParticipantPksMap,
+//		Pubkey:       state.PubKeyData,
+//	}, nil
+//}
+
 func (t *TssManager) GetTssInfo() (*pb.TssInfo, error) {
-	// 1. get pool addr from file
-	filePath := filepath.Join(t.repoPath, t.conf.TssConfPath, storage.PoolPkAddrFileName)
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return nil, err
+	if t.keygenLocalState == nil {
+		return nil, fmt.Errorf("tss local state is nil")
 	}
 
-	buf, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("file to read from file(%s): %w", filePath, err)
-	}
-
-	// 2. get local state by pool addr
-	state, err := t.stateMgr.GetLocalState(string(buf))
-	if err != nil {
-		return nil, fmt.Errorf("failed to get local state: %s,  %v", string(buf), err)
-	}
-
-	// 3. get parties pks from local state
 	return &pb.TssInfo{
-		PartiesPkMap: state.ParticipantPksMap,
-		Pubkey:       state.PubKeyData,
+		PartiesPkMap: t.keygenLocalState.ParticipantPksMap,
+		Pubkey:       t.keygenLocalState.PubKeyData,
 	}, nil
 }
 

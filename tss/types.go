@@ -22,11 +22,16 @@ type Tss interface {
 	PutTssMsg(msg *pb.Message)
 
 	// GetTssPubkey returns tss pool pubkey addr and pubkey
-	// todo fbz: 从内存读
 	GetTssPubkey() (string, *ecdsa.PublicKey, error)
 
 	// GetTssInfo returns tss pubkey and participants pubkey info
 	GetTssInfo() (*pb.TssInfo, error)
+
+	// LoadTssPubkey returns tss pool pubkey addr and pubkey from file
+	LoadTssLoaclState() error
+
+	//// LoadTssInfo returns tss pubkey and participants pubkey info from file
+	//LoadTssInfo() (*pb.TssInfo, error)
 
 	DeleteCulpritsFromLocalState(culprits []string) error
 }

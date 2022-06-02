@@ -224,7 +224,7 @@ func (t *TssManager) processKeyGen(errChan chan struct{},
 				t.logger.Errorf("fail to broadcast the keygen done")
 			}
 
-			// 2. save local state
+			// 2. save local state to file
 			ecdsaPk, err := conversion.GetTssPubKey(tssSaveData.ECDSAPub)
 			if err != nil {
 				t.logger.Errorf("fail to get threshold pubkey: %v", err)
@@ -241,7 +241,10 @@ func (t *TssManager) processKeyGen(errChan chan struct{},
 			if err = t.stateMgr.SaveLocalState(keyGenLocalStateItem); err != nil {
 				t.logger.Errorf("fail to save keygen result to storage: %w", err)
 			}
-			t.logger.Infof("rocessKeyGen end")
+
+			// 3. save tss info to memory
+			t.keygenLocalState = keyGenLocalStateItem
+			t.logger.Infof("processKeyGen end")
 			return ecdsaPk, pubAddr, nil
 		}
 	}
