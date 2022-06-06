@@ -14,6 +14,7 @@ const (
 	FabricRuleAddr    = "0x00000000000000000000000000000000000000a0"
 	SimFabricRuleAddr = "0x00000000000000000000000000000000000000a1"
 	HappyRuleAddr     = "0x00000000000000000000000000000000000000a2"
+	MultiSignAddr     = "0x00000000000000000000000000000000000000a3"
 )
 
 // Validator is the instance that can use wasm to verify transaction validity
@@ -81,6 +82,10 @@ func (ve *ValidationEngine) getValidator(address string) (Validator, error) {
 
 	if address == SimFabricRuleAddr {
 		return NewFabSimValidator(ve.logger), nil
+	}
+
+	if address == MultiSignAddr {
+		return NewMultiSignValidator(ve.logger), nil
 	}
 
 	if address == HappyRuleAddr {
