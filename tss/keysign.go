@@ -42,7 +42,9 @@ var (
 )
 
 func (t *TssManager) Keysign(req keysign.Request) (*keysign.Response, error) {
-	t.logger.Infof("Received keysign request, signers len: %d", len(req.SignerPubKeys))
+	t.logger.Infof("Received keysign request, signers: %v, msg: %v", req.SignerPubKeys, req.Messages)
+	t.tssKeyGenLocker.Lock()
+	defer t.tssKeyGenLocker.Unlock()
 
 	// 1. analysis req
 	// 1.0 get msgID
@@ -135,7 +137,7 @@ func (t *TssManager) generateSignature(msgsToSign [][]byte, req keysign.Request,
 		conversion.BatchSignatures(signatureData, msgsToSign),
 		status,
 		t.blameMgr.Blame,
-	), nil
+	), err
 }
 
 func (t *TssManager) SignMessage(msgsToSign [][]byte, localStateItem *storage.KeygenLocalState, signers []crypto.PubKey) ([]*bcommon.SignatureData, error) {

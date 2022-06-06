@@ -68,7 +68,8 @@ type TssManager struct {
 	culprits     []*btss.PartyID
 	culpritsLock *sync.RWMutex
 
-	tssKeyGenLocker *sync.Mutex
+	tssKeyGenLocker  *sync.Mutex
+	tssKeySignLocker *sync.Mutex
 
 	p2pComm  *p2p.Communication
 	stateMgr storage.LocalStateManager
@@ -137,6 +138,7 @@ func NewTss(
 		finishedParties:             make(map[string]bool),
 		culpritsLock:                &sync.RWMutex{},
 		tssKeyGenLocker:             &sync.Mutex{},
+		tssKeySignLocker:            &sync.Mutex{},
 		p2pComm:                     comm,
 		stateMgr:                    stateManager,
 		blameMgr:                    blame.NewBlameManager(logger),
