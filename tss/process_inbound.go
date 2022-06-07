@@ -161,7 +161,10 @@ func (t *TssManager) processTSSMsg(wireMsg *message.WireMessage, msgType pb.Mess
 	partyIDMap := t.getPartyInfo().PartyIDMap
 	dataOwner, ok := partyIDMap[wireMsg.Routing.From.Id]
 	if !ok {
-		t.logger.Errorf("error in find the data owner")
+		t.logger.WithFields(logrus.Fields{
+			"fromId":     wireMsg.Routing.From.Id,
+			"partyIDMap": partyIDMap,
+		}).Errorf("error in find the data owner")
 		return fmt.Errorf("error in find the data owner")
 	}
 	pubkey, err := conversion.GetPubKeyFromPartyID(dataOwner)
