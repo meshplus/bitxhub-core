@@ -18,7 +18,7 @@ import (
 )
 
 // ProcessInboundMessages process the different types of p2p msgs received==============================================
-func (t *TssManager) ProcessInboundMessages(wg *sync.WaitGroup) {
+func (t *TssInstance) ProcessInboundMessages(wg *sync.WaitGroup) {
 	t.logger.Debug("start processing inbound messages")
 	defer wg.Done()
 	defer t.logger.Debug("stop processing inbound messages")
@@ -41,7 +41,7 @@ func (t *TssManager) ProcessInboundMessages(wg *sync.WaitGroup) {
 }
 
 // ProcessOneMessage process one p2p msgs received======================================================================
-func (t *TssManager) ProcessOneMessage(msg *pb.Message) error {
+func (t *TssInstance) ProcessOneMessage(msg *pb.Message) error {
 	t.logger.Debug("start processing one message")
 	defer t.logger.Debug("finish processing one message")
 
@@ -49,86 +49,91 @@ func (t *TssManager) ProcessOneMessage(msg *pb.Message) error {
 		return fmt.Errorf("invalid message")
 	}
 
-	switch msg.Type {
-	case pb.Message_TSS_KEY_GEN, pb.Message_TSS_KEY_SIGN:
+	wireMsg := &message.WireMessage{}
+	if err := json.Unmarshal(msg.Data, wireMsg); err != nil {
+		return fmt.Errorf("wire msg unmarshal error: %v", err)
+	}
+
+	switch wireMsg.MsgType {
+	case message.TSSKeyGenMsg, message.TSSKeySignMsg:
 		// The message returned by the library method.
 		// These needs to be processed for party updates once received and acknowledged (broadcast messages need to be acknowledged).
-		var wireMsg message.WireMessage
-		if err := json.Unmarshal(msg.Data, &wireMsg); nil != err {
-			return fmt.Errorf("fail to unmarshal wire message: %w", err)
+		var taskMsg message.TaskMessage
+		if err := json.Unmarshal(wireMsg.MsgData, &taskMsg); nil != err {
+			return fmt.Errorf("fail to unmarshal task message: %w", err)
 		}
 
 		t.logger.WithFields(logrus.Fields{
-			"from":      wireMsg.Routing.From.Id,
-			"roundInfo": wireMsg.RoundInfo,
-			"msgType":   msg.Type,
+			"from":      taskMsg.Routing.From.Id,
+			"roundInfo": taskMsg.RoundInfo,
+			"msgType":   wireMsg.MsgType,
 		}).Debug("process wire msg")
 
-		return t.processTSSMsg(&wireMsg, msg.Type, false)
-	case pb.Message_TSS_KEY_GEN_VER, pb.Message_TSS_KEY_SIGN_VER:
+		return t.processTSSMsg(&taskMsg, wireMsg.MsgType, false)
+	case message.TSSKeyGenVerMsg, message.TSSKeySignVerMsg:
 		// The message is a confirmation for a broadcast message.
 		// We need to update the confirmation of the broadcast message after receiving it。
 		var bMsg message.BroadcastConfirmMessage
-		if err := json.Unmarshal(msg.Data, &bMsg); nil != err {
+		if err := json.Unmarshal(wireMsg.MsgData, &bMsg); nil != err {
 			return fmt.Errorf("fail to unmarshal broadcast confirm message")
 		}
 
 		t.logger.WithFields(logrus.Fields{
 			"from":      bMsg.FromID,
 			"roundInfo": bMsg.Key,
-			"msgType":   msg.Type,
+			"msgType":   wireMsg.MsgType,
 		}).Debug("process ver msg")
 
 		// we check whether this peer has already send us the VerMsg before update
 		ret := t.checkDupAndUpdateVerMsg(&bMsg, bMsg.FromID)
 		if ret {
-			return t.processVerMsg(&bMsg, msg.Type)
+			return t.processVerMsg(&bMsg, wireMsg.MsgType)
 		}
-	case pb.Message_TSS_CONTROL:
+	case message.TSSControlMsg:
 		// The message is a share request message about a broadcast message from another participant.
-		var wireMsg message.TssControl
-		if err := json.Unmarshal(msg.Data, &wireMsg); nil != err {
-			return fmt.Errorf("fail to unmarshal wire message: %w", err)
+		var controlMsg message.TssControl
+		if err := json.Unmarshal(wireMsg.MsgData, &controlMsg); nil != err {
+			return fmt.Errorf("fail to unmarshal control message: %w", err)
 		}
 
 		t.logger.WithFields(logrus.Fields{
-			"from":    wireMsg.FromID,
-			"reqKey":  wireMsg.ReqKey,
-			"reqType": msg.Type,
+			"from":    controlMsg.FromID,
+			"reqKey":  controlMsg.ReqKey,
+			"reqType": wireMsg.MsgType,
 		}).Debug("process control msg")
 
-		if wireMsg.Msg == nil {
-			return t.processRequestMsgFromParty([]string{wireMsg.FromID}, &wireMsg, false)
+		if controlMsg.Msg == nil {
+			return t.processRequestMsgFromParty([]string{controlMsg.FromID}, &controlMsg, false)
 		}
-		exist := t.blameMgr.ShareMgr.QueryAndDelete(wireMsg.ReqHash)
+		exist := t.blameMgr.ShareMgr.QueryAndDelete(controlMsg.ReqHash)
 		if !exist {
 			t.logger.Debug("this request does not exit, maybe already processed")
 			return nil
 		}
 		t.logger.Debug("we got the missing share from the peer")
-		return t.processTSSMsg(wireMsg.Msg, wireMsg.RequestType, true)
+		return t.processTSSMsg(controlMsg.Msg, controlMsg.RequestType, true)
 
-	case pb.Message_TSS_TASK_DONE:
+	case message.TSSTaskDone:
 		// If the message is received as the source node task has ended, check whether the task has been marked. If the message is marked, an error log is displayed.
 		// If not marked, check whether all other nodes are marked end, if so, close its own end signal channel to return.
 		// If not, that is, there is an end that has not received a signal, then we need to wait for their signal, so do not close the end signal channel, directly return.
-		var wireMsg message.TssTaskNotifier
-		if err := json.Unmarshal(msg.Data, &wireMsg); err != nil {
+		var doneMsg message.TssTaskNotifier
+		if err := json.Unmarshal(wireMsg.MsgData, &doneMsg); err != nil {
 			t.logger.Errorf("fail to unmarshal the notify message")
 			return nil
 		}
 
 		t.logger.WithFields(logrus.Fields{
-			"from":    wireMsg.FromID,
-			"reqType": msg.Type,
+			"from":    doneMsg.FromID,
+			"reqType": wireMsg.MsgType,
 		}).Debug("process task down msg")
 
-		if wireMsg.TaskDone {
+		if doneMsg.TaskDone {
 			// if we have already logged this node, we return to avoid close of a close channel
-			if t.finishedParties[wireMsg.FromID] {
-				return fmt.Errorf("duplicated notification from peer %s ignored", wireMsg.FromID)
+			if t.finishedParties[doneMsg.FromID] {
+				return fmt.Errorf("duplicated notification from peer %s ignored", doneMsg.FromID)
 			}
-			t.finishedParties[wireMsg.FromID] = true
+			t.finishedParties[doneMsg.FromID] = true
 			if len(t.finishedParties) == len(t.partyInfo.PartyIDMap)-1 {
 				t.logger.Debugf("we get the confirm of the nodes that generate the signature")
 				close(t.taskDoneChan)
@@ -142,7 +147,7 @@ func (t *TssManager) ProcessOneMessage(msg *pb.Message) error {
 
 // processTSSMsg =======================================================================================================
 // processTSSMsg processes the library message. If the library message is received properly, the process needs to continue
-func (t *TssManager) processTSSMsg(wireMsg *message.WireMessage, msgType pb.Message_Type, forward bool) error {
+func (t *TssInstance) processTSSMsg(wireMsg *message.TaskMessage, msgType message.TssMsgType, forward bool) error {
 	t.logger.WithFields(logrus.Fields{
 		"from":      wireMsg.Routing.From.Id,
 		"to":        wireMsg.Routing.To,
@@ -233,9 +238,9 @@ func (t *TssManager) processTSSMsg(wireMsg *message.WireMessage, msgType pb.Mess
 // - Unicast messages can be updated directly；
 // - Broadcast messages can be updated after confirmation.
 // updateLocal will apply the wireMsg to local keygen/keysign party
-func (t *TssManager) updateLocal(wireMsg *message.WireMessage) error {
+func (t *TssInstance) updateLocal(taskMsg *message.TaskMessage) error {
 	// 1 verify msg not empty
-	if wireMsg == nil || wireMsg.Routing == nil || wireMsg.Routing.From == nil {
+	if taskMsg == nil || taskMsg.Routing == nil || taskMsg.Routing.From == nil {
 		t.logger.Warn("wire msg is nil")
 		return fmt.Errorf("invalid wireMsg")
 	}
@@ -245,20 +250,20 @@ func (t *TssManager) updateLocal(wireMsg *message.WireMessage) error {
 	if partyInfo == nil {
 		return nil
 	}
-	dataOwnerPartyID, ok := partyInfo.PartyIDMap[wireMsg.Routing.From.Id]
+	dataOwnerPartyID, ok := partyInfo.PartyIDMap[taskMsg.Routing.From.Id]
 	if !ok {
 		return fmt.Errorf("get message from unknown party %s", dataOwnerPartyID.Id)
 	}
 
 	// 3 here we log down this peer as the latest unicast peer
-	if !wireMsg.Routing.IsBroadcast {
-		t.blameMgr.SetLastUnicastParty(dataOwnerPartyID.Id, wireMsg.RoundInfo)
+	if !taskMsg.Routing.IsBroadcast {
+		t.blameMgr.SetLastUnicastParty(dataOwnerPartyID.Id, taskMsg.RoundInfo)
 	}
 
-	// 4 get the WireMessage body content
+	// 4 get the TaskMessage body content
 	// it maybe multiple msg in keysign, but one keygen
 	var bulkMsg []BulkWireMsg
-	if err := json.Unmarshal(wireMsg.Message, &bulkMsg); err != nil {
+	if err := json.Unmarshal(taskMsg.Message, &bulkMsg); err != nil {
 		t.logger.Errorf("error to unmarshal the BulkMsg")
 		return err
 	}
@@ -357,7 +362,7 @@ func newJob(party btss.Party, wireBytes []byte, msgIdentifier string, from *btss
 }
 
 // doTssJob process a job in tssJobChan, essentially call update to advance to the next round
-func (t *TssManager) doTssJob(tssJobChan chan *tssJob, jobWg *sync.WaitGroup) {
+func (t *TssInstance) doTssJob(tssJobChan chan *tssJob, jobWg *sync.WaitGroup) {
 	defer func() {
 		jobWg.Done()
 	}()
@@ -389,10 +394,10 @@ func (t *TssManager) doTssJob(tssJobChan chan *tssJob, jobWg *sync.WaitGroup) {
 	}
 }
 
-func (t *TssManager) processInvalidMsgBlame(roundInfo string, round conversion.RoundInfo, err *btss.Error) error {
+func (t *TssInstance) processInvalidMsgBlame(roundInfo string, round conversion.RoundInfo, err *btss.Error) error {
 	// now we get the culprits ID, invalid message and signature the culprits sent
 	var culpritsID []string
-	var invalidMsgs []*message.WireMessage
+	var invalidMsgs []*message.TaskMessage
 	unicast := conversion.CheckUnicast(round)
 
 	// 1 record culprits
@@ -428,7 +433,7 @@ func (t *TssManager) processInvalidMsgBlame(roundInfo string, round conversion.R
 
 // Broadcast message processing1 =======================================================================================
 // receiverBroadcastHashToPeers broadcasts the hash of the received msg to all nodes except the source and myself
-func (t *TssManager) receiverBroadcastHashToPeers(wireMsg *message.WireMessage, msgType pb.Message_Type) error {
+func (t *TssInstance) receiverBroadcastHashToPeers(wireMsg *message.TaskMessage, msgType message.TssMsgType) error {
 	var ids []uint64
 	dataOwnerPartyID := wireMsg.Routing.From.Id
 	for id, _ := range t.p2pComm.Peers() {
@@ -457,7 +462,7 @@ func (t *TssManager) receiverBroadcastHashToPeers(wireMsg *message.WireMessage, 
 	return nil
 }
 
-func (t *TssManager) broadcastHashToPeers(key, msgHash string, msgType pb.Message_Type, parties []uint64) error {
+func (t *TssInstance) broadcastHashToPeers(key, msgHash string, msgType message.TssMsgType, parties []uint64) error {
 	broadcastConfirmMsg := &message.BroadcastConfirmMessage{
 		FromID: t.localPartyID,
 		Key:    key,
@@ -469,12 +474,13 @@ func (t *TssManager) broadcastHashToPeers(key, msgHash string, msgType pb.Messag
 	}
 	t.logger.Debug("broadcast VerMsg to all other parties")
 
-	p2pMsg := &pb.Message{
-		Type: msgType,
-		Data: buf,
+	wireMsg := &message.WireMessage{
+		MsgID:   t.msgID,
+		MsgType: msgType,
+		MsgData: buf,
 	}
 	t.renderToP2P(&message.SendMsgChan{
-		P2PMsg:    p2pMsg,
+		WireMsg:   wireMsg,
 		PartiesID: parties,
 	})
 
@@ -484,7 +490,7 @@ func (t *TssManager) broadcastHashToPeers(key, msgHash string, msgType pb.Messag
 // Broadcast message processing2 =======================================================================================
 // applyShare handle the sharing confirmation of broadcast messages.
 // check whether the number of caches is sufficient, if sufficient, can be stored to blame and update local
-func (t *TssManager) applyShare(localCacheItem *cache.LocalCacheItem, key string, msgType pb.Message_Type) error {
+func (t *TssInstance) applyShare(localCacheItem *cache.LocalCacheItem, key string, msgType message.TssMsgType) error {
 	unicast := true
 	if localCacheItem.Msg.Routing.IsBroadcast {
 		unicast = false
@@ -535,7 +541,7 @@ func (t *TssManager) applyShare(localCacheItem *cache.LocalCacheItem, key string
 // - 1 Checks whether the number reaches the threshold. If not, the verification fails
 // - 2 Check whether there is a sender in the list. If so, delete the sender and return with an error
 // - 3 Check whether the hash is consistent, if not, then return with validation failure
-func (t *TssManager) hashCheck(localCacheItem *cache.LocalCacheItem, threshold int) error {
+func (t *TssInstance) hashCheck(localCacheItem *cache.LocalCacheItem, threshold int) error {
 	// 1
 	if localCacheItem.TotalConfirmParty() < threshold {
 		t.logger.Debug("not enough nodes to evaluate the hash")
@@ -569,7 +575,7 @@ func (t *TssManager) hashCheck(localCacheItem *cache.LocalCacheItem, threshold i
 
 // getMsgHash query the hash of the message that most people agree to confirm. The number of confirmed messages must be t-1 or higher
 // t-1 was chosen because plus the sender of the message itself is t
-func (t *TssManager) getMsgHash(localCacheItem *cache.LocalCacheItem, threshold int) (string, error) {
+func (t *TssInstance) getMsgHash(localCacheItem *cache.LocalCacheItem, threshold int) (string, error) {
 	hash, freq, err := getHighestFreq(localCacheItem.ConfirmedList)
 	if err != nil {
 		t.logger.Errorf("fail to get the hash freq: %v", err)
@@ -606,7 +612,7 @@ func getHighestFreq(confirmedList map[string]string) (string, int, error) {
 // - The local has not received this message, but has received an acknowledgement hash from another participant
 // - Local received the message, but the message hash is not consistent with the majority of people is empty, need to request the correct MSG from other participants
 // Construct a message of type Contraol, where from is itself and to is the other participants unanimously identified in localCacheItem
-func (t *TssManager) requestShareFromPeer(localCacheItem *cache.LocalCacheItem, threshold int, key string, msgType pb.Message_Type) error {
+func (t *TssInstance) requestShareFromPeer(localCacheItem *cache.LocalCacheItem, threshold int, key string, msgType message.TssMsgType) error {
 	// query the hash of the message that most people agree to confirm
 	targetHash, err := t.getMsgHash(localCacheItem, threshold)
 	if err != nil {
@@ -632,13 +638,13 @@ func (t *TssManager) requestShareFromPeer(localCacheItem *cache.LocalCacheItem, 
 	}
 	t.blameMgr.ShareMgr.Set(targetHash)
 	switch msgType {
-	case pb.Message_TSS_KEY_GEN_VER:
-		msg.RequestType = pb.Message_TSS_KEY_GEN
+	case message.TSSKeyGenVerMsg:
+		msg.RequestType = message.TSSKeyGenMsg
 		return t.processRequestMsgFromParty(partysIDs, msg, true)
-	case pb.Message_TSS_KEY_SIGN_VER:
-		msg.RequestType = pb.Message_TSS_KEY_SIGN
+	case message.TSSKeySignVerMsg:
+		msg.RequestType = message.TSSKeySignMsg
 		return t.processRequestMsgFromParty(partysIDs, msg, true)
-	case pb.Message_TSS_KEY_SIGN, pb.Message_TSS_KEY_GEN:
+	case message.TSSKeySignMsg, message.TSSKeyGenMsg:
 		msg.RequestType = msgType
 		return t.processRequestMsgFromParty(partysIDs, msg, true)
 	default:
@@ -647,7 +653,7 @@ func (t *TssManager) requestShareFromPeer(localCacheItem *cache.LocalCacheItem, 
 	}
 }
 
-func (t *TssManager) processRequestMsgFromParty(partiesIDStr []string, msg *message.TssControl, requester bool) error {
+func (t *TssInstance) processRequestMsgFromParty(partiesIDStr []string, msg *message.TssControl, requester bool) error {
 	// we need to send msg to the peer
 	if !requester {
 		if msg == nil {
@@ -667,9 +673,10 @@ func (t *TssManager) processRequestMsgFromParty(partiesIDStr []string, msg *mess
 		return fmt.Errorf("fail to marshal the request body %w", err)
 	}
 
-	p2pMsg := &pb.Message{
-		Type: pb.Message_TSS_CONTROL,
-		Data: data,
+	wireMsg := &message.WireMessage{
+		MsgID:   t.msgID,
+		MsgType: message.TSSControlMsg,
+		MsgData: data,
 	}
 
 	partiesID := []uint64{}
@@ -681,13 +688,13 @@ func (t *TssManager) processRequestMsgFromParty(partiesIDStr []string, msg *mess
 		partiesID = append(partiesID, idUint)
 	}
 	t.renderToP2P(&message.SendMsgChan{
-		P2PMsg:    p2pMsg,
+		WireMsg:   wireMsg,
 		PartiesID: partiesID,
 	})
 	return nil
 }
 
-func (t *TssManager) removeKey(key string) {
+func (t *TssInstance) removeKey(key string) {
 	t.unConfirmedMsgLock.Lock()
 	defer t.unConfirmedMsgLock.Unlock()
 	delete(t.unConfirmedMessages, key)
@@ -695,7 +702,7 @@ func (t *TssManager) removeKey(key string) {
 
 // TssVer message processing1 ==========================================================================================
 // checkDupAndUpdateVerMsg checkes whether this peer has already send us the VerMsg before update
-func (t *TssManager) checkDupAndUpdateVerMsg(bMsg *message.BroadcastConfirmMessage, partyID string) bool {
+func (t *TssInstance) checkDupAndUpdateVerMsg(bMsg *message.BroadcastConfirmMessage, partyID string) bool {
 	localCacheItem := t.getLocalCacheItem(bMsg.Key)
 	// we check whether this node has already sent the VerMsg message to avoid eclipse of others VerMsg
 	if localCacheItem == nil {
@@ -713,7 +720,7 @@ func (t *TssManager) checkDupAndUpdateVerMsg(bMsg *message.BroadcastConfirmMessa
 }
 
 // TssVer message processing2 ==========================================================================================
-func (t *TssManager) processVerMsg(broadcastConfirmMsg *message.BroadcastConfirmMessage, msgType pb.Message_Type) error {
+func (t *TssInstance) processVerMsg(broadcastConfirmMsg *message.BroadcastConfirmMessage, msgType message.TssMsgType) error {
 	t.logger.WithFields(logrus.Fields{
 		"from": broadcastConfirmMsg.FromID,
 		"key":  broadcastConfirmMsg.Key,

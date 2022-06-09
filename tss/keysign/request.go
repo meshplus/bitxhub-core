@@ -15,13 +15,15 @@ type Request struct {
 	PoolPubKey    *ecdsa.PublicKey `json:"pool_pub_key"` // pub key of the pool that we would like to send this message from
 	Messages      []string         `json:"messages"`     // base64 encoded message to be signed
 	SignerPubKeys []crypto.PubKey  `json:"signer_pub_keys"`
+	RandomN       string           `json:"random_n"` // This random number is determined by the node forwarding the sign request, in order to ensure that the mgsID of each sign request is unique
 }
 
-func NewRequest(pk *ecdsa.PublicKey, msgs []string, signers []crypto.PubKey) Request {
+func NewRequest(pk *ecdsa.PublicKey, msgs []string, signers []crypto.PubKey, randomN string) Request {
 	return Request{
 		PoolPubKey:    pk,
 		Messages:      msgs,
 		SignerPubKeys: signers,
+		RandomN:       randomN,
 	}
 }
 
@@ -42,5 +44,6 @@ func (r *Request) RequestToMsgId() (string, error) {
 		keyAccumulation += pid.String()
 	}
 	dat = append(dat, []byte(keyAccumulation)...)
+	dat = append(dat, []byte(r.RandomN)...)
 	return conversion.MsgToHashString(dat)
 }

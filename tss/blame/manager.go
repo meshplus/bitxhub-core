@@ -13,7 +13,7 @@ type Manager struct {
 	ShareMgr *ShareMgr
 	RoundMgr *RoundMgr
 
-	// partyInfo is same to the partyInfo of TssManager
+	// partyInfo is same to the partyInfo of TssInstance
 	partyInfo *conversion.PartyInfo
 	// localPartyID is the partyID.id of localParty
 	localPartyID string
