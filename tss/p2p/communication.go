@@ -60,7 +60,7 @@ func (c *Communication) ProcessBroadcast() {
 				}).Warnf("marshal wire msg")
 			}
 			p2pMsg := &pb.Message{
-				Type: pb.Message_TSS,
+				Type: pb.Message_TSS_TASK,
 				Data: wireMsgData,
 			}
 			c.logger.Debugf("=================== send %s message to %+v", msg.WireMsg.MsgType, msg.PartiesID)

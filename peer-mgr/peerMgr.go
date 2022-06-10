@@ -64,4 +64,6 @@ type TssPeerManager interface {
 
 	// SubscribeTssMessage subscribes to the message of the tss module
 	SubscribeTssCulprits(ch chan<- *pb.Message) event.Subscription
+
+	SubscribeTssKeygenReq(ch chan<- *pb.Message) event.Subscription
 }

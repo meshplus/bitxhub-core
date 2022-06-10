@@ -182,7 +182,7 @@ func (t *TssInstance) InitTssInfo(
 	t.finishedParties = make(map[string]bool)
 	t.culprits = []*btss.PartyID{}
 	t.culpritsLock = &sync.RWMutex{}
-	t.blameMgr = blame.NewBlameManager(t.logger)
+	t.blameMgr = blame.NewBlameManager(logger)
 
 	comm, err := p2p.NewCommunication(peerMgr, logger)
 	if err != nil {
@@ -192,6 +192,7 @@ func (t *TssInstance) InitTssInfo(
 	t.p2pComm.Start()
 
 	t.logger = logger
+	t.logger.Debugf("..... init instance %s", msgId)
 	return nil
 }
 
