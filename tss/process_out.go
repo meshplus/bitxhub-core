@@ -9,6 +9,7 @@ import (
 	btss "github.com/binance-chain/tss-lib/tss"
 	"github.com/meshplus/bitxhub-core/tss/conversion"
 	"github.com/meshplus/bitxhub-core/tss/message"
+	"github.com/sirupsen/logrus"
 )
 
 // The TaskMessage body content
@@ -170,9 +171,25 @@ func (t *TssInstance) NotifyTaskDone() error {
 		MsgData: msgData,
 	}
 
+	var parties []uint64
+
+	for id, _ := range t.getPartyInfo().PartyIDMap {
+		if id == t.localPartyID {
+			continue
+		}
+		tmpId, err := strconv.ParseUint(id, 10, 32)
+		if err != nil {
+			t.logger.Errorf("get parties:%s", id)
+			return fmt.Errorf("receiverBroadcastHashToPeers parse int error: %v", err)
+		}
+		parties = append(parties, tmpId)
+	}
+	t.logger.WithFields(logrus.Fields{"parties": t.getPartyInfo().PartyIDMap, "msgType": string(wireMsg.MsgType)}).
+		Debug("send task Done")
+
 	t.renderToP2P(&message.SendMsgChan{
 		WireMsg:   wireMsg,
-		PartiesID: []uint64{},
+		PartiesID: parties,
 	})
 	return nil
 }

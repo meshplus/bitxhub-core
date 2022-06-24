@@ -135,7 +135,7 @@ func (t *TssInstance) ProcessOneMessage(msg *pb.Message) error {
 			}
 			t.finishedParties[doneMsg.FromID] = true
 			if len(t.finishedParties) == len(t.partyInfo.PartyIDMap)-1 {
-				t.logger.Debugf("we get the confirm of the nodes that generate the signature")
+				t.logger.WithFields(logrus.Fields{"finishedParties": t.finishedParties}).Infof("we get the confirm of the nodes that generate the signature")
 				close(t.taskDoneChan)
 			}
 			return nil

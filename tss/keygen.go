@@ -104,8 +104,11 @@ func (t *TssInstance) Keygen(req keygen.Request) (*keygen.Response, error) {
 		return nil, fmt.Errorf("fail to process keygen: %w", err)
 	}
 
+	keyGenTicker := time.NewTicker(t.conf.KeyGenTimeout)
+	defer keyGenTicker.Stop()
 	select {
-	case <-time.After(time.Second * t.conf.KeyGenTimeout):
+	case <-keyGenTicker.C:
+		t.logger.WithFields(logrus.Fields{"timeout": t.conf.KeyGenTimeout}).Infof("close inMsgHandleStopChan because of timeout")
 		close(t.inMsgHandleStopChan)
 	case <-t.taskDoneChan:
 		close(t.inMsgHandleStopChan)
@@ -136,7 +139,8 @@ func (t *TssInstance) processKeyGen(errChan chan struct{},
 	endCh <-chan bkg.LocalPartySaveData) (*ecdsa.PublicKey, string, error) {
 	defer t.logger.Debug("finished keygen process")
 	t.logger.Debug("start to read messages from local party")
-
+	kenGenTicker := time.NewTicker(t.conf.KeySignTimeout)
+	defer kenGenTicker.Stop()
 	for {
 		select {
 		case <-t.stopChan: // when TSS processor receive signal to quit
@@ -144,7 +148,7 @@ func (t *TssInstance) processKeyGen(errChan chan struct{},
 		case <-errChan: // when keyGenParty return
 			t.logger.Error("key gen failed")
 			return nil, "", fmt.Errorf("error channel closed fail to start local party")
-		case <-time.After(t.conf.KeyGenTimeout): // key gen timeout
+		case <-kenGenTicker.C: // key gen timeout
 			// we bail out after KeyGenTimeoutSeconds
 			t.logger.Errorf("fail to generate key in time %s", t.conf.KeyGenTimeout.String())
 

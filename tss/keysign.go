@@ -188,8 +188,10 @@ func (t *TssInstance) SignMessage(msgsToSign [][]byte, localStateItem *storage.K
 		return nil, fmt.Errorf("fail to process key sign: %w", err)
 	}
 
+	kenGenTicker := time.NewTicker(t.conf.KeySignTimeout)
+	defer kenGenTicker.Stop()
 	select {
-	case <-time.After(time.Second * t.conf.KeySignTimeout):
+	case <-kenGenTicker.C:
 		close(t.inMsgHandleStopChan)
 	case <-t.taskDoneChan:
 		close(t.inMsgHandleStopChan)
@@ -244,7 +246,8 @@ func (t *TssInstance) processKeySign(reqNum int,
 	t.logger.Debug("start to read messages from local party")
 
 	var signatures []*bcommon.SignatureData
-
+	kenSignTicker := time.NewTicker(t.conf.KeySignTimeout)
+	defer kenSignTicker.Stop()
 	for {
 		select {
 		case <-t.stopChan: // when TSS processor receive signal to quit
@@ -252,7 +255,7 @@ func (t *TssInstance) processKeySign(reqNum int,
 		case <-errChan: // when key sign return
 			t.logger.Error("key sign failed")
 			return nil, errors.New("error channel closed fail to start local party")
-		case <-time.After(t.conf.KeySignTimeout):
+		case <-kenSignTicker.C:
 			// we bail out after KeySignTimeoutSeconds
 			t.logger.Errorf("fail to sign message with %s", t.conf.KeySignTimeout.String())
 
