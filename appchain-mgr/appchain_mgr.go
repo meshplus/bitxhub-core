@@ -50,6 +50,7 @@ type Appchain struct {
 	Desc      string `json:"desc"`
 	Version   uint64 `json:"version"`
 	DID       string `json:"did"`
+	PubKey    []byte `json:"pub_key"`
 
 	Status g.GovernanceStatus `json:"status"`
 	FSM    *fsm.FSM           `json:"fsm"`
