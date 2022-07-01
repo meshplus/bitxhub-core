@@ -10,18 +10,18 @@ import (
 // In the round of keygen and keysign, a participant needs to broadcast the hash of a broadcast message after receiving it
 //   to ensure that the broadcast message received by the participant is consistent with that received by other participants.
 type RoundMgr struct {
-	storedMsg   map[string]*message.WireMessage
+	storedMsg   map[string]*message.TaskMessage
 	storeLocker *sync.Mutex
 }
 
 func NewTssRoundMgr() *RoundMgr {
 	return &RoundMgr{
 		storeLocker: &sync.Mutex{},
-		storedMsg:   make(map[string]*message.WireMessage),
+		storedMsg:   make(map[string]*message.TaskMessage),
 	}
 }
 
-func (tr *RoundMgr) Get(key string) *message.WireMessage {
+func (tr *RoundMgr) Get(key string) *message.TaskMessage {
 	tr.storeLocker.Lock()
 	defer tr.storeLocker.Unlock()
 	ret, ok := tr.storedMsg[key]
@@ -31,7 +31,7 @@ func (tr *RoundMgr) Get(key string) *message.WireMessage {
 	return ret
 }
 
-func (tr *RoundMgr) Set(key string, msg *message.WireMessage) {
+func (tr *RoundMgr) Set(key string, msg *message.TaskMessage) {
 	tr.storeLocker.Lock()
 	defer tr.storeLocker.Unlock()
 	tr.storedMsg[key] = msg

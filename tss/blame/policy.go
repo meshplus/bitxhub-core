@@ -91,7 +91,7 @@ func (m *Manager) tssTimeoutBlame(lastMessageType string, partyIDMap map[string]
 }
 
 // TssWrongShareBlame blames the node who provide the wrong share
-func (m *Manager) TssWrongShareBlame(wiredMsg *message.WireMessage) (string, error) {
+func (m *Manager) TssWrongShareBlame(wiredMsg *message.TaskMessage) (string, error) {
 	shareOwner := wiredMsg.Routing.From
 	return shareOwner.Id, nil
 }

@@ -7,35 +7,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/meshplus/bitxhub-core/tss/message"
-
-	"github.com/meshplus/bitxhub-core/tss/blame"
-
-	"github.com/meshplus/bitxhub-core/tss/conversion"
-
 	bkg "github.com/binance-chain/tss-lib/ecdsa/keygen"
 	btss "github.com/binance-chain/tss-lib/tss"
+	"github.com/meshplus/bitxhub-core/tss/blame"
+	"github.com/meshplus/bitxhub-core/tss/conversion"
 	"github.com/meshplus/bitxhub-core/tss/keygen"
+	"github.com/meshplus/bitxhub-core/tss/message"
 	"github.com/meshplus/bitxhub-core/tss/storage"
-
-	//"github.com/meshplus/bitxhub-kit/crypto/asym/ecdsa"
-	"github.com/meshplus/bitxhub-model/pb"
 	"github.com/sirupsen/logrus"
 )
 
 // Keygen generates the key share of the participants of the threshold signature
-func (t *TssManager) Keygen(req keygen.Request) (*keygen.Response, error) {
+func (t *TssInstance) Keygen(req keygen.Request) (*keygen.Response, error) {
 	t.logger.WithFields(logrus.Fields{}).Info("Received keygen request")
-	t.tssKeyGenLocker.Lock()
-	defer t.tssKeyGenLocker.Unlock()
-	status := conversion.Success
-
-	// 1 Set msg info
-	msgID, err := req.RequestToMsgId()
-	if err != nil {
-		return nil, fmt.Errorf("fail to convert request to msgID: %w", err)
-	}
-	t.setTssMsgInfo(msgID, 1)
 
 	// 2 Get parties info
 	partiesID, localPartyID, err := conversion.GetParties(req.Pubkeys, t.localPubK, t.p2pComm.Peers())
@@ -52,7 +36,7 @@ func (t *TssManager) Keygen(req keygen.Request) (*keygen.Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fail to get pid from party id: %w", err)
 	}
-	keyGenLocalStateItem := &storage.KeygenLocalState{
+	t.keygenLocalState = &storage.KeygenLocalState{
 		ParticipantPksMap: partyPksDataMap,
 		LocalPartyPk:      localPkData,
 	}
@@ -114,14 +98,17 @@ func (t *TssManager) Keygen(req keygen.Request) (*keygen.Response, error) {
 	go t.ProcessInboundMessages(&keyGenWg)
 
 	// 7.3 Current main process: advance the execution of keyGen process - send out the pending p2p messages given in the library method as required
-	newPubKey, newPubAddr, err := t.processKeyGen(errChan, outCh, endCh, keyGenLocalStateItem)
+	newPubKey, newPubAddr, err := t.processKeyGen(errChan, outCh, endCh)
 	if err != nil {
 		close(t.inMsgHandleStopChan)
 		return nil, fmt.Errorf("fail to process keygen: %w", err)
 	}
 
+	keyGenTicker := time.NewTicker(t.conf.KeyGenTimeout)
+	defer keyGenTicker.Stop()
 	select {
-	case <-time.After(time.Second * t.conf.KeyGenTimeout):
+	case <-keyGenTicker.C:
+		t.logger.WithFields(logrus.Fields{"timeout": t.conf.KeyGenTimeout}).Infof("close inMsgHandleStopChan because of timeout")
 		close(t.inMsgHandleStopChan)
 	case <-t.taskDoneChan:
 		close(t.inMsgHandleStopChan)
@@ -139,7 +126,7 @@ func (t *TssManager) Keygen(req keygen.Request) (*keygen.Response, error) {
 	return keygen.NewResponse(
 		newPubKey,
 		newPubAddr,
-		status,
+		t.keygenLocalState,
 		t.blameMgr.Blame,
 	), nil
 }
@@ -147,13 +134,13 @@ func (t *TssManager) Keygen(req keygen.Request) (*keygen.Response, error) {
 // Handles messages returned by KeyGen library methods that need to be sent
 // - outCh: the messages that need to be sent for each turn
 // - endCh：the message that ultimately needs to be stored
-func (t *TssManager) processKeyGen(errChan chan struct{},
+func (t *TssInstance) processKeyGen(errChan chan struct{},
 	outCh <-chan btss.Message,
-	endCh <-chan bkg.LocalPartySaveData,
-	keyGenLocalStateItem *storage.KeygenLocalState) (*ecdsa.PublicKey, string, error) {
+	endCh <-chan bkg.LocalPartySaveData) (*ecdsa.PublicKey, string, error) {
 	defer t.logger.Debug("finished keygen process")
 	t.logger.Debug("start to read messages from local party")
-
+	kenGenTicker := time.NewTicker(t.conf.KeySignTimeout)
+	defer kenGenTicker.Stop()
 	for {
 		select {
 		case <-t.stopChan: // when TSS processor receive signal to quit
@@ -161,7 +148,7 @@ func (t *TssManager) processKeyGen(errChan chan struct{},
 		case <-errChan: // when keyGenParty return
 			t.logger.Error("key gen failed")
 			return nil, "", fmt.Errorf("error channel closed fail to start local party")
-		case <-time.After(t.conf.KeyGenTimeout): // key gen timeout
+		case <-kenGenTicker.C: // key gen timeout
 			// we bail out after KeyGenTimeoutSeconds
 			t.logger.Errorf("fail to generate key in time %s", t.conf.KeyGenTimeout.String())
 
@@ -211,7 +198,7 @@ func (t *TssManager) processKeyGen(errChan chan struct{},
 		case tssMsg := <-outCh: // get msg to send
 			t.logger.Debugf(">>>>>>>>>> key gen msg: %s", tssMsg.String())
 			t.blameMgr.SetLastMsg(tssMsg)
-			err := t.ProcessOutCh(tssMsg, pb.Message_TSS_KEY_GEN)
+			err := t.ProcessOutCh(tssMsg, message.TSSKeyGenMsg)
 			if err != nil {
 				t.logger.Errorf("fail to process the message")
 				return nil, "", err
@@ -224,7 +211,7 @@ func (t *TssManager) processKeyGen(errChan chan struct{},
 				t.logger.Errorf("fail to broadcast the keygen done")
 			}
 
-			// 2. save local state
+			// 2. save local state to file
 			ecdsaPk, err := conversion.GetTssPubKey(tssSaveData.ECDSAPub)
 			if err != nil {
 				t.logger.Errorf("fail to get threshold pubkey: %v", err)
@@ -235,13 +222,11 @@ func (t *TssManager) processKeyGen(errChan chan struct{},
 				t.logger.Errorf("fail to convert ecdsa pubkey to pubkey addr and byte: %v", err)
 				return nil, "", fmt.Errorf("fail to convert ecdsa pubkey to pubkey addr and byte: %w", err)
 			}
-			keyGenLocalStateItem.LocalData = tssSaveData
-			keyGenLocalStateItem.PubKeyData = pubData
-			keyGenLocalStateItem.PubKeyAddr = pubAddr
-			if err = t.stateMgr.SaveLocalState(keyGenLocalStateItem); err != nil {
-				t.logger.Errorf("fail to save keygen result to storage: %w", err)
-			}
-			t.logger.Infof("rocessKeyGen end")
+			t.keygenLocalState.LocalData = tssSaveData
+			t.keygenLocalState.PubKeyData = pubData
+			t.keygenLocalState.PubKeyAddr = pubAddr
+
+			t.logger.Infof("processKeyGen end")
 			return ecdsaPk, pubAddr, nil
 		}
 	}

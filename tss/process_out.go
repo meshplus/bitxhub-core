@@ -9,10 +9,10 @@ import (
 	btss "github.com/binance-chain/tss-lib/tss"
 	"github.com/meshplus/bitxhub-core/tss/conversion"
 	"github.com/meshplus/bitxhub-core/tss/message"
-	"github.com/meshplus/bitxhub-model/pb"
+	"github.com/sirupsen/logrus"
 )
 
-// The WireMessage body content
+// The TaskMessage body content
 type BulkWireMsg struct {
 	WiredBulkMsgs []byte
 	MsgIdentifier string
@@ -29,7 +29,7 @@ func NewBulkWireMsg(msg []byte, id string, r *btss.MessageRouting) BulkWireMsg {
 
 // ProcessOutCh sends msg out ==========================================================================================
 // add msgType to the library message, send it as requested or broadcast
-func (t *TssManager) ProcessOutCh(tssMsg btss.Message, msgType pb.Message_Type) error {
+func (t *TssInstance) ProcessOutCh(tssMsg btss.Message, msgType message.TssMsgType) error {
 	// 1. get wire byte, include msg content and rout info
 	msgData, r, err := tssMsg.WireBytes()
 	// if we cannot get the wire share, the tss will fail, we just quit.
@@ -96,7 +96,7 @@ func (t *TssManager) ProcessOutCh(tssMsg btss.Message, msgType pb.Message_Type) 
 }
 
 // sendBulkMsg packages the message with type and signature, put it into the network module to send it out
-func (t *TssManager) sendBulkMsg(wiredMsgType string, tssMsgType pb.Message_Type, wiredMsgList []BulkWireMsg) error {
+func (t *TssInstance) sendBulkMsg(wiredMsgType string, tssMsgType message.TssMsgType, wiredMsgList []BulkWireMsg) error {
 	// 1. get msg rout info
 	// since all the messages in the list is the same round, so it must have the same dest
 	// we just need to get the routing info of the first message
@@ -116,21 +116,22 @@ func (t *TssManager) sendBulkMsg(wiredMsgType string, tssMsgType pb.Message_Type
 	}
 
 	// 4. package msg with routing and signature
-	wireMsg := message.WireMessage{
+	taskMsg := &message.TaskMessage{
 		Routing:   r,
 		RoundInfo: wiredMsgType,
 		Message:   buf,
 		Sig:       sig,
 	}
-	wireMsgBytes, err := json.Marshal(wireMsg)
+	taskMsgBytes, err := json.Marshal(taskMsg)
 	if err != nil {
 		return fmt.Errorf("fail to convert tss msg to wire bytes: %w", err)
 	}
 
 	// 5. constructor a p2p msg with type
-	p2pMsg := &pb.Message{
-		Type: tssMsgType,
-		Data: wireMsgBytes,
+	wireMsg := &message.WireMessage{
+		MsgID:   t.msgID,
+		MsgType: tssMsgType,
+		MsgData: taskMsgBytes,
 	}
 
 	// 6. get msg to info
@@ -145,7 +146,7 @@ func (t *TssManager) sendBulkMsg(wiredMsgType string, tssMsgType pb.Message_Type
 
 	// 7. set to network module
 	t.renderToP2P(&message.SendMsgChan{
-		P2PMsg:    p2pMsg,
+		WireMsg:   wireMsg,
 		PartiesID: partiesID,
 	})
 
@@ -153,7 +154,7 @@ func (t *TssManager) sendBulkMsg(wiredMsgType string, tssMsgType pb.Message_Type
 }
 
 // NotifyTaskDone broadcasts a message, the current task is over  ======================================================
-func (t *TssManager) NotifyTaskDone() error {
+func (t *TssInstance) NotifyTaskDone() error {
 	taskDoneMsg := &message.TssTaskNotifier{
 		FromID:   t.localPartyID,
 		TaskDone: true,
@@ -164,14 +165,31 @@ func (t *TssManager) NotifyTaskDone() error {
 		return fmt.Errorf("marshal tss task notifier error: %w", err)
 	}
 
-	p2pMsg := &pb.Message{
-		Type: pb.Message_TSS_TASK_DONE,
-		Data: msgData,
+	wireMsg := &message.WireMessage{
+		MsgID:   t.msgID,
+		MsgType: message.TSSTaskDone,
+		MsgData: msgData,
 	}
 
+	var parties []uint64
+
+	for id, _ := range t.getPartyInfo().PartyIDMap {
+		if id == t.localPartyID {
+			continue
+		}
+		tmpId, err := strconv.ParseUint(id, 10, 32)
+		if err != nil {
+			t.logger.Errorf("get parties:%s", id)
+			return fmt.Errorf("receiverBroadcastHashToPeers parse int error: %v", err)
+		}
+		parties = append(parties, tmpId)
+	}
+	t.logger.WithFields(logrus.Fields{"parties": t.getPartyInfo().PartyIDMap, "msgType": string(wireMsg.MsgType)}).
+		Debug("send task Done")
+
 	t.renderToP2P(&message.SendMsgChan{
-		P2PMsg:    p2pMsg,
-		PartiesID: []uint64{},
+		WireMsg:   wireMsg,
+		PartiesID: parties,
 	})
 	return nil
 }

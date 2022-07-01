@@ -11,7 +11,7 @@ var _ = Suite(&RoundMgrSuite{})
 
 func (ShareMgrSuite) TestTssRoundMgr(c *C) {
 	mgr := NewTssRoundMgr()
-	w1 := message.WireMessage{
+	w1 := message.TaskMessage{
 		Routing:   nil,
 		RoundInfo: "test1",
 		Message:   nil,
@@ -19,7 +19,7 @@ func (ShareMgrSuite) TestTssRoundMgr(c *C) {
 	}
 	mgr.Set("test1", &w1)
 
-	w2 := message.WireMessage{
+	w2 := message.TaskMessage{
 		Routing:   nil,
 		RoundInfo: "test2",
 		Message:   nil,
@@ -27,7 +27,7 @@ func (ShareMgrSuite) TestTssRoundMgr(c *C) {
 	}
 	mgr.Set("test2", &w2)
 
-	w3 := message.WireMessage{
+	w3 := message.TaskMessage{
 		Routing:   nil,
 		RoundInfo: "test3",
 		Message:   nil,

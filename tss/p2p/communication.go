@@ -1,10 +1,12 @@
 package p2p
 
 import (
+	"encoding/json"
 	"sync"
 
 	peer_mgr "github.com/meshplus/bitxhub-core/peer-mgr"
 	"github.com/meshplus/bitxhub-core/tss/message"
+	"github.com/meshplus/bitxhub-model/pb"
 	"github.com/sirupsen/logrus"
 )
 
@@ -50,23 +52,34 @@ func (c *Communication) ProcessBroadcast() {
 	for {
 		select {
 		case msg := <-c.SendMsgChan:
-			c.logger.Debugf("=================== send %s message to %+v", msg.P2PMsg.Type, msg.PartiesID)
+			wireMsgData, err := json.Marshal(msg.WireMsg)
+			if err != nil {
+				c.logger.WithFields(logrus.Fields{
+					"type": msg.WireMsg.MsgType,
+					"err":  err.Error(),
+				}).Warnf("marshal wire msg")
+			}
+			p2pMsg := &pb.Message{
+				Type: pb.Message_TSS_TASK,
+				Data: wireMsgData,
+			}
+			c.logger.Debugf("=================== send %s message to %+v", msg.WireMsg.MsgType, msg.PartiesID)
 			if len(msg.PartiesID) == 0 {
-				err := c.Broadcast(msg.P2PMsg)
+				err := c.Broadcast(p2pMsg)
 				if err != nil {
 					c.logger.WithFields(logrus.Fields{
 						"to":   msg.PartiesID,
-						"type": msg.P2PMsg.Type,
+						"type": msg.WireMsg.MsgType,
 						"err":  err.Error(),
 					}).Warnf("broadcast error")
 				}
 			} else {
 				for _, id := range msg.PartiesID {
-					err := c.AsyncSend(id, msg.P2PMsg)
+					err := c.AsyncSend(id, p2pMsg)
 					if err != nil {
 						c.logger.WithFields(logrus.Fields{
 							"to":   id,
-							"type": msg.P2PMsg.Type,
+							"type": msg.WireMsg.MsgType,
 							"err":  err.Error(),
 						}).Warnf("AsyncSend error")
 					}

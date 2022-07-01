@@ -91,7 +91,7 @@ func (p *policyTestSuite) TestGetBroadcastBlame(c *C) {
 		IsToOldCommittee:        false,
 		IsToOldAndNewCommittees: false,
 	}
-	msg := message.WireMessage{
+	msg := message.TaskMessage{
 		Routing:   &r1,
 		RoundInfo: "key1",
 		Message:   nil,
@@ -123,7 +123,7 @@ func (p *policyTestSuite) TestTssWrongShareBlame(c *C) {
 		IsToOldCommittee:        false,
 		IsToOldAndNewCommittees: false,
 	}
-	msg := message.WireMessage{
+	msg := message.TaskMessage{
 		Routing:   &r1,
 		RoundInfo: "key2",
 		Message:   nil,

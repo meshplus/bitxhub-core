@@ -8,14 +8,14 @@ import (
 
 // LocalCacheItem used to cache the unconfirmed broadcast message
 type LocalCacheItem struct {
-	Msg  *message.WireMessage
+	Msg  *message.TaskMessage
 	Hash string
 	Lock *sync.Mutex
 	// parytyID.id -> msgHash
 	ConfirmedList map[string]string
 }
 
-func NewLocalCacheItem(msg *message.WireMessage, hash string) *LocalCacheItem {
+func NewLocalCacheItem(msg *message.TaskMessage, hash string) *LocalCacheItem {
 	return &LocalCacheItem{
 		Msg:           msg,
 		Hash:          hash,

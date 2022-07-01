@@ -11,26 +11,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/meshplus/bitxhub-core/tss/message"
-
-	"github.com/meshplus/bitxhub-model/pb"
-
-	"go.uber.org/atomic"
-
+	bcommon "github.com/binance-chain/tss-lib/common"
 	"github.com/binance-chain/tss-lib/ecdsa/signing"
 	btss "github.com/binance-chain/tss-lib/tss"
-
-	"github.com/meshplus/bitxhub-core/tss/blame"
-
 	"github.com/libp2p/go-libp2p-core/crypto"
-
-	bcommon "github.com/binance-chain/tss-lib/common"
-
-	"github.com/meshplus/bitxhub-core/tss/storage"
-
+	"github.com/meshplus/bitxhub-core/tss/blame"
 	"github.com/meshplus/bitxhub-core/tss/conversion"
-
 	"github.com/meshplus/bitxhub-core/tss/keysign"
+	"github.com/meshplus/bitxhub-core/tss/message"
+	"github.com/meshplus/bitxhub-core/tss/storage"
+	"go.uber.org/atomic"
 )
 
 var (
@@ -41,30 +31,11 @@ var (
 	ErrSigGenerated     = errors.New("signature generated")
 )
 
-func (t *TssManager) Keysign(req keysign.Request) (*keysign.Response, error) {
+func (t *TssInstance) Keysign(req keysign.Request) (*keysign.Response, error) {
 	t.logger.Infof("Received keysign request, signers: %v, msg: %v", req.SignerPubKeys, req.Messages)
-	t.tssKeyGenLocker.Lock()
-	defer t.tssKeyGenLocker.Unlock()
 
 	// 1. analysis req
-	// 1.0 get msgID
-	msgID, err := req.RequestToMsgId()
-	if err != nil {
-		return nil, err
-	}
-	t.setTssMsgInfo(msgID, len(req.Messages))
-
-	// 1.1 get local state which is saved in keygen
-	pubAddr, _, err := conversion.GetPubKeyInfoFromECDSAPubkey(req.PoolPubKey)
-	if err != nil {
-		return nil, fmt.Errorf("fail to get pub addr from ecdsa pubkey: %w", err)
-	}
-	localStateItem, err := t.stateMgr.GetLocalState(pubAddr)
-	if err != nil {
-		return nil, fmt.Errorf("fail to get local keygen state: %w", err)
-	}
-
-	// 1.2 get msgsToSign
+	// 1.1 get msgsToSign
 	var msgsToSign [][]byte
 	for _, val := range req.Messages {
 		msgToSign, err := base64.StdEncoding.DecodeString(val)
@@ -88,7 +59,7 @@ func (t *TssManager) Keysign(req keysign.Request) (*keysign.Response, error) {
 		return true
 	})
 
-	// 1.3 check signers num
+	// 1.2 check signers num
 	if len(req.SignerPubKeys) <= t.threshold {
 		return nil, fmt.Errorf("at least t+1 signers are required: t-%d", t.threshold)
 	}
@@ -97,12 +68,12 @@ func (t *TssManager) Keysign(req keysign.Request) (*keysign.Response, error) {
 	var errGen error
 
 	// 2 The first coroutine: generate the signature ourselves
-	generatedSig, errGen = t.generateSignature(msgsToSign, req, localStateItem)
+	generatedSig, errGen = t.generateSignature(msgsToSign, req, t.keygenLocalState)
 
 	return generatedSig, errGen
 }
 
-func (t *TssManager) generateSignature(msgsToSign [][]byte, req keysign.Request, localStateItem *storage.KeygenLocalState) (*keysign.Response, error) {
+func (t *TssInstance) generateSignature(msgsToSign [][]byte, req keysign.Request, localStateItem *storage.KeygenLocalState) (*keysign.Response, error) {
 	// 1. Determine if you are one of the participants in the signature request
 	allParticipantKeys := req.SignerPubKeys
 	localKey := t.localPubK
@@ -119,7 +90,7 @@ func (t *TssManager) generateSignature(msgsToSign [][]byte, req keysign.Request,
 	}
 
 	if !isSignMember {
-		t.logger.Infof("we(%s) are not the active signer", t.localPartyID)
+		t.logger.Infof("we(%s) are not the active signer", pid)
 		return nil, ErrNotActiveSigner
 	}
 
@@ -140,7 +111,7 @@ func (t *TssManager) generateSignature(msgsToSign [][]byte, req keysign.Request,
 	), err
 }
 
-func (t *TssManager) SignMessage(msgsToSign [][]byte, localStateItem *storage.KeygenLocalState, signers []crypto.PubKey) ([]*bcommon.SignatureData, error) {
+func (t *TssInstance) SignMessage(msgsToSign [][]byte, localStateItem *storage.KeygenLocalState, signers []crypto.PubKey) ([]*bcommon.SignatureData, error) {
 	// 1. get parties info
 	partiesID, localPartyID, err := conversion.GetParties(signers, t.localPubK, t.p2pComm.Peers())
 	if err != nil {
@@ -217,8 +188,10 @@ func (t *TssManager) SignMessage(msgsToSign [][]byte, localStateItem *storage.Ke
 		return nil, fmt.Errorf("fail to process key sign: %w", err)
 	}
 
+	kenGenTicker := time.NewTicker(t.conf.KeySignTimeout)
+	defer kenGenTicker.Stop()
 	select {
-	case <-time.After(time.Second * t.conf.KeySignTimeout):
+	case <-kenGenTicker.C:
 		close(t.inMsgHandleStopChan)
 	case <-t.taskDoneChan:
 		close(t.inMsgHandleStopChan)
@@ -240,7 +213,7 @@ func (t *TssManager) SignMessage(msgsToSign [][]byte, localStateItem *storage.Ke
 	return results, nil
 }
 
-func (t *TssManager) startBatchSigning(keySignPartyMap *sync.Map, msgNum int) bool {
+func (t *TssInstance) startBatchSigning(keySignPartyMap *sync.Map, msgNum int) bool {
 	// start the batch sign
 	var keySignWg sync.WaitGroup
 	ret := atomic.NewBool(true)
@@ -265,7 +238,7 @@ func (t *TssManager) startBatchSigning(keySignPartyMap *sync.Map, msgNum int) bo
 // - outCh: the messages that need to be sent for each turn
 // - endCh：the message that ultimately needs to be stored
 // - reqNum： number of messages to be signed
-func (t *TssManager) processKeySign(reqNum int,
+func (t *TssInstance) processKeySign(reqNum int,
 	errChan chan struct{},
 	outCh <-chan btss.Message,
 	endCh <-chan bcommon.SignatureData) ([]*bcommon.SignatureData, error) {
@@ -273,7 +246,8 @@ func (t *TssManager) processKeySign(reqNum int,
 	t.logger.Debug("start to read messages from local party")
 
 	var signatures []*bcommon.SignatureData
-
+	kenSignTicker := time.NewTicker(t.conf.KeySignTimeout)
+	defer kenSignTicker.Stop()
 	for {
 		select {
 		case <-t.stopChan: // when TSS processor receive signal to quit
@@ -281,7 +255,7 @@ func (t *TssManager) processKeySign(reqNum int,
 		case <-errChan: // when key sign return
 			t.logger.Error("key sign failed")
 			return nil, errors.New("error channel closed fail to start local party")
-		case <-time.After(t.conf.KeySignTimeout):
+		case <-kenSignTicker.C:
 			// we bail out after KeySignTimeoutSeconds
 			t.logger.Errorf("fail to sign message with %s", t.conf.KeySignTimeout.String())
 
@@ -339,7 +313,7 @@ func (t *TssManager) processKeySign(reqNum int,
 		case msg := <-outCh:
 			t.logger.Debugf(">>>>>>>>>>key sign msg: %s", msg.String())
 			t.blameMgr.SetLastMsg(msg)
-			err := t.ProcessOutCh(msg, pb.Message_TSS_KEY_SIGN)
+			err := t.ProcessOutCh(msg, message.TSSKeySignMsg)
 			if err != nil {
 				t.logger.Errorf("fail to process the message")
 				return nil, err
