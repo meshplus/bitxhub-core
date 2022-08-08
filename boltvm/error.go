@@ -481,4 +481,7 @@ const (
 
 	ProposalStrategyNotUpdateCode ErrorCode = "1130006"
 	ProposalStrategyNotUpdateMsg  ErrorMsg  = "no strategy information is updated"
+
+	BnsErrCode ErrorCode = "2140000"
+	BnsErrMsg  ErrorMsg  = "%s"
 )
