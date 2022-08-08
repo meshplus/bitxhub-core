@@ -22,7 +22,7 @@ require (
 	github.com/looplab/fsm v0.2.0
 	github.com/magiconair/properties v1.8.4 // indirect
 	github.com/meshplus/bitxhub-kit v1.2.1-0.20220325052414-bc17176c509d
-	github.com/meshplus/bitxhub-model v1.2.1-0.20220610034930-e87191588edd
+	github.com/meshplus/bitxhub-model v1.2.1-0.20220803022708-9ab7a71abdbf
 	github.com/meshplus/go-lightp2p v0.0.0-20200817105923-6b3aee40fa54
 	github.com/miekg/pkcs11 v1.0.3 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
