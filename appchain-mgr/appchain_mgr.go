@@ -20,6 +20,7 @@ const (
 	NameChainPrefix       = "name-chain"
 	AdminChainPrefix      = "admin-chain"
 	ChainAdminsPrefix     = "chain-admins"
+	ChainTrustRootPrefix  = "chain-trust-root"
 
 	RelaychainType = "relaychain"
 	AppchainType   = "appchain"
@@ -156,6 +157,7 @@ func (am *AppchainManager) GovernancePre(chainId string, event g.EventType, _ []
 func (am *AppchainManager) Register(chainInfo *Appchain) {
 	am.SetObject(AppchainKey(chainInfo.ID), *chainInfo)
 	am.SetObject(AppchainNameKey(chainInfo.ChainName), chainInfo.ID)
+	am.Set(AppchainTrustRootKey(chainInfo.ID), chainInfo.TrustRoot)
 
 	am.Logger().WithFields(logrus.Fields{
 		"id":   chainInfo.ID,
@@ -176,6 +178,7 @@ func (am *AppchainManager) Update(updateInfo *Appchain) (bool, []byte) {
 	chain.TrustRoot = updateInfo.TrustRoot
 	chain.Version++
 	am.SetObject(AppchainKey(updateInfo.ID), chain)
+	am.Set(AppchainTrustRootKey(updateInfo.ID), updateInfo.TrustRoot)
 	if oldName != chain.ChainName {
 		am.Delete(AppchainNameKey(oldName))
 		am.SetObject(AppchainNameKey(chain.ChainName), chain.ID)
@@ -212,6 +215,7 @@ func (am *AppchainManager) ChangeStatus(id, trigger, lastStatus string, _ []byte
 
 func (am *AppchainManager) DeleteAppchain(id string) (bool, []byte) {
 	am.Delete(AppchainKey(id))
+	am.Delete(AppchainTrustRootKey(id))
 	am.Logger().Infof("delete appchain:%s", id)
 	return true, nil
 }
@@ -337,6 +341,10 @@ func AppchainAdminKey(addr string) string {
 
 func AppAdminsChainKey(id string) string {
 	return fmt.Sprintf("%s-%s", ChainAdminsPrefix, id)
+}
+
+func AppchainTrustRootKey(id string) string {
+	return fmt.Sprintf("%s-%s", ChainTrustRootPrefix, id)
 }
 
 func (am *AppchainManager) auditRecordKey(id string) string {
