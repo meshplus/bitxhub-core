@@ -53,4 +53,6 @@ type Stub interface {
 	CrossInvokeEVM(address string, input []byte) *Response
 	// GetAccount get ledger account address
 	GetAccount(address string) interface{}
+	// EnableAudit returns whether the audit service is enable
+	EnableAudit() bool
 }

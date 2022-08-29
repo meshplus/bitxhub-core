@@ -137,6 +137,20 @@ func (mr *MockStubMockRecorder) Delete(key interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStub)(nil).Delete), key)
 }
 
+// EnableAudit mocks base method.
+func (m *MockStub) EnableAudit() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnableAudit")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// EnableAudit indicates an expected call of EnableAudit.
+func (mr *MockStubMockRecorder) EnableAudit() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableAudit", reflect.TypeOf((*MockStub)(nil).EnableAudit))
+}
+
 // Get mocks base method.
 func (m *MockStub) Get(key string) (bool, []byte) {
 	m.ctrl.T.Helper()
