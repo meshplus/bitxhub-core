@@ -38,6 +38,18 @@ func (m *MockStub) EXPECT() *MockStubMockRecorder {
 	return m.recorder
 }
 
+// Add mocks base method.
+func (m *MockStub) Add(key string, value []byte) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Add", key, value)
+}
+
+// Add indicates an expected call of Add.
+func (mr *MockStubMockRecorder) Add(key, value interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockStub)(nil).Add), key, value)
+}
+
 // AddObject mocks base method.
 func (m *MockStub) AddObject(key string, value interface{}) {
 	m.ctrl.T.Helper()
