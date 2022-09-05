@@ -49,6 +49,7 @@ type Appchain struct {
 	Broker    []byte `json:"broker"`
 	Desc      string `json:"desc"`
 	Version   uint64 `json:"version"`
+	PubKey    []byte `json:"pub_key"`
 
 	Status g.GovernanceStatus `json:"status"`
 	FSM    *fsm.FSM           `json:"fsm"`
