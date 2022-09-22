@@ -18,6 +18,5 @@ require (
 	github.com/sirupsen/logrus v1.5.0
 	github.com/stretchr/testify v1.6.0
 	github.com/sykesm/zap-logfmt v0.0.3 // indirect
-	github.com/wasmerio/go-ext-wasm v0.3.1
 	go.uber.org/zap v1.15.0 // indirect
 )
