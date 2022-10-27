@@ -23,4 +23,5 @@ type TxsExecutor interface {
 
 type TxOpt struct {
 	Contracts map[string]Contract
+	Changer   interface{}
 }
