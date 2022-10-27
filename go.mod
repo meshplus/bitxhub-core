@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/binance-chain/tss-lib v1.3.3-0.20210411025750-fffb56b30511
 	github.com/btcsuite/btcd v0.21.0-beta
-	github.com/bytecodealliance/wasmtime-go v0.34.0
+	github.com/bytecodealliance/wasmtime-go v0.37.0
 	github.com/deckarep/golang-set v0.0.0-20180603214616-504e848d77ea
 	github.com/ethereum/go-ethereum v1.10.4
 	github.com/gogo/protobuf v1.3.2
@@ -51,3 +51,5 @@ require (
 replace github.com/binance-chain/tss-lib => github.com/dawn-to-dusk/tss-lib v1.3.2-0.20220422023240-5ddc16a330ed
 
 replace github.com/agl/ed25519 => github.com/binance-chain/edwards25519 v0.0.0-20200305024217-f36fc4b53d43
+
+replace google.golang.org/grpc => google.golang.org/grpc v1.33.0
