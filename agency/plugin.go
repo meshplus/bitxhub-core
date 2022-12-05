@@ -5,7 +5,7 @@ import (
 )
 
 // Client defines the interface that interacts with appchain
-//go:generate mockgen -destination mock_client/mock_client.go -package mock_client -source interface.go
+//go:generate mockgen -destination mock_client/mock_client.go -package mock_client -source plugin.go
 type Client interface {
 	// Initialize initialize plugin client
 	Initialize(configPath string, extra []byte, mode string) error
@@ -75,7 +75,7 @@ type Client interface {
 	Type() string
 
 	// GetOffChainData get offchain data and send back
-	GetOffChainData(request *pb.GetDataRequest) (*pb.GetDataResponse, error)
+	GetOffChainData(request *pb.GetDataRequest) (*pb.OffChainDataInfo, error)
 
 	// GetOffChainDataReq get offchain data request
 	GetOffChainDataReq() chan *pb.GetDataRequest
