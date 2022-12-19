@@ -35,7 +35,7 @@ type PierHAConstructor func(client HAClient, pierID string) PierHA
 
 type OrderConstructor func(opt ...order.Option) (order.Order, error)
 
-type OffchainTransmissionConstructor func(appchainID string, peerMgr PeerManager, client Client) OffChainTransmission
+type OffchainTransmissionConstructor func(appchainID, path string, peerMgr PeerManager, client Client) OffChainTransmission
 
 var (
 	TxsExecutorConstructorM         = make(map[string]TxsExecutorConstructor)
