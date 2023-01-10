@@ -6,7 +6,7 @@ require (
 	github.com/Shopify/sarama v1.27.0 // indirect
 	github.com/binance-chain/tss-lib v1.3.3-0.20210411025750-fffb56b30511
 	github.com/btcsuite/btcd v0.21.0-beta
-	github.com/bytecodealliance/wasmtime-go v0.34.0
+	github.com/bytecodealliance/wasmtime-go v1.0.0
 	github.com/deckarep/golang-set v0.0.0-20180603214616-504e848d77ea
 	github.com/ethereum/go-ethereum v1.10.4
 	github.com/gogo/protobuf v1.3.2
@@ -22,7 +22,7 @@ require (
 	github.com/looplab/fsm v0.2.0
 	github.com/magiconair/properties v1.8.4 // indirect
 	github.com/meshplus/bitxhub-kit v1.2.1-0.20220325052414-bc17176c509d
-	github.com/meshplus/bitxhub-model v1.2.1-0.20220610034930-e87191588edd
+	github.com/meshplus/bitxhub-model v1.20.0
 	github.com/meshplus/go-lightp2p v0.0.0-20200817105923-6b3aee40fa54
 	github.com/miekg/pkcs11 v1.0.3 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
@@ -33,8 +33,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.7.1 // indirect
-	github.com/stretchr/objx v0.2.0 // indirect
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.8.0
 	github.com/sykesm/zap-logfmt v0.0.4 // indirect
 	go.uber.org/atomic v1.7.0
 	go.uber.org/multierr v1.6.0 // indirect
