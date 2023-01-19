@@ -4,7 +4,6 @@ go 1.13
 
 require (
 	github.com/binance-chain/tss-lib v1.3.3-0.20210411025750-fffb56b30511
-	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/bytecodealliance/wasmtime-go v0.37.0
 	github.com/deckarep/golang-set v0.0.0-20180603214616-504e848d77ea
 	github.com/ethereum/go-ethereum v1.10.4
