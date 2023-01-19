@@ -206,7 +206,7 @@ func (rm *RuleManager) GovernancePre(ruleAddress string, event governance.EventT
 	switch event {
 	case governance.EventUpdate:
 		for _, r := range rules {
-			if true == r.Master && governance.GovernanceAvailable != r.Status {
+			if r.Master && governance.GovernanceAvailable != r.Status {
 				return nil, boltvm.BError(boltvm.RuleMasterRuleUpdatingCode, fmt.Sprintf(string(boltvm.RuleMasterRuleUpdatingMsg), r.Address))
 			}
 		}
@@ -299,7 +299,7 @@ func (rm *RuleManager) GetMaster(chainID string) (*Rule, error) {
 	}
 
 	for _, r := range rules {
-		if true == r.Master {
+		if r.Master {
 			return r, nil
 		}
 	}
@@ -314,7 +314,7 @@ func (rm *RuleManager) HasMaster(chainID string) bool {
 	}
 
 	for _, r := range rules {
-		if true == r.Master {
+		if r.Master {
 			return true
 		}
 	}

@@ -436,7 +436,7 @@ func (t *TssInstance) processInvalidMsgBlame(roundInfo string, round conversion.
 func (t *TssInstance) receiverBroadcastHashToPeers(wireMsg *message.TaskMessage, msgType message.TssMsgType) error {
 	var ids []uint64
 	dataOwnerPartyID := wireMsg.Routing.From.Id
-	for id, _ := range t.p2pComm.Peers() {
+	for id := range t.p2pComm.Peers() {
 		if id == dataOwnerPartyID || id == t.localPartyID {
 			continue
 		}
@@ -520,7 +520,7 @@ func (t *TssInstance) applyShare(localCacheItem *cache.LocalCacheItem, key strin
 		}
 		blameNode := blame.NewNode(blamePk, localCacheItem.Msg.Message, localCacheItem.Msg.Sig)
 		t.blameMgr.Blame.SetBlame(blame.HashCheckFail, []blame.Node{blameNode}, unicast)
-		return fmt.Errorf("%w, %w", blame.ErrHashCheck, errHashCheck)
+		return fmt.Errorf("%w, %s", blame.ErrHashCheck, errHashCheck)
 	}
 
 	//2. check ok

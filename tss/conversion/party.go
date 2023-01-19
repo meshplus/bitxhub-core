@@ -41,7 +41,7 @@ func GetParties(keys []crypto.PubKey, localPK crypto.PubKey, peerMap map[string]
 		}
 		partyIDID := ""
 		for peerID, peerInfo := range peerMap {
-			if string(peerInfo.ID) == partyPid.String() {
+			if peerInfo.ID.String() == partyPid.String() {
 				partyIDID = peerID
 				break
 			}

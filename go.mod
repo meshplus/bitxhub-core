@@ -15,8 +15,8 @@ require (
 	github.com/iancoleman/orderedmap v0.2.0
 	github.com/libp2p/go-libp2p-core v0.5.6
 	github.com/looplab/fsm v0.2.0
-	github.com/meshplus/bitxhub-kit v1.2.1-0.20220325052414-bc17176c509d
-	github.com/meshplus/bitxhub-model v1.2.1-0.20221216071442-fd226b10045c
+	github.com/meshplus/bitxhub-kit v1.28.0
+	github.com/meshplus/bitxhub-model v1.28.0
 	github.com/meshplus/go-lightp2p v0.0.0-20200817105923-6b3aee40fa54
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.8.0
@@ -53,3 +53,5 @@ replace github.com/binance-chain/tss-lib => github.com/dawn-to-dusk/tss-lib v1.3
 replace github.com/agl/ed25519 => github.com/binance-chain/edwards25519 v0.0.0-20200305024217-f36fc4b53d43
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.33.0
+
+//replace github.com/golang/protobuf => github.com/golang/protobuf v1.3.2

@@ -3,7 +3,7 @@ package blame
 // getBlamePartyIDsInList returns the nodes partyID.id who are in the partiesID list
 func (m *Manager) getBlamePartyIDsInList(partiesID []string) ([]string, error) {
 	var partiesInList []string
-	for partyID, _ := range m.partyInfo.PartyIDMap {
+	for partyID := range m.partyInfo.PartyIDMap {
 		for _, el := range partiesID {
 			if el == partyID {
 				partiesInList = append(partiesInList, partyID)
