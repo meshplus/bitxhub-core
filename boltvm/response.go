@@ -58,5 +58,5 @@ func ResponseWrapper(ok bool, data []byte) *Response {
 	if ok {
 		return Success(data)
 	}
-	return Error(OtherInternalErrCode, fmt.Sprintf(string(OtherInternalErrMsg), string(data)))
+	return Error(OtherInternalErrCode, string(data))
 }

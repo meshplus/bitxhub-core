@@ -237,5 +237,4 @@ func (t *TssInstance) PutTssMsg(msg *pb.Message) {
 	t.logger.WithFields(logrus.Fields{
 		"msgID": t.msgID,
 	}).Debugf("PutTssMsg")
-	return
 }

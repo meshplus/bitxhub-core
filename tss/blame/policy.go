@@ -147,9 +147,7 @@ func (m *Manager) TssMissingShareBlame(rounds int) ([]Node, bool, error) {
 			// since all the local parties have the same id, so we just need to take one of them to get the peer
 
 			el = append(el, m.localPartyID)
-			for _, partyIDid := range el {
-				partyIDs = append(partyIDs, partyIDid)
-			}
+			partyIDs = append(partyIDs, el...)
 			break
 		}
 

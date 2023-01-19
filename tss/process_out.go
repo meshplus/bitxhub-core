@@ -173,7 +173,7 @@ func (t *TssInstance) NotifyTaskDone() error {
 
 	var parties []uint64
 
-	for id, _ := range t.getPartyInfo().PartyIDMap {
+	for id := range t.getPartyInfo().PartyIDMap {
 		if id == t.localPartyID {
 			continue
 		}

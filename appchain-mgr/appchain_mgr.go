@@ -192,7 +192,7 @@ func (am *AppchainManager) Update(updateInfo *Appchain) (bool, []byte) {
 func (am *AppchainManager) ChangeStatus(id, trigger, lastStatus string, _ []byte) (bool, []byte) {
 	ok, data := am.Get(AppchainKey(id))
 	if !ok {
-		return false, []byte(fmt.Sprintf("this appchain does not exist"))
+		return false, []byte("this appchain does not exist")
 	}
 
 	chain := &Appchain{}

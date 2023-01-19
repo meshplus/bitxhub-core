@@ -70,7 +70,7 @@ func (s *FileStateMgrTestSuite) TestSaveLocalState(c *C) {
 
 	testPubKeys := []crypto.PubKey{}
 	testPubKeysDataMap := map[string][]byte{}
-	testPeers := []peer.ID{}
+	testPeers := make([]peer.ID, 0)
 	for i := 0; i < 4; i++ {
 		_, public, err := crypto.GenerateKeyPair(crypto.ECDSA, 1024)
 		c.Assert(err, IsNil)
@@ -83,6 +83,7 @@ func (s *FileStateMgrTestSuite) TestSaveLocalState(c *C) {
 		c.Assert(err, IsNil)
 		testPeers = append(testPeers, pid)
 	}
+	c.Assert(len(testPeers), Equals, 4)
 
 	stateItem := &KeygenLocalState{
 		PubKeyData:        pubkeyData2,
