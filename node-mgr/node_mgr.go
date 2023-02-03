@@ -117,7 +117,7 @@ func (node *Node) setFSM(lastStatus governance.GovernanceStatus) {
 	)
 }
 
-// GovernancePre checks if the appchain can do the event. (only check, not modify infomation)
+// GovernancePre checks if the appchain can do the event. (only check, not modify information)
 // return *node, extra info, error
 func (nm *NodeManager) GovernancePre(nodeAccount string, event governance.EventType, _ []byte) (interface{}, *boltvm.BxhError) {
 	node := &Node{}

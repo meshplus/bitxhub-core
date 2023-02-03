@@ -143,9 +143,6 @@ func SortPubKey(keys []crypto.PubKey) {
 		keyDataJ, _ := keys[j].Raw()
 		ma, _ := MsgToHashInt(keyDataI)
 		mb, _ := MsgToHashInt(keyDataJ)
-		if ma.Cmp(mb) == -1 {
-			return false
-		}
-		return true
+		return ma.Cmp(mb) != -1
 	})
 }

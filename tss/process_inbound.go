@@ -343,12 +343,12 @@ func (t *TssInstance) updateLocal(taskMsg *message.TaskMessage) error {
 }
 
 type tssJob struct {
-	wireBytes      []byte
-	msgIdentifier  string
-	partyID        *btss.PartyID
-	isBroadcast    bool
-	localParty     btss.Party
-	acceptedShares map[conversion.RoundInfo][]string
+	wireBytes     []byte
+	msgIdentifier string
+	partyID       *btss.PartyID
+	isBroadcast   bool
+	localParty    btss.Party
+	// acceptedShares map[conversion.RoundInfo][]string
 }
 
 func newJob(party btss.Party, wireBytes []byte, msgIdentifier string, from *btss.PartyID, isBroadcast bool) *tssJob {
@@ -523,7 +523,7 @@ func (t *TssInstance) applyShare(localCacheItem *cache.LocalCacheItem, key strin
 		return fmt.Errorf("%w, %s", blame.ErrHashCheck, errHashCheck)
 	}
 
-	//2. check ok
+	// 2. check ok
 	// - Save the original message to roundMgr
 	// - updateLocal to advance rounds
 	// - delete cache

@@ -14,9 +14,9 @@ import (
 type WasmValidator struct {
 	wasm     *wasm.Wasm
 	input    []byte
-	ledger   Ledger
 	logger   logrus.FieldLogger
 	gasLimit uint64
+	// ledger   Ledger
 }
 
 // New a validator instance
@@ -36,7 +36,7 @@ func NewWasmValidator(code []byte, logger logrus.FieldLogger, gasLimit uint64) *
 
 // Verify will check whether the transaction info is valid
 func (vlt *WasmValidator) Verify(from string, proof, payload []byte, validators string) (bool, uint64, error) {
-	err := vlt.initRule(from, proof, payload, validators)
+	err := vlt.initRule(proof, payload, validators)
 	if err != nil {
 		return false, 0, err
 	}
@@ -61,8 +61,8 @@ func (vlt *WasmValidator) Verify(from string, proof, payload []byte, validators 
 }
 
 // InitRule can import a specific rule for validator to verify the transaction
-func (vlt *WasmValidator) initRule(from string, proof, payload []byte, validators string) error {
-	err := vlt.setTransaction(from, proof, validators, payload)
+func (vlt *WasmValidator) initRule(proof, payload []byte, validators string) error {
+	err := vlt.setTransaction(proof, validators, payload)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (vlt *WasmValidator) initRule(from string, proof, payload []byte, validator
 	return nil
 }
 
-func (vlt *WasmValidator) setTransaction(from string, proof []byte, validators string, payload []byte) error {
+func (vlt *WasmValidator) setTransaction(proof []byte, validators string, payload []byte) error {
 	invokePayload := &pb.InvokePayload{
 		Method: "start_verify",
 		Args: []*pb.Arg{

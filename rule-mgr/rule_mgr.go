@@ -111,7 +111,7 @@ func (rule *Rule) setFSM(lastStatus governance.GovernanceStatus) {
 			// logout
 			{Name: string(governance.EventLogout), Src: []string{string(governance.GovernanceBindable)}, Dst: string(governance.GovernanceForbidden)},
 
-			// claer
+			// clear
 			{Name: string(governance.EventCLear), Src: []string{string(governance.GovernanceBindable), string(governance.GovernanceAvailable), string(governance.GovernanceBinding), string(governance.GovernanceUnbinding), string(governance.GovernanceForbidden)}, Dst: string(governance.GovernanceUnavailable)},
 		},
 		fsm.Callbacks{
@@ -162,7 +162,7 @@ func (rm *RuleManager) Register(chainID, ruleAddress, ruleUrl string, createTime
 	}).Info("Rule is registering")
 }
 
-// GovernancePre checks if the rule address can do event with appchain id and record rule. (only check, not modify infomation)
+// GovernancePre checks if the rule address can do event with appchain id and record rule. (only check, not modify information)
 func (rm *RuleManager) GovernancePre(ruleAddress string, event governance.EventType, chainID []byte) (interface{}, *boltvm.BxhError) {
 	rules := make([]*Rule, 0)
 	if ok := rm.GetObject(RuleKey(string(chainID)), &rules); !ok {

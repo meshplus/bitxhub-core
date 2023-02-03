@@ -5,6 +5,7 @@ import (
 )
 
 // Client defines the interface that interacts with appchain
+//
 //go:generate mockgen -destination mock_client/mock_client.go -package mock_client -source plugin.go
 type Client interface {
 	// Initialize initialize plugin client
@@ -48,7 +49,7 @@ type Client interface {
 	// outgoing interchain txs for each service pair
 	GetOutMeta() (map[string]uint64, error)
 
-	// GetReceiptMeta gets an index map, which implicates the greatest index of
+	// GetCallbackMeta gets an index map, which implicates the greatest index of
 	// executed callback txs for each service pair
 	GetCallbackMeta() (map[string]uint64, error)
 

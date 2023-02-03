@@ -204,10 +204,7 @@ func (t *TssInstance) SignMessage(msgsToSign [][]byte, localStateItem *storage.K
 		a := new(big.Int).SetBytes(results[i].M)
 		b := new(big.Int).SetBytes(results[j].M)
 
-		if a.Cmp(b) == -1 {
-			return false
-		}
-		return true
+		return a.Cmp(b) != -1
 	})
 
 	return results, nil
