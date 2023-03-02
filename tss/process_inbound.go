@@ -42,10 +42,7 @@ func (t *TssInstance) ProcessInboundMessages(wg *sync.WaitGroup) {
 
 // ProcessOneMessage process one p2p msgs received======================================================================
 func (t *TssInstance) ProcessOneMessage(msg *pb.Message) error {
-	t.logger.Debug("start processing one message")
-	defer t.logger.Debug("finish processing one message")
-
-	if nil == msg {
+	if msg == nil {
 		return fmt.Errorf("invalid message")
 	}
 
@@ -53,6 +50,8 @@ func (t *TssInstance) ProcessOneMessage(msg *pb.Message) error {
 	if err := json.Unmarshal(msg.Data, wireMsg); err != nil {
 		return fmt.Errorf("wire msg unmarshal error: %v", err)
 	}
+	t.logger.WithFields(logrus.Fields{"msgTyp": wireMsg.MsgType, "msgID": wireMsg.MsgID}).Debug("start processing one message")
+	defer t.logger.WithFields(logrus.Fields{"msgTyp": wireMsg.MsgType, "msgID": wireMsg.MsgID}).Debug("finish processing one message")
 
 	switch wireMsg.MsgType {
 	case message.TSSKeyGenMsg, message.TSSKeySignMsg:
@@ -149,10 +148,11 @@ func (t *TssInstance) ProcessOneMessage(msg *pb.Message) error {
 // processTSSMsg processes the library message. If the library message is received properly, the process needs to continue
 func (t *TssInstance) processTSSMsg(wireMsg *message.TaskMessage, msgType message.TssMsgType, forward bool) error {
 	t.logger.WithFields(logrus.Fields{
-		"from":      wireMsg.Routing.From.Id,
-		"to":        wireMsg.Routing.To,
-		"roundInfo": wireMsg.RoundInfo,
-		"type":      msgType,
+		"from":        wireMsg.Routing.From.Id,
+		"to":          wireMsg.Routing.To,
+		"roundInfo":   wireMsg.RoundInfo,
+		"isBroadCast": wireMsg.Routing.IsBroadcast,
+		"type":        msgType,
 	}).Debugf("process wire message")
 	defer t.logger.Debugf("finish process wire message")
 
@@ -162,7 +162,7 @@ func (t *TssInstance) processTSSMsg(wireMsg *message.TaskMessage, msgType messag
 		return fmt.Errorf("invalid wireMsg")
 	}
 
-	// 2. verrify sign in msg which is signed by sender
+	// 2. verify sign in msg which is signed by sender
 	partyIDMap := t.getPartyInfo().PartyIDMap
 	dataOwner, ok := partyIDMap[wireMsg.Routing.From.Id]
 	if !ok {
@@ -220,14 +220,14 @@ func (t *TssInstance) processTSSMsg(wireMsg *message.TaskMessage, msgType messag
 		// this means we received the broadcast confirm message from other party first
 		t.logger.Debugf("%s exist", key)
 		if localCacheItem.Msg == nil {
-			t.logger.Debugf("%s exist, set message", key)
+			t.logger.WithFields(logrus.Fields{"msgHash": msgHash}).Debugf("%s exist, set message", key)
 			localCacheItem.Msg = wireMsg
 			localCacheItem.Hash = msgHash
 		}
 	}
 	// 3.2.2.3 update confirm list, that is, add localpartyID to the list
 	localCacheItem.UpdateConfirmList(t.localPartyID, msgHash)
-	t.logger.Debugf("total confirmed parties:%+v", localCacheItem.ConfirmedList)
+	t.logger.WithFields(logrus.Fields{"key": localCacheItem.Msg.GetCacheKey()}).Debugf("total confirmed parties:%+v", localCacheItem.ConfirmedList)
 
 	// 3.2.3 handle the sharing confirmation of broadcast messages.
 	// check whether the number of caches is sufficient, if sufficient, can be stored to blame and update local
@@ -447,6 +447,7 @@ func (t *TssInstance) receiverBroadcastHashToPeers(wireMsg *message.TaskMessage,
 		ids = append(ids, tmpId)
 	}
 
+	t.logger.WithFields(logrus.Fields{"typ": msgType}).Debugf("receive broadcast msg")
 	msgVerType := conversion.GetBroadcastMessageType(msgType)
 	key := wireMsg.GetCacheKey()
 	msgHash, err := conversion.BytesToHashString(wireMsg.Message)
@@ -637,6 +638,9 @@ func (t *TssInstance) requestShareFromPeer(localCacheItem *cache.LocalCacheItem,
 		Msg:         nil,
 	}
 	t.blameMgr.ShareMgr.Set(targetHash)
+
+	t.logger.WithFields(logrus.Fields{"key": key, "localID": t.localPartyID, "others": partysIDs}).
+		Debugf("we have no msg, request from others")
 	switch msgType {
 	case message.TSSKeyGenVerMsg:
 		msg.RequestType = message.TSSKeyGenMsg
@@ -742,7 +746,7 @@ func (t *TssInstance) processVerMsg(broadcastConfirmMsg *message.BroadcastConfir
 
 	// update confirm list
 	localCacheItem.UpdateConfirmList(broadcastConfirmMsg.FromID, broadcastConfirmMsg.Hash)
-	t.logger.Debugf("total confirmed parties:%+v", localCacheItem.ConfirmedList)
+	t.logger.WithFields(logrus.Fields{"key": broadcastConfirmMsg.Key}).Debugf("total confirmed parties:%+v", localCacheItem.ConfirmedList)
 
 	// if we do not have the msg, we try to request from peer otherwise, we apply this share
 	if localCacheItem.Msg == nil {
