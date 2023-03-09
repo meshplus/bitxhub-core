@@ -6,8 +6,8 @@ require (
 	github.com/binance-chain/tss-lib v1.3.3-0.20210411025750-fffb56b30511
 	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/bytecodealliance/wasmtime-go v0.37.0
-	github.com/deckarep/golang-set v0.0.0-20180603214616-504e848d77ea
-	github.com/ethereum/go-ethereum v1.10.4
+	github.com/deckarep/golang-set v1.8.0
+	github.com/ethereum/go-ethereum v1.10.22
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/mock v1.6.0
 	github.com/hyperledger/fabric v2.1.1+incompatible
@@ -32,7 +32,6 @@ require (
 	github.com/lestrrat-go/strftime v1.0.3 // indirect
 	github.com/magiconair/properties v1.8.4 // indirect
 	github.com/miekg/pkcs11 v1.0.3 // indirect
-	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/pelletier/go-toml v1.8.1 // indirect
 	github.com/spf13/afero v1.5.1 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
@@ -45,7 +44,6 @@ require (
 	google.golang.org/genproto v0.0.0-20221014213838-99cd37c6964a // indirect
 	google.golang.org/grpc v1.50.1 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 replace github.com/binance-chain/tss-lib => github.com/dawn-to-dusk/tss-lib v1.3.2-0.20220422023240-5ddc16a330ed
