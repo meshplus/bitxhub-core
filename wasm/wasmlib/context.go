@@ -4,7 +4,7 @@ import (
 	"github.com/bytecodealliance/wasmtime-go"
 )
 
-func set_data(context map[string]interface{}, store *wasmtime.Store) *ImportLib {
+func set_data(context map[string]interface{}) *ImportLib {
 	return &ImportLib{
 		Module: "env",
 		Name:   "set_data",
@@ -29,7 +29,7 @@ func set_result(context map[string]interface{}, store *wasmtime.Store) *ImportLi
 
 func ImportWasmLib(context map[string]interface{}, store *wasmtime.Store) []*ImportLib {
 	var libs []*ImportLib
-	libs = append(libs, set_data(context, store))
+	libs = append(libs, set_data(context))
 	libs = append(libs, set_result(context, store))
 
 	return libs

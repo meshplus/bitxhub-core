@@ -1,7 +1,7 @@
 package blame
 
 // getBlamePartyIDsInList returns the nodes partyID.id who are in the partiesID list
-func (m *Manager) getBlamePartyIDsInList(partiesID []string) ([]string, error) {
+func (m *Manager) getBlamePartyIDsInList(partiesID []string) []string {
 	var partiesInList []string
 	for partyID := range m.partyInfo.PartyIDMap {
 		for _, el := range partiesID {
@@ -10,13 +10,13 @@ func (m *Manager) getBlamePartyIDsInList(partiesID []string) ([]string, error) {
 			}
 		}
 	}
-	return partiesInList, nil
+	return partiesInList
 }
 
 // getBlamePartyIDsNotInList returns the nodes partyID.id who are not in the partiesID list
-func (m *Manager) getBlamePartyIDsNotInList(partysID []string) ([]string, error) {
+func (m *Manager) getBlamePartyIDsNotInList(partysID []string) []string {
 	var partiesNotInList []string
-	for partyID, _ := range m.partyInfo.PartyIDMap {
+	for partyID := range m.partyInfo.PartyIDMap {
 		if m.localPartyID == partyID {
 			continue
 		}
@@ -31,20 +31,14 @@ func (m *Manager) getBlamePartyIDsNotInList(partysID []string) ([]string, error)
 			partiesNotInList = append(partiesNotInList, partyID)
 		}
 	}
-	return partiesNotInList, nil
+	return partiesNotInList
 }
 
 // GetBlamePartyIDsLists returns the nodes partyID.id who are in and not in the partiesID list
 func (m *Manager) GetBlamePartyIDsLists(partiesID []string) ([]string, []string, error) {
-	inList, err := m.getBlamePartyIDsInList(partiesID)
-	if err != nil {
-		return nil, nil, err
-	}
+	inList := m.getBlamePartyIDsInList(partiesID)
 
-	notInlist, err := m.getBlamePartyIDsNotInList(partiesID)
-	if err != nil {
-		return nil, nil, err
-	}
+	notInlist := m.getBlamePartyIDsNotInList(partiesID)
 
-	return inList, notInlist, err
+	return inList, notInlist, nil
 }

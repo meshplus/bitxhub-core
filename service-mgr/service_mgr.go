@@ -129,7 +129,7 @@ func (s *Service) setFSM(lastStatus governance.GovernanceStatus) {
 			{Name: string(governance.EventApprove), Src: []string{string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceForbidden)},
 			{Name: string(governance.EventReject), Src: []string{string(governance.GovernanceLogouting)}, Dst: string(lastStatus)},
 
-			// claer
+			// clear
 			{Name: string(governance.EventCLear), Src: []string{string(governance.GovernancePause), string(governance.GovernanceLogouting)}, Dst: string(governance.GovernanceForbidden)},
 		},
 		fsm.Callbacks{

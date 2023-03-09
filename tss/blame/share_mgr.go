@@ -6,8 +6,8 @@ import (
 
 // ShareMgr is used to manage the share request.
 // When the current participant does not receive a broadcast message (or when the received broadcast message
-//   is inconsistent with the majority of participants), the current participant requests the share of the broadcast
-//   message from the majority of participants in agreement.
+// is inconsistent with the majority of participants), the current participant requests the share of the broadcast
+// message from the majority of participants in agreement.
 type ShareMgr struct {
 	// requested indicates whether the current participant has requested sharing of the broadcast message from other participants
 	requested map[string]bool

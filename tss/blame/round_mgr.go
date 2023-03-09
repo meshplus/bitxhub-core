@@ -8,7 +8,7 @@ import (
 
 // RoundMgr is used to record the confirmation of broadcast messages of each round.
 // In the round of keygen and keysign, a participant needs to broadcast the hash of a broadcast message after receiving it
-//   to ensure that the broadcast message received by the participant is consistent with that received by other participants.
+// to ensure that the broadcast message received by the participant is consistent with that received by other participants.
 type RoundMgr struct {
 	storedMsg   map[string]*message.TaskMessage
 	storeLocker *sync.Mutex

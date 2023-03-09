@@ -49,11 +49,7 @@ func (m *Manager) GetUnicastBlame(lastMsgType string) ([]Node, error) {
 
 // GetBroadcastBlame blames the node who cause the timeout in broadcast message
 func (m *Manager) GetBroadcastBlame(lastMessageType string) ([]Node, error) {
-	blameParties, err := m.tssTimeoutBlame(lastMessageType, m.partyInfo.PartyIDMap)
-	if err != nil {
-		m.logger.Errorf("fail to get the blamed peers: %v", err)
-		return nil, fmt.Errorf("fail to get the blamed peers: %w", ErrTssTimeOut)
-	}
+	blameParties := m.tssTimeoutBlame(lastMessageType, m.partyInfo.PartyIDMap)
 
 	var blameNodes []Node
 	for _, el := range blameParties {
@@ -63,7 +59,7 @@ func (m *Manager) GetBroadcastBlame(lastMessageType string) ([]Node, error) {
 }
 
 // tssTimeoutBlame queries parties that do not participate in messages of the specified type
-func (m *Manager) tssTimeoutBlame(lastMessageType string, partyIDMap map[string]*btss.PartyID) ([]string, error) {
+func (m *Manager) tssTimeoutBlame(lastMessageType string, partyIDMap map[string]*btss.PartyID) []string {
 	peersSet := mapset.NewSet()
 	for _, el := range partyIDMap {
 		if el.Id != m.localPartyID {
@@ -74,7 +70,7 @@ func (m *Manager) tssTimeoutBlame(lastMessageType string, partyIDMap map[string]
 	// Query the sender of a message of a specified type
 	standbyNodes := m.RoundMgr.GetByRound(lastMessageType)
 	if len(standbyNodes) == 0 {
-		return nil, nil
+		return nil
 	}
 	s := make([]interface{}, len(standbyNodes))
 	for i, v := range standbyNodes {
@@ -87,7 +83,7 @@ func (m *Manager) tssTimeoutBlame(lastMessageType string, partyIDMap map[string]
 	for _, el := range diff {
 		blames = append(blames, el.(string))
 	}
-	return blames, nil
+	return blames
 }
 
 // TssWrongShareBlame blames the node who provide the wrong share
@@ -151,10 +147,7 @@ func (m *Manager) TssMissingShareBlame(rounds int) ([]Node, bool, error) {
 			break
 		}
 
-		blameParties, err := m.getBlamePartyIDsNotInList(partyIDs)
-		if err != nil {
-			return nil, isUnicast, err
-		}
+		blameParties := m.getBlamePartyIDsNotInList(partyIDs)
 		for _, el := range blameParties {
 			node := Node{
 				el,

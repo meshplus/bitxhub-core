@@ -18,9 +18,9 @@ const (
 	FABRIC_EVALUATOR = "fabric_evaluator"
 )
 
-var (
-	evaluatorMap map[string]*PolicyEvaluator
-)
+// var (
+// 	evaluatorMap map[string]*PolicyEvaluator
+// )
 
 type ValiadationArtifacts struct {
 	rwset        []byte

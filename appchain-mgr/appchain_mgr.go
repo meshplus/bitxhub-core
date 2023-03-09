@@ -135,7 +135,7 @@ func (chain *Appchain) setFSM(lastStatus g.GovernanceStatus) {
 	)
 }
 
-// GovernancePre checks if the appchain can do the event. (only check, not modify infomation)
+// GovernancePre checks if the appchain can do the event. (only check, not modify information)
 // return *appchain, extra info, error
 func (am *AppchainManager) GovernancePre(chainId string, event g.EventType, _ []byte) (interface{}, *boltvm.BxhError) {
 	chain := &Appchain{}
@@ -343,6 +343,6 @@ func (am *AppchainManager) auditRecordKey(id string) string {
 	return "audit-record-" + id
 }
 
-func (am *AppchainManager) indexMapKey(id string) string {
-	return fmt.Sprintf("index-tx-%s", id)
-}
+// func (am *AppchainManager) indexMapKey(id string) string {
+// 	return fmt.Sprintf("index-tx-%s", id)
+// }
