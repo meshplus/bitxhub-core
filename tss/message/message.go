@@ -26,7 +26,7 @@ const (
 	TSSControlMsg
 	// TSSTaskDone is the message of Tss process notification
 	TSSTaskDone
-	// Unknown is the message indicates the undefined message type
+	// TssUnknown is the message indicates the undefined message type
 	TssUnknown
 )
 
@@ -36,7 +36,7 @@ type WireMessage struct {
 	MsgData []byte     `json:"msg_data"`
 }
 
-// pb.Message_TSS_KEY_GEN, pb.Message_TSS_KEY_SIGN
+// TaskMessage pb.Message_TSS_KEY_GEN, pb.Message_TSS_KEY_SIGN
 // TaskMessage the message that produced by tss-lib package
 type TaskMessage struct {
 	Routing   *btss.MessageRouting `json:"routing"`
@@ -45,7 +45,7 @@ type TaskMessage struct {
 	Sig       []byte               `json:"signature"`
 }
 
-// pb.Message_TSS_KEY_GEN_VER, pb.Message_TSS_KEY_SIGN_VER
+// BroadcastConfirmMessage type: pb.Message_TSS_KEY_GEN_VER, pb.Message_TSS_KEY_SIGN_VER
 // BroadcastConfirmMessage is used to broadcast to all parties what message they receive
 type BroadcastConfirmMessage struct {
 	FromID string `json:"from_id"`
@@ -53,7 +53,7 @@ type BroadcastConfirmMessage struct {
 	Hash   string `json:"hash"`
 }
 
-// pb.Message_TSS_CONTROL
+// TssControl pb.Message_TSS_CONTROL
 type TssControl struct {
 	FromID      string       `json:"from_id"`
 	ReqHash     string       `json:"reqest_hash"`
@@ -62,7 +62,7 @@ type TssControl struct {
 	Msg         *TaskMessage `json:"message_body"`
 }
 
-// pb.Message_TSS_TASK_DONE
+// TssTaskNotifier pb.Message_TSS_TASK_DONE
 type TssTaskNotifier struct {
 	FromID   string `json:"from_id"`
 	TaskDone bool   `json:"task_done"`
