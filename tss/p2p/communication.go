@@ -63,7 +63,7 @@ func (c *Communication) ProcessBroadcast() {
 				Type: pb.Message_TSS_TASK,
 				Data: wireMsgData,
 			}
-			c.logger.Debugf("=================== send %s message to %+v", msg.WireMsg.MsgType, msg.PartiesID)
+			c.logger.Debugf("=================== send %d message to %+v", msg.WireMsg.MsgType, msg.PartiesID)
 			if len(msg.PartiesID) == 0 {
 				err := c.Broadcast(p2pMsg)
 				if err != nil {

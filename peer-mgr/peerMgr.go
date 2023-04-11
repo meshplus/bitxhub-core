@@ -62,8 +62,11 @@ type TssPeerManager interface {
 	// SubscribeTssSignRes subscribes to the sign result
 	SubscribeTssSignRes(ch chan<- *pb.Message) event.Subscription
 
-	// SubscribeTssMessage subscribes to the message of the tss module
+	// SubscribeTssCulprits subscribes to the message of the tss module
 	SubscribeTssCulprits(ch chan<- *pb.Message) event.Subscription
 
 	SubscribeTssKeygenReq(ch chan<- *pb.Message) event.Subscription
+
+	// GetLocalID return local id
+	GetLocalID() uint64
 }
