@@ -553,8 +553,6 @@ github.com/meshplus/bitxhub-kit v1.2.1-0.20210902085548-07f4fa85bfc9 h1:FFXQrmOz
 github.com/meshplus/bitxhub-kit v1.2.1-0.20210902085548-07f4fa85bfc9/go.mod h1:wrEdhHp1tktzdwcWb4bOxYsVc+KkcrYL18IYWYeumPQ=
 github.com/meshplus/bitxhub-model v1.2.1-0.20211122062102-4e6856663e73 h1:1nAjJGIoia3KiB9dUYAz+xWvtE7Dkvp1CI9KSr/mIvg=
 github.com/meshplus/bitxhub-model v1.2.1-0.20211122062102-4e6856663e73/go.mod h1:sPko8fD+G3MYOnH/44Ju4T4jD/tlEU3IJDIJ4hjrzxg=
-github.com/meshplus/wasmer-go v1.0.5-0.20210817103436-19ec68f8bfe2 h1:tgu12zbRlfzFj+y+01WdOuTb3PEZg4XF77gFcoasyCU=
-github.com/meshplus/wasmer-go v1.0.5-0.20210817103436-19ec68f8bfe2/go.mod h1:0gzVdSfg6pysA6QVp6iVRPTagC6Wq9pOE8J86WKb2Fk=
 github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b/go.mod h1:01TrycV0kFyexm33Z7vhZRXopbI8J3TDReVlkTgMUxE=
 github.com/miekg/dns v1.0.14/go.mod h1:W1PPwlIAgtquWBMBEV9nkV9Cazfe8ScdGz/Lj7v3Nrg=
 github.com/miekg/dns v1.1.12/go.mod h1:W1PPwlIAgtquWBMBEV9nkV9Cazfe8ScdGz/Lj7v3Nrg=
