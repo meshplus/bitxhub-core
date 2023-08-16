@@ -3,6 +3,7 @@ package validatorlib
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/hyperledger/fabric/common/policydsl"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
@@ -52,7 +53,7 @@ type payloadInfo struct {
 }
 
 func GetPolicyEnvelope(policy string) ([]byte, error) {
-	policyEnv, err := cauthdsl.FromString(policy)
+	policyEnv, err := policydsl.FromString(policy)
 	if err != nil {
 		return nil, err
 	}
