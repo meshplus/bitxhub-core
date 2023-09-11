@@ -10,10 +10,10 @@ require (
 	github.com/hyperledger/fabric-amcl v0.0.0-20200424173818-327c9e2cf77a // indirect
 	github.com/hyperledger/fabric-protos-go v0.0.0-20200506201313-25f6564b9ac4
 	github.com/looplab/fsm v0.2.0
-	github.com/meshplus/bitxhub-kit v1.2.1-0.20230815115616-6bcc1727c22a
+	github.com/meshplus/bitxhub-kit v1.2.1-0.20230911023851-d3de8fb2a6e6
 	github.com/meshplus/bitxhub-model v1.1.2-0.20210513074749-d31e04a9f41d
 	github.com/sirupsen/logrus v1.8.1
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.4
 	github.com/tjfoc/gmsm v1.4.1
 	github.com/wasmerio/go-ext-wasm v0.3.1
 )
