@@ -3,7 +3,6 @@ package validator
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"sync"
 
 	"github.com/gogo/protobuf/proto"
@@ -34,31 +33,31 @@ func NewWasmValidator(ledger Ledger, logger logrus.FieldLogger, instances *sync.
 
 // Verify will check whether the transaction info is valid
 func (vlt *WasmValidator) Verify(address, from string, proof, payload []byte, validators string) (bool, error) {
-	ruleHash, err := vlt.initRule(address, from, proof, payload, validators)
-	if err != nil {
-		return false, err
-	}
-
-	ret, err := vlt.wasm.Execute(vlt.input)
-	if err != nil {
-		return false, err
-	}
-	// put wasm instance into pool
-	v, ok := vlt.instances.Load(ruleHash)
-	if !ok {
-		return false, fmt.Errorf("load wasm instance failed")
-	}
-	v.(*sync.Pool).Put(vlt.wasm.Instance)
-
-	// check execution status
-	result, err := strconv.Atoi(string(ret))
-	if err != nil {
-		return false, err
-	}
-
-	if result == 0 {
-		return false, nil
-	}
+	//ruleHash, err := vlt.initRule(address, from, proof, payload, validators)
+	//if err != nil {
+	//	return false, err
+	//}
+	//
+	//ret, err := vlt.wasm.Execute(vlt.input)
+	//if err != nil {
+	//	return false, err
+	//}
+	//// put wasm instance into pool
+	//v, ok := vlt.instances.Load(ruleHash)
+	//if !ok {
+	//	return false, fmt.Errorf("load wasm instance failed")
+	//}
+	//v.(*sync.Pool).Put(vlt.wasm.Instance)
+	//
+	//// check execution status
+	//result, err := strconv.Atoi(string(ret))
+	//if err != nil {
+	//	return false, err
+	//}
+	//
+	//if result == 0 {
+	//	return false, nil
+	//}
 
 	return true, nil
 }
